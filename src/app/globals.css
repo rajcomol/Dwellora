@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f6f3;
+  --foreground: #1a1c1e;
+  --renovation-surface: #f2f0eb;
+  --renovation-elevated: #ffffff;
+  --renovation-muted: #e8e6e1;
+  --renovation-accent: #c9a227;
+  --renovation-accent-foreground: #2a2408;
+  --renovation-steel: #2f4a5c;
+  --renovation-concrete: #6b7280;
+  --renovation-border: #d6d3cd;
+  --renovation-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.04);
+  --radius-renovation: 0.75rem;
+  --renovation-pattern: linear-gradient(
+      to right,
+      rgb(47 74 92 / 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgb(47 74 92 / 0.06) 1px, transparent 1px);
+  --renovation-pattern-size: 24px 24px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-renovation-surface: var(--renovation-surface);
+  --color-renovation-elevated: var(--renovation-elevated);
+  --color-renovation-muted: var(--renovation-muted);
+  --color-renovation-accent: var(--renovation-accent);
+  --color-renovation-accent-foreground: var(--renovation-accent-foreground);
+  --color-renovation-steel: var(--renovation-steel);
+  --color-renovation-concrete: var(--renovation-concrete);
+  --color-renovation-border: var(--renovation-border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --shadow-renovation-card: var(--renovation-shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0c0d0f;
+    --foreground: #ececec;
+    --renovation-surface: #121418;
+    --renovation-elevated: #181b20;
+    --renovation-muted: #22262d;
+    --renovation-accent: #d4b84a;
+    --renovation-accent-foreground: #1a1c12;
+    --renovation-steel: #8fb4c9;
+    --renovation-concrete: #9ca3af;
+    --renovation-border: #2a2f38;
+    --renovation-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 4px 16px rgb(0 0 0 / 0.25);
+    --renovation-pattern: linear-gradient(
+        to right,
+        rgb(143 180 201 / 0.08) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, rgb(143 180 201 / 0.08) 1px, transparent 1px);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.bg-renovation-app {
+  background-color: var(--renovation-surface);
+  background-image: radial-gradient(
+      ellipse 120% 80% at 50% -30%,
+      rgb(201 162 39 / 0.12),
+      transparent 55%
+    ),
+    var(--renovation-pattern);
+  background-size: auto, var(--renovation-pattern-size);
+  background-position: center top, 0 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bg-renovation-app {
+    background-image: radial-gradient(
+        ellipse 120% 80% at 50% -30%,
+        rgb(212 184 74 / 0.08),
+        transparent 55%
+      ),
+      var(--renovation-pattern);
+    background-size: auto, var(--renovation-pattern-size);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe-fade-in {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe-fade-in {
+    animation: renovation-fade-in 0.55s ease-out both;
+  }
+}
+
+@keyframes renovation-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.motion-safe-stagger > * {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe-stagger > * {
+    opacity: 0;
+    animation: renovation-fade-in 0.5s ease-out both;
+  }
+  .motion-safe-stagger > *:nth-child(1) {
+    animation-delay: 0.04s;
+  }
+  .motion-safe-stagger > *:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  .motion-safe-stagger > *:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .motion-safe-stagger > *:nth-child(4) {
+    animation-delay: 0.22s;
+  }
+  .motion-safe-stagger > *:nth-child(5) {
+    animation-delay: 0.28s;
+  }
+  .motion-safe-stagger > *:nth-child(6) {
+    animation-delay: 0.34s;
+  }
+  .motion-safe-stagger > *:nth-child(7) {
+    animation-delay: 0.4s;
+  }
+  .motion-safe-stagger > *:nth-child(8) {
+    animation-delay: 0.46s;
+  }
+  .motion-safe-stagger > *:nth-child(n + 9) {
+    animation-delay: 0.52s;
+  }
+}

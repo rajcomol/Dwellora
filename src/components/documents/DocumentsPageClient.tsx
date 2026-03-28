@@ -1,0 +1,410 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { useI18n } from "@/i18n/provider";
+import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
+import type { DocumentRecord } from "@/lib/documents/types";
+
+const DOCUMENTS_BUCKET = "documents";
+
+type DocumentRow = {
+  id: string;
+  project_id: string;
+  file_name: string;
+  file_path: string;
+  created_at: string;
+  ai_summary?: string | null;
+};
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
+function mapDocument(row: DocumentRow): DocumentRecord {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    fileName: row.file_name,
+    filePath: row.file_path,
+    createdAt: row.created_at,
+    aiSummary: row.ai_summary ?? null,
+  };
+}
+
+export default function DocumentsPageClient() {
+  const { t } = useI18n();
+  const { projects } = useRenovation();
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [summaryByDocumentId, setSummaryByDocumentId] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
+  const [summarizingDocumentId, setSummarizingDocumentId] = useState<string | null>(null);
+  const [compareDocA, setCompareDocA] = useState("");
+  const [compareDocB, setCompareDocB] = useState("");
+  const [comparisonText, setComparisonText] = useState<string | null>(null);
+  const [comparing, setComparing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const projectNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const project of projects) map.set(project.id, project.name);
+    return map;
+  }, [projects]);
+
+  useEffect(() => {
+    if (projects.length === 0) {
+      setSelectedProjectId("");
+      return;
+    }
+    setSelectedProjectId((prev) => (prev && projectNameById.has(prev) ? prev : projects[0].id));
+  }, [projects, projectNameById]);
+
+  const documentsForSelectedProject = useMemo(
+    () => documents.filter((d) => d.projectId === selectedProjectId),
+    [documents, selectedProjectId]
+  );
+
+  useEffect(() => {
+    setCompareDocA((prev) =>
+      prev && documentsForSelectedProject.some((d) => d.id === prev) ? prev : ""
+    );
+    setCompareDocB((prev) =>
+      prev && documentsForSelectedProject.some((d) => d.id === prev) ? prev : ""
+    );
+  }, [documentsForSelectedProject]);
+
+  useEffect(() => {
+    async function loadDocuments() {
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        setDocuments([]);
+        return;
+      }
+
+      const res = await supabase
+        .from("documents")
+        .select("id,project_id,file_name,file_path,created_at,ai_summary")
+        .order("created_at", { ascending: false });
+
+      if (res.error) {
+        setError(t("documents.errorLoadList", { message: res.error.message }));
+        return;
+      }
+
+      const mapped = (res.data ?? []).map((row) => mapDocument(row as DocumentRow));
+      setDocuments(mapped);
+      const summaries: Record<string, string> = {};
+      for (const d of mapped) {
+        if (d.aiSummary && d.aiSummary.trim()) summaries[d.id] = d.aiSummary;
+      }
+      setSummaryByDocumentId((prev) => ({ ...summaries, ...prev }));
+    }
+
+    void loadDocuments();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void loadDocuments();
+    });
+
+    return () => subscription.unsubscribe();
+  }, [t]);
+
+  async function uploadDocument() {
+    if (!selectedProjectId) {
+      setError(t("documents.errorSelectProject"));
+      return;
+    }
+    if (!file) {
+      setError(t("documents.errorSelectPdf"));
+      return;
+    }
+    if (file.type !== "application/pdf") {
+      setError(t("documents.errorPdfOnly"));
+      return;
+    }
+
+    setError(null);
+    setUploading(true);
+
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `${selectedProjectId}/${Date.now()}-${safeName}`;
+
+      const { data: authData, error: getUserError } = await supabase.auth.getUser();
+      if (!authData.user) {
+        console.error("Document upload blocked: not authenticated", getUserError);
+        setError(t("documents.errorMustSignIn"));
+        return;
+      }
+
+      const { error: uploadError } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (uploadError) {
+        console.error("Document storage upload failed:", uploadError);
+        setError(uploadError.message);
+        return;
+      }
+
+      const { data: insertedRows, error: dbError } = await supabase
+        .from("documents")
+        .insert({
+          project_id: selectedProjectId,
+          file_name: file.name,
+          file_path: filePath,
+        })
+        .select("id,project_id,file_name,file_path,created_at,ai_summary");
+
+      if (dbError) {
+        console.error("Document metadata insert failed:", dbError);
+        await supabase.storage.from(DOCUMENTS_BUCKET).remove([filePath]);
+        setError(dbError.message);
+        return;
+      }
+
+      const insertData = insertedRows?.[0];
+      if (!insertData) {
+        await supabase.storage.from(DOCUMENTS_BUCKET).remove([filePath]);
+        setError(t("documents.errorMetadata"));
+        return;
+      }
+
+      setDocuments((prev) => [mapDocument(insertData as DocumentRow), ...prev]);
+      setFile(null);
+      const input = document.getElementById("document-upload-input") as HTMLInputElement | null;
+      if (input) input.value = "";
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("documents.errorUploadFailed"));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function summarizeDocument(documentId: string) {
+    setError(null);
+    setSummarizingDocumentId(documentId);
+
+    try {
+      const authHeaders = await getBearerAuthHeaders();
+      const res = await fetch("/api/documents/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ documentId }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || t("documents.errorSummarizeFailed"));
+      }
+
+      const data = (await res.json()) as { summary?: string };
+      const summary = typeof data.summary === "string" ? data.summary.trim() : "";
+      if (!summary) throw new Error(t("documents.errorNoSummary"));
+
+      setSummaryByDocumentId((prev) => ({ ...prev, [documentId]: summary }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("documents.errorSummarizeFailed"));
+    } finally {
+      setSummarizingDocumentId(null);
+    }
+  }
+
+  async function runCompare() {
+    if (!compareDocA || !compareDocB) {
+      setError(t("documents.errorSelectTwo"));
+      return;
+    }
+    if (compareDocA === compareDocB) {
+      setError(t("documents.errorSelectDifferent"));
+      return;
+    }
+    setError(null);
+    setComparing(true);
+    setComparisonText(null);
+
+    try {
+      const authHeaders = await getBearerAuthHeaders();
+      const res = await fetch("/api/documents/compare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ documentIdA: compareDocA, documentIdB: compareDocB }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || t("documents.errorCompareFailed"));
+      }
+
+      const data = (await res.json()) as { comparison?: string };
+      const comparison = typeof data.comparison === "string" ? data.comparison.trim() : "";
+      if (!comparison) throw new Error(t("documents.errorNoComparison"));
+
+      setComparisonText(comparison);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("documents.errorCompareFailed"));
+    } finally {
+      setComparing(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">{t("documents.title")}</h1>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("documents.subtitle")}</p>
+      </div>
+
+      <Card>
+        <h2 className="text-base font-semibold">{t("documents.uploadTitle")}</h2>
+        <form
+          className="mt-4 space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void uploadDocument();
+          }}
+        >
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            {projects.length === 0 ? (
+              <option value="">{t("documents.noProjectsOption")}</option>
+            ) : (
+              projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))
+            )}
+          </select>
+
+          <input
+            id="document-upload-input"
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-sm dark:border-zinc-800 dark:bg-zinc-950 dark:file:bg-zinc-900"
+          />
+
+          <Button type="submit" disabled={uploading || projects.length === 0}>
+            {uploading ? t("documents.uploading") : t("documents.uploadPdf")}
+          </Button>
+        </form>
+      </Card>
+
+      <Card>
+        <h2 className="text-base font-semibold">{t("documents.compareTitle")}</h2>
+        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("documents.compareHint")}</p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row">
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                {t("documents.documentA")}
+              </label>
+              <select
+                value={compareDocA}
+                onChange={(e) => setCompareDocA(e.target.value)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <option value="">{t("documents.selectPlaceholder")}</option>
+                {documentsForSelectedProject.map((d) => (
+                  <option key={d.id} value={d.id} disabled={d.id === compareDocB}>
+                    {d.fileName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                {t("documents.documentB")}
+              </label>
+              <select
+                value={compareDocB}
+                onChange={(e) => setCompareDocB(e.target.value)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <option value="">{t("documents.selectPlaceholder")}</option>
+                {documentsForSelectedProject.map((d) => (
+                  <option key={d.id} value={d.id} disabled={d.id === compareDocA}>
+                    {d.fileName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={() => void runCompare()}
+            disabled={
+              comparing ||
+              documentsForSelectedProject.length < 2 ||
+              !compareDocA ||
+              !compareDocB ||
+              compareDocA === compareDocB
+            }
+          >
+            {comparing ? t("documents.comparing") : t("documents.compare")}
+          </Button>
+        </div>
+
+        {comparisonText ? (
+          <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm whitespace-pre-wrap dark:border-zinc-800 dark:bg-zinc-900/40">
+            {comparisonText}
+          </div>
+        ) : null}
+      </Card>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">{t("documents.uploadedTitle")}</h2>
+        {documents.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+            {t("documents.uploadedEmpty")}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {documents.map((doc) => (
+              <Card key={doc.id}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold">{doc.fileName}</div>
+                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      {t("documents.projectLabel")}: {projectNameById.get(doc.projectId) ?? doc.projectId}
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      {t("documents.uploadedAt")}: {formatDate(doc.createdAt)}
+                    </div>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => void summarizeDocument(doc.id)}
+                    disabled={summarizingDocumentId === doc.id}
+                  >
+                    {summarizingDocumentId === doc.id ? t("documents.summarizing") : t("documents.summarize")}
+                  </Button>
+                </div>
+
+                {summaryByDocumentId[doc.id] ? (
+                  <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm whitespace-pre-wrap dark:border-zinc-800 dark:bg-zinc-900/40">
+                    {summaryByDocumentId[doc.id]}
+                  </div>
+                ) : null}
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {error ? <div className="text-sm text-red-600 dark:text-red-400">{error}</div> : null}
+    </div>
+  );
+}

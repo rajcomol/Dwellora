@@ -1,0 +1,393 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { completeChat, type ChatMessageParam } from "@/lib/ai/completeChat";
+import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
+import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
+import { isUuid } from "@/lib/supabase/project-access";
+
+const CHAT_MESSAGE_MAX_CHARS = 16_000;
+
+type ChatRequestBody = {
+  message?: unknown;
+  projectId?: unknown;
+  threadId?: unknown;
+};
+
+function mockAssistantReply(message: string) {
+  return `Mock response: I received your message "${message}". In the next step, I can tailor suggestions (cost, materials, sequencing) for your renovation plan.`;
+}
+
+export const runtime = "nodejs";
+
+const RENOVATION_COACH_SYSTEM_PROMPT = [
+  "You are a practical home-renovation coach.",
+  "Use selected project context if it is available.",
+  "Be concise, concrete, and actionable. Avoid long generic explanations.",
+  "Response length must stay between about 150 and 200 words maximum.",
+  "Use these section headers when relevant:",
+  "Wat eerst",
+  "Risico's",
+  "Volgende stap",
+  "Each section should be short and useful (1-3 bullets or compact sentences).",
+  "If project data is missing or incomplete, explicitly state what is missing.",
+  "Suggest exactly what the user should add: rooms, tasks, budget, duration_days, priority, or loose project expenses (e.g. hardware store) where relevant.",
+  "If the user asks for order of work, provide a practical sequence and include dependencies between tasks.",
+  "If budget data appears incomplete, warn carefully and do not pretend exact real-world costs.",
+  "Use cautious language for costs and assumptions (for example: 'indicatie', 'globale inschatting').",
+  "Prioritize safety, sequencing, and realistic next actions.",
+].join("\n");
+
+export async function GET(req: Request) {
+  const rl = rateLimitResponse(`chat:get:${clientIpFromRequest(req)}`, 120, 60_000);
+  if (rl) return rl;
+
+  const auth = await createUserSupabaseFromRequest(req);
+  if (!auth) {
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const threadId = url.searchParams.get("threadId");
+
+  if (threadId) {
+    if (!isUuid(threadId)) {
+      return Response.json({ error: "Invalid threadId." }, { status: 400 });
+    }
+    const th = await auth.client
+      .from("chat_threads")
+      .select("id")
+      .eq("id", threadId)
+      .eq("user_id", auth.userId)
+      .maybeSingle();
+    if (!th.data) {
+      return Response.json({ error: "Thread not found." }, { status: 404 });
+    }
+    const msgRes = await auth.client
+      .from("chat_messages")
+      .select("id,role,content,created_at")
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: true });
+    if (msgRes.error) {
+      return Response.json({ error: msgRes.error.message }, { status: 500 });
+    }
+    const rows = msgRes.data ?? [];
+    return Response.json({
+      messages: rows.map((r) => ({
+        id: String(r.id),
+        role: r.role === "assistant" || r.role === "user" ? r.role : "user",
+        content: String(r.content ?? ""),
+      })),
+    });
+  }
+
+  const listRes = await auth.client
+    .from("chat_threads")
+    .select("id,title,project_id,updated_at,created_at")
+    .eq("user_id", auth.userId)
+    .order("updated_at", { ascending: false })
+    .limit(30);
+
+  if (listRes.error) {
+    return Response.json({ error: listRes.error.message }, { status: 500 });
+  }
+
+  return Response.json({
+    threads: (listRes.data ?? []).map((t) => ({
+      id: String(t.id),
+      title: String(t.title ?? "Chat"),
+      projectId: t.project_id ? String(t.project_id) : null,
+      updatedAt: String(t.updated_at ?? ""),
+    })),
+  });
+}
+
+async function buildProjectContext(
+  supabase: SupabaseClient,
+  projectId: string
+): Promise<{ ok: true; text: string } | { ok: false; status: number; error: string }> {
+  const [projectRes, roomsRes, docsRes, expensesRes] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id,name,total_budget,address,expected_key_handover,notes")
+      .eq("id", projectId)
+      .maybeSingle(),
+    supabase.from("rooms").select("id,name,project_id").eq("project_id", projectId),
+    supabase.from("documents").select("file_name,ai_summary").eq("project_id", projectId),
+    supabase.from("project_expenses").select("title,amount,spent_on,notes").eq("project_id", projectId),
+  ]);
+
+  if (projectRes.error) {
+    console.error("Chat project context", { projectError: projectRes.error.message });
+    return { ok: false, status: 500, error: "Failed to load project." };
+  }
+  if (!projectRes.data) {
+    return { ok: false, status: 404, error: "Project not found." };
+  }
+
+  if (roomsRes.error) {
+    console.error("Chat project context", { roomsError: roomsRes.error.message });
+    return { ok: false, status: 500, error: "Failed to load rooms." };
+  }
+
+  let tasksRes: {
+    data: Array<Record<string, unknown>> | null;
+    error: { message: string } | null;
+  } = { data: [], error: null };
+
+  const rooms = roomsRes.data ?? [];
+  const roomIdList = rooms.map((room) => String(room.id));
+
+  if (roomIdList.length > 0) {
+    tasksRes = await supabase
+      .from("tasks")
+      .select(
+        "id,title,room_id,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date"
+      )
+      .in("room_id", roomIdList);
+  }
+
+  if (tasksRes.error) {
+    console.error("Chat project context", { tasksError: tasksRes.error.message });
+    return { ok: false, status: 500, error: "Failed to load tasks." };
+  }
+
+  const roomIds = new Set(roomIdList);
+  const scopedTasks = (tasksRes.data ?? []).filter((task) => roomIds.has(String(task.room_id)));
+
+  const roomLines = rooms.map((room) => {
+    const tasksForRoom = scopedTasks.filter((task) => String(task.room_id) === String(room.id));
+    const taskSummary =
+      tasksForRoom.length === 0
+        ? "no tasks yet"
+        : tasksForRoom
+            .map(
+              (task) =>
+                `${task.title} [${task.status}, ${task.priority}, ${task.duration_days}d, est ${task.estimated_cost}, actual ${task.actual_cost ?? 0}]`
+            )
+            .join("; ");
+    return `- ${room.name}: ${taskSummary}`;
+  });
+
+  const looseExpenses = expensesRes.error ? [] : (expensesRes.data ?? []);
+  const expenseLines =
+    looseExpenses.length === 0
+      ? ["- No loose project expenses recorded yet."]
+      : looseExpenses.map((row: { title?: unknown; amount?: unknown; spent_on?: unknown; notes?: unknown }) => {
+          const title = String(row.title ?? "");
+          const amt = row.amount ?? 0;
+          const when = row.spent_on != null && String(row.spent_on).trim() !== "" ? String(row.spent_on) : "no date";
+          const note = row.notes != null && String(row.notes).trim() !== "" ? ` — ${String(row.notes).slice(0, 80)}` : "";
+          return `- ${title}: ${amt} (${when})${note}`;
+        });
+
+  const docs = docsRes.error ? [] : (docsRes.data ?? []);
+  const docLines =
+    docs.length === 0
+      ? ["- No uploaded documents for this project."]
+      : docs.map((d: { file_name?: unknown; ai_summary?: unknown }) => {
+          const fn = String(d.file_name ?? "file");
+          const sum = d.ai_summary != null && String(d.ai_summary).trim() !== "";
+          return sum
+            ? `- ${fn} (summary): ${String(d.ai_summary).slice(0, 400)}${String(d.ai_summary).length > 400 ? "…" : ""}`
+            : `- ${fn} (run Summarize in Documents to add context)`;
+        });
+
+  const p = projectRes.data as Record<string, unknown>;
+  const text = [
+    `Selected project: ${p.name} (${p.id})`,
+    `Total budget: ${p.total_budget ?? 0}`,
+    p.address ? `Address: ${p.address}` : "",
+    p.expected_key_handover ? `Expected key handover: ${p.expected_key_handover}` : "",
+    p.notes ? `Notes: ${String(p.notes).slice(0, 500)}${String(p.notes).length > 500 ? "…" : ""}` : "",
+    `Rooms: ${rooms.length}`,
+    `Tasks: ${scopedTasks.length}`,
+    "Loose project expenses (hardware store, materials not tied to one task):",
+    ...expenseLines,
+    "Uploaded documents (for quote context):",
+    ...docLines,
+    "If any of these are missing, mention that clearly and ask the user to add them: rooms, tasks, total budget, duration_days, priority, and loose expenses if they shop outside tasks.",
+    "Room/task details:",
+    ...roomLines,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return { ok: true, text };
+}
+
+export async function POST(req: Request) {
+  const rl = rateLimitResponse(`chat:post:${clientIpFromRequest(req)}`, 60, 60_000);
+  if (rl) return rl;
+
+  let body: ChatRequestBody | null = null;
+  try {
+    body = (await req.json()) as ChatRequestBody;
+  } catch {
+    // ignore
+  }
+
+  const messageRaw = body?.message;
+  const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
+  const projectIdRaw = body?.projectId;
+  const projectId =
+    typeof projectIdRaw === "string" && projectIdRaw.trim().length > 0 ? projectIdRaw.trim() : null;
+  const threadIdRaw = body?.threadId;
+  const threadIdIn =
+    typeof threadIdRaw === "string" && threadIdRaw.trim().length > 0 ? threadIdRaw.trim() : null;
+
+  if (!message) {
+    return Response.json({ error: "Message is required." }, { status: 400 });
+  }
+  if (message.length > CHAT_MESSAGE_MAX_CHARS) {
+    return Response.json(
+      { error: `Message is too long (max ${CHAT_MESSAGE_MAX_CHARS} characters).` },
+      { status: 400 }
+    );
+  }
+
+  const auth = await createUserSupabaseFromRequest(req);
+  const usePersistence = Boolean(auth);
+
+  let projectContext = "";
+  if (projectId) {
+    if (!isUuid(projectId)) {
+      return Response.json({ error: "Invalid projectId." }, { status: 400 });
+    }
+    if (!auth) {
+      return Response.json({ error: "Sign in to use project context." }, { status: 401 });
+    }
+    const built = await buildProjectContext(auth.client, projectId);
+    if (!built.ok) {
+      return Response.json({ error: built.error }, { status: built.status });
+    }
+    projectContext = built.text;
+  }
+
+  let threadIdOut: string | null = null;
+  const historyForModel: ChatMessageParam[] = [];
+
+  if (usePersistence && auth) {
+    let activeThreadId = threadIdIn;
+
+    if (activeThreadId) {
+      if (!isUuid(activeThreadId)) {
+        return Response.json({ error: "Invalid threadId." }, { status: 400 });
+      }
+      const own = await auth.client
+        .from("chat_threads")
+        .select("id")
+        .eq("id", activeThreadId)
+        .eq("user_id", auth.userId)
+        .maybeSingle();
+      if (!own.data) {
+        return Response.json({ error: "Thread not found." }, { status: 404 });
+      }
+    } else {
+      const title = message.length > 60 ? `${message.slice(0, 57)}…` : message;
+      const ins = await auth.client
+        .from("chat_threads")
+        .insert({
+          user_id: auth.userId,
+          project_id: projectId && isUuid(projectId) ? projectId : null,
+          title,
+        })
+        .select("id")
+        .single();
+      if (ins.error || !ins.data) {
+        console.error("chat thread insert", ins.error?.message);
+        return Response.json({ error: "Could not start chat thread." }, { status: 500 });
+      }
+      activeThreadId = String(ins.data.id);
+    }
+
+    threadIdOut = activeThreadId;
+
+    const prev = await auth.client
+      .from("chat_messages")
+      .select("role,content")
+      .eq("thread_id", activeThreadId)
+      .order("created_at", { ascending: true })
+      .limit(40);
+
+    if (prev.error) {
+      return Response.json({ error: prev.error.message }, { status: 500 });
+    }
+
+    for (const row of prev.data ?? []) {
+      const role = row.role === "assistant" ? "assistant" : "user";
+      const content = String(row.content ?? "");
+      if (!content) continue;
+      historyForModel.push({ role, content });
+    }
+
+    const userIns = await auth.client.from("chat_messages").insert({
+      thread_id: activeThreadId,
+      role: "user",
+      content: message,
+    });
+    if (userIns.error) {
+      return Response.json({ error: userIns.error.message }, { status: 500 });
+    }
+    historyForModel.push({ role: "user", content: message });
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    const text = mockAssistantReply(message);
+    if (usePersistence && auth && threadIdOut) {
+      await auth.client.from("chat_messages").insert({
+        thread_id: threadIdOut,
+        role: "assistant",
+        content: text,
+      });
+      await auth.client.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadIdOut);
+    }
+    return Response.json({ response: text, threadId: threadIdOut });
+  }
+
+  const messages: ChatMessageParam[] = [
+    { role: "system", content: RENOVATION_COACH_SYSTEM_PROMPT },
+    ...(projectContext
+      ? [
+          {
+            role: "system" as const,
+            content: `Use this project context when giving advice. Ground your answer in this data and highlight missing planning data explicitly:\n${projectContext}`,
+          },
+        ]
+      : []),
+    ...historyForModel.slice(0, -1),
+    { role: "user", content: message },
+  ];
+
+  try {
+    const responseText = await completeChat({ messages, temperature: 0.7 });
+
+    if (usePersistence && auth && threadIdOut) {
+      await auth.client.from("chat_messages").insert({
+        thread_id: threadIdOut,
+        role: "assistant",
+        content: responseText,
+      });
+      await auth.client.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadIdOut);
+    }
+
+    return Response.json({ response: responseText, threadId: threadIdOut });
+  } catch (e: unknown) {
+    const error = e as { name?: string; message?: string; code?: string; status?: number; statusCode?: number };
+    console.error("Chat completion error", {
+      name: error?.name,
+      code: error?.code,
+      status: error?.status ?? error?.statusCode,
+      message: error?.message,
+    });
+    const text = mockAssistantReply(message);
+    if (usePersistence && auth && threadIdOut) {
+      await auth.client.from("chat_messages").insert({
+        thread_id: threadIdOut,
+        role: "assistant",
+        content: text,
+      });
+      await auth.client.from("chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadIdOut);
+    }
+    return Response.json({ response: text, threadId: threadIdOut }, { status: 200 });
+  }
+}

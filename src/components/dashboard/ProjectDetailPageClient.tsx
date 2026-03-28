@@ -1,0 +1,1367 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import { DEFAULT_RENOVATION_PHASE, RENOVATION_PHASE_ORDER } from "@/lib/renovation/phases";
+import type {
+  ID,
+  Project,
+  ProjectExpense,
+  RenovationPhase,
+  Room,
+  Task,
+  TaskAttachment,
+  TaskDependency,
+  TaskPriority,
+  TaskStatus,
+  TeamRosterEntry,
+} from "@/lib/renovation/types";
+import { formatCurrency as formatCost } from "@/lib/format/currency";
+import { useI18n } from "@/i18n/provider";
+import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
+import { supabase } from "@/lib/supabase/client";
+
+function statusBadge(status: TaskStatus) {
+  switch (status) {
+    case "todo":
+      return "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200";
+    case "doing":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
+    case "done":
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200";
+  }
+}
+
+function TaskEditor({
+  task,
+  roomName,
+  projectTaskOptions,
+  rosterOptions,
+  deps,
+  attachments,
+  onUpdate,
+  onDelete,
+  onAddDep,
+  onRemoveDep,
+  onUploadFile,
+  onRemoveAttachment,
+}: {
+  task: Task;
+  roomName: string;
+  projectTaskOptions: Task[];
+  rosterOptions: TeamRosterEntry[];
+  deps: TaskDependency[];
+  attachments: TaskAttachment[];
+  onUpdate: (patch: {
+    id: ID;
+    title?: string;
+    status?: TaskStatus;
+    estimatedCost?: number;
+    actualCost?: number;
+    durationDays?: number;
+    priority?: TaskPriority;
+    description?: string;
+    startDate?: string | null;
+    assignedRosterId?: ID | null;
+    renovationPhase?: RenovationPhase;
+  }) => Promise<boolean>;
+  onDelete: () => void;
+  onAddDep: (dependsOnTaskId: ID) => void;
+  onRemoveDep: (depId: ID) => void;
+  onUploadFile: (file: File) => Promise<void>;
+  onRemoveAttachment: (id: ID) => void;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(task.title);
+  const [status, setStatus] = useState<TaskStatus>(task.status);
+  const [estimatedCost, setEstimatedCost] = useState(String(task.estimatedCost));
+  const [actualCost, setActualCost] = useState(String(task.actualCost));
+  const [durationDays, setDurationDays] = useState(String(task.durationDays));
+  const [priority, setPriority] = useState<TaskPriority>(task.priority);
+  const [description, setDescription] = useState(task.description);
+  const [startDate, setStartDate] = useState(task.startDate ?? "");
+  const [renovationPhase, setRenovationPhase] = useState<RenovationPhase>(task.renovationPhase);
+  const [assignedRosterId, setAssignedRosterId] = useState(task.assignedRosterId ?? "");
+  const [depPick, setDepPick] = useState("");
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+
+  useEffect(() => {
+    setSaveError(null);
+    setJustSaved(false);
+  }, [task.id]);
+
+  useEffect(() => {
+    if (!justSaved) return;
+    const tmr = window.setTimeout(() => setJustSaved(false), 4000);
+    return () => window.clearTimeout(tmr);
+  }, [justSaved]);
+
+  useEffect(() => {
+    setTitle(task.title);
+    setStatus(task.status);
+    setEstimatedCost(String(task.estimatedCost));
+    setActualCost(String(task.actualCost));
+    setDurationDays(String(task.durationDays));
+    setPriority(task.priority);
+    setDescription(task.description);
+    setStartDate(task.startDate ?? "");
+    setRenovationPhase(task.renovationPhase);
+    setAssignedRosterId(task.assignedRosterId ?? "");
+  }, [
+    task.id,
+    task.title,
+    task.status,
+    task.estimatedCost,
+    task.actualCost,
+    task.durationDays,
+    task.priority,
+    task.description,
+    task.startDate,
+    task.assignedRosterId,
+    task.renovationPhase,
+  ]);
+
+  const assigneeLabel =
+    task.assignedRosterId != null
+      ? (rosterOptions.find((r) => r.id === task.assignedRosterId)?.displayName ?? t("projectDetail.assigneeUnknown"))
+      : t("projectDetail.assigneeUnassigned");
+
+  async function signedUrl(path: string) {
+    const { data, error } = await supabase.storage.from("documents").createSignedUrl(path, 3600);
+    if (error || !data?.signedUrl) return null;
+    return data.signedUrl;
+  }
+
+  return (
+    <li className="rounded-md border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">{task.title}</div>
+          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            {roomName} • {formatCost(task.estimatedCost)} {t("projectDetail.estShort")} • {formatCost(task.actualCost)}{" "}
+            {t("projectDetail.actualShort")} • {task.durationDays}d
+          </div>
+          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            {t(`renovationPhase.${task.renovationPhase}`)}
+            {" • "}
+            {t(`task.priority.${task.priority}`)}
+            {task.startDate ? ` • ${t("projectDetail.startsOn", { date: task.startDate })}` : ""}
+            {" • "}
+            {assigneeLabel}
+          </div>
+          {justSaved ? (
+            <p className="mt-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400" role="status">
+              {t("projectDetail.taskSaveSuccess")}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className={["rounded-md px-2 py-1 text-[11px] font-medium", statusBadge(task.status)].join(" ")}>
+            {t(`task.status.${task.status}`)}
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setOpen((o) => {
+                const next = !o;
+                if (next) {
+                  setJustSaved(false);
+                  setSaveError(null);
+                }
+                return next;
+              })
+            }
+            className="text-xs font-medium text-zinc-700 underline dark:text-zinc-300"
+          >
+            {open ? t("common.close") : t("common.edit")}
+          </button>
+        </div>
+      </div>
+
+      {open ? (
+        <div className="mt-3 space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <option value="todo">{t("task.status.todo")}</option>
+              <option value="doing">{t("task.status.doing")}</option>
+              <option value="done">{t("task.status.done")}</option>
+            </select>
+            <input
+              value={estimatedCost}
+              onChange={(e) => setEstimatedCost(e.target.value)}
+              placeholder={t("projectDetail.estimatedCost")}
+              inputMode="decimal"
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            <input
+              value={actualCost}
+              onChange={(e) => setActualCost(e.target.value)}
+              placeholder={t("projectDetail.actualCost")}
+              inputMode="decimal"
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            <input
+              value={durationDays}
+              onChange={(e) => setDurationDays(e.target.value)}
+              placeholder={t("projectDetail.durationDays")}
+              inputMode="numeric"
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <option value="low">{t("task.priority.low")}</option>
+              <option value="medium">{t("task.priority.medium")}</option>
+              <option value="high">{t("task.priority.high")}</option>
+            </select>
+            <label className="contents sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                {t("projectDetail.taskPhaseLabel")}
+              </span>
+              <select
+                value={renovationPhase}
+                onChange={(e) => setRenovationPhase(e.target.value as RenovationPhase)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                {RENOVATION_PHASE_ORDER.map((ph) => (
+                  <option key={ph} value={ph}>
+                    {t(`renovationPhase.${ph}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <select
+              value={assignedRosterId}
+              onChange={(e) => setAssignedRosterId(e.target.value)}
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:col-span-2"
+            >
+              <option value="">{t("projectDetail.assigneeNone")}</option>
+              {rosterOptions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t("projectDetail.description")}
+            rows={2}
+            className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              disabled={saveBusy}
+              onClick={() => {
+                void (async () => {
+                  const ec = Number.parseFloat(estimatedCost);
+                  const ac = Number.parseFloat(actualCost);
+                  const dd = Number.parseInt(durationDays, 10);
+                  if (!title.trim()) return;
+                  if (!Number.isFinite(ec) || !Number.isFinite(ac) || !Number.isFinite(dd) || dd < 0) return;
+                  setSaveError(null);
+                  setSaveBusy(true);
+                  try {
+                    const ok = await onUpdate({
+                      id: task.id,
+                      title: title.trim(),
+                      status,
+                      estimatedCost: ec,
+                      actualCost: ac,
+                      durationDays: dd,
+                      priority,
+                      description: description.trim(),
+                      startDate: startDate.trim() || null,
+                      assignedRosterId: assignedRosterId.trim() || null,
+                      renovationPhase,
+                    });
+                    if (ok) {
+                      setOpen(false);
+                      setJustSaved(true);
+                    } else {
+                      setSaveError(t("projectDetail.taskSaveError"));
+                    }
+                  } finally {
+                    setSaveBusy(false);
+                  }
+                })();
+              }}
+            >
+              {saveBusy ? t("projectDetail.taskSaving") : t("projectDetail.saveTask")}
+            </Button>
+            <Button type="button" variant="secondary" onClick={onDelete}>
+              {t("common.delete")}
+            </Button>
+          </div>
+          {saveError ? (
+            <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+              {saveError}
+            </p>
+          ) : null}
+
+          <div className="rounded-md border border-zinc-100 p-2 dark:border-zinc-800">
+            <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("projectDetail.dependsOn")}</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <select
+                value={depPick}
+                onChange={(e) => setDepPick(e.target.value)}
+                className="max-w-full flex-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <option value="">{t("projectDetail.selectPredecessor")}</option>
+                {projectTaskOptions
+                  .filter((t) => t.id !== task.id)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+              </select>
+              <Button
+                type="button"
+                className="text-xs"
+                onClick={() => {
+                  if (!depPick || depPick === task.id) return;
+                  onAddDep(depPick);
+                  setDepPick("");
+                }}
+              >
+                {t("common.add")}
+              </Button>
+            </div>
+            <ul className="mt-2 space-y-1 text-xs">
+              {deps.map((d) => {
+                const pred = projectTaskOptions.find((tk) => tk.id === d.dependsOnTaskId);
+                if (!pred) return null;
+                return (
+                  <li key={d.id} className="flex items-center justify-between gap-2">
+                    <span>{pred.title}</span>
+                    <button type="button" className="text-red-600 dark:text-red-400" onClick={() => onRemoveDep(d.id)}>
+                      {t("common.remove")}
+                    </button>
+                  </li>
+                );
+              })}
+              {deps.length === 0 ? <li className="text-zinc-500">{t("projectDetail.noDependencies")}</li> : null}
+            </ul>
+          </div>
+
+          <div className="rounded-md border border-zinc-100 p-2 dark:border-zinc-800">
+            <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("projectDetail.attachments")}</div>
+            <input
+              type="file"
+              className="mt-2 block w-full text-xs"
+              disabled={uploadBusy}
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                setUploadBusy(true);
+                try {
+                  await onUploadFile(f);
+                } finally {
+                  setUploadBusy(false);
+                }
+              }}
+            />
+            <ul className="mt-2 space-y-1 text-xs">
+              {attachments.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className="truncate text-left text-zinc-800 underline dark:text-zinc-200"
+                    onClick={async () => {
+                      const url = await signedUrl(a.filePath);
+                      if (url) window.open(url, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    {a.fileName}
+                  </button>
+                  <button type="button" className="text-red-600 dark:text-red-400" onClick={() => onRemoveAttachment(a.id)}>
+                    {t("common.remove")}
+                  </button>
+                </li>
+              ))}
+              {attachments.length === 0 ? <li className="text-zinc-500">{t("projectDetail.noFilesYet")}</li> : null}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function ProjectEditSection({
+  project,
+  updateProject,
+}: {
+  project: Project;
+  updateProject: (input: {
+    id: ID;
+    name?: string;
+    totalBudget?: number;
+    address?: string;
+    expectedKeyHandover?: string | null;
+    notes?: string;
+  }) => void;
+}) {
+  const { t } = useI18n();
+  const [editName, setEditName] = useState(project.name);
+  const [editBudget, setEditBudget] = useState(String(project.totalBudget));
+  const [editAddress, setEditAddress] = useState(project.address);
+  const [editKeyDate, setEditKeyDate] = useState(project.expectedKeyHandover ?? "");
+  const [editNotes, setEditNotes] = useState(project.notes);
+
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <h2 className="text-base font-semibold">{t("projectDetail.projectDetailsTitle")}</h2>
+      <form
+        className="mt-4 grid gap-3 sm:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const b = Number.parseFloat(editBudget);
+          if (!editName.trim() || !Number.isFinite(b)) return;
+          updateProject({
+            id: project.id,
+            name: editName.trim(),
+            totalBudget: b,
+            address: editAddress,
+            expectedKeyHandover: editKeyDate.trim() || null,
+            notes: editNotes,
+          });
+        }}
+      >
+        <input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          placeholder={t("projectDetail.placeholderProjectName")}
+          className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        <input
+          value={editBudget}
+          onChange={(e) => setEditBudget(e.target.value)}
+          placeholder={t("projectDetail.placeholderTotalBudget")}
+          inputMode="decimal"
+          className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        <input
+          value={editAddress}
+          onChange={(e) => setEditAddress(e.target.value)}
+          placeholder={t("projectDetail.placeholderAddress")}
+          className="sm:col-span-2 rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        <div>
+          <label className="text-xs text-zinc-500">{t("projectDetail.labelExpectedKey")}</label>
+          <input
+            type="date"
+            value={editKeyDate}
+            onChange={(e) => setEditKeyDate(e.target.value)}
+            className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs text-zinc-500">{t("projectDetail.labelNotes")}</label>
+          <textarea
+            value={editNotes}
+            onChange={(e) => setEditNotes(e.target.value)}
+            rows={3}
+            className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <Button type="submit" className="sm:col-span-2 w-fit">
+          {t("projectDetail.saveProject")}
+        </Button>
+      </form>
+    </section>
+  );
+}
+
+function ExpenseLine({
+  expense,
+  onUpdate,
+  onDelete,
+}: {
+  expense: ProjectExpense;
+  onUpdate: (input: {
+    id: ID;
+    title?: string;
+    amount?: number;
+    spentOn?: string | null;
+    notes?: string;
+  }) => void;
+  onDelete: () => void;
+}) {
+  const { t } = useI18n();
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(expense.title);
+  const [amount, setAmount] = useState(String(expense.amount));
+  const [spentOn, setSpentOn] = useState(expense.spentOn ?? "");
+  const [notes, setNotes] = useState(expense.notes);
+
+  if (editing) {
+    return (
+      <li className="space-y-2 rounded-md border border-zinc-100 p-3 dark:border-zinc-800">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t("projectDetail.expenseTitlePlaceholder")}
+            className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:col-span-2"
+          />
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder={t("projectDetail.expenseAmount")}
+            inputMode="decimal"
+            className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <input
+            type="date"
+            value={spentOn}
+            onChange={(e) => setSpentOn(e.target.value)}
+            className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t("projectDetail.expenseNotes")}
+            rows={2}
+            className="sm:col-span-2 w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            className="text-xs"
+            onClick={() => {
+              const a = Number.parseFloat(amount);
+              if (!title.trim() || !Number.isFinite(a) || a < 0) return;
+              onUpdate({
+                id: expense.id,
+                title: title.trim(),
+                amount: a,
+                spentOn: spentOn.trim() || null,
+                notes: notes.trim(),
+              });
+              setEditing(false);
+            }}
+          >
+            {t("projectDetail.expenseSave")}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="text-xs"
+            onClick={() => {
+              setTitle(expense.title);
+              setAmount(String(expense.amount));
+              setSpentOn(expense.spentOn ?? "");
+              setNotes(expense.notes);
+              setEditing(false);
+            }}
+          >
+            {t("common.close")}
+          </Button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex flex-col gap-2 rounded-md border border-zinc-100 p-3 sm:flex-row sm:items-start sm:justify-between dark:border-zinc-800">
+      <div className="min-w-0 flex-1">
+        <div className="font-medium text-zinc-900 dark:text-zinc-50">{expense.title}</div>
+        <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          {formatCost(expense.amount)}
+          {expense.spentOn ? ` • ${expense.spentOn}` : ""}
+        </div>
+        {expense.notes ? <div className="mt-1 text-xs text-zinc-500">{expense.notes}</div> : null}
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          className="text-xs font-medium text-zinc-700 underline dark:text-zinc-300"
+          onClick={() => {
+            setTitle(expense.title);
+            setAmount(String(expense.amount));
+            setSpentOn(expense.spentOn ?? "");
+            setNotes(expense.notes);
+            setEditing(true);
+          }}
+        >
+          {t("common.edit")}
+        </button>
+        <button type="button" className="text-xs font-medium text-red-600 dark:text-red-400" onClick={onDelete}>
+          {t("common.delete")}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function ProjectLooseExpensesSection({
+  projectId,
+  expenses,
+  createProjectExpense,
+  updateProjectExpense,
+  deleteProjectExpense,
+}: {
+  projectId: string;
+  expenses: ProjectExpense[];
+  createProjectExpense: (input: {
+    projectId: ID;
+    title: string;
+    amount: number;
+    spentOn?: string | null;
+    notes?: string;
+  }) => void;
+  updateProjectExpense: (input: {
+    id: ID;
+    title?: string;
+    amount?: number;
+    spentOn?: string | null;
+    notes?: string;
+  }) => void;
+  deleteProjectExpense: (id: ID) => void;
+}) {
+  const { t } = useI18n();
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [spentOn, setSpentOn] = useState("");
+  const [notes, setNotes] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const sorted = useMemo(
+    () => [...expenses].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [expenses]
+  );
+
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <h2 className="text-base font-semibold">{t("projectDetail.expensesTitle")}</h2>
+      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projectDetail.expensesHint")}</p>
+
+      <form
+        className="mt-4 grid gap-2 sm:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = title.trim();
+          if (!trimmed) {
+            setError(t("projectDetail.expenseTitleRequired"));
+            return;
+          }
+          const a = amount.trim() === "" ? 0 : Number.parseFloat(amount);
+          if (!Number.isFinite(a) || a < 0) {
+            setError(t("projectDetail.expenseAmountInvalid"));
+            return;
+          }
+          createProjectExpense({
+            projectId,
+            title: trimmed,
+            amount: a,
+            spentOn: spentOn.trim() || null,
+            notes: notes.trim(),
+          });
+          setTitle("");
+          setAmount("");
+          setSpentOn("");
+          setNotes("");
+          setError(null);
+        }}
+      >
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t("projectDetail.expenseTitlePlaceholder")}
+          className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:col-span-2"
+        />
+        <input
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder={t("projectDetail.expenseAmount")}
+          inputMode="decimal"
+          className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        <input
+          type="date"
+          value={spentOn}
+          onChange={(e) => setSpentOn(e.target.value)}
+          className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={t("projectDetail.expenseNotes")}
+          rows={2}
+          className="sm:col-span-2 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+        <Button type="submit" className="w-fit sm:col-span-2">
+          {t("projectDetail.expenseAdd")}
+        </Button>
+      </form>
+      {error ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</div> : null}
+
+      {sorted.length === 0 ? (
+        <p className="mt-4 text-sm text-zinc-500">{t("projectDetail.expenseEmpty")}</p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {sorted.map((ex) => (
+            <ExpenseLine
+              key={ex.id}
+              expense={ex}
+              onUpdate={updateProjectExpense}
+              onDelete={() => {
+                if (typeof window !== "undefined" && window.confirm(t("common.delete") + "?")) {
+                  deleteProjectExpense(ex.id);
+                }
+              }}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function RoomCard({
+  room,
+  tasks,
+  projectTasks,
+  rosterForProject,
+  taskDependencies,
+  taskAttachments,
+  onCreateTask,
+  onUpdateTask,
+  onDeleteTask,
+  onDeleteRoom,
+  onAddDep,
+  onRemoveDep,
+  onUploadAttachment,
+  onRemoveAttachment,
+}: {
+  room: Room;
+  tasks: Task[];
+  projectTasks: Task[];
+  rosterForProject: TeamRosterEntry[];
+  taskDependencies: TaskDependency[];
+  taskAttachments: TaskAttachment[];
+  onCreateTask: (input: {
+    title: string;
+    roomId: ID;
+    status: TaskStatus;
+    estimatedCost: number;
+    actualCost: number;
+    durationDays: number;
+    priority: TaskPriority;
+    description: string;
+    startDate: string | null;
+    assignedRosterId?: ID | null;
+    renovationPhase?: RenovationPhase;
+  }) => void;
+  onUpdateTask: (input: {
+    id: ID;
+    title?: string;
+    status?: TaskStatus;
+    estimatedCost?: number;
+    actualCost?: number;
+    durationDays?: number;
+    priority?: TaskPriority;
+    description?: string;
+    startDate?: string | null;
+    roomId?: ID;
+    sortOrder?: number;
+    assignedRosterId?: ID | null;
+    renovationPhase?: RenovationPhase;
+  }) => Promise<boolean>;
+  onDeleteTask: (id: ID) => void;
+  onDeleteRoom: (roomId: ID) => void;
+  onAddDep: (taskId: ID, dependsOnTaskId: ID) => void;
+  onRemoveDep: (id: ID) => void;
+  onUploadAttachment: (
+    taskId: ID,
+    file: File
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onRemoveAttachment: (id: ID) => void;
+}) {
+  const { t } = useI18n();
+  const [title, setTitle] = useState("");
+  const [status, setStatus] = useState<TaskStatus>("todo");
+  const [estimatedCost, setEstimatedCost] = useState("");
+  const [actualCost, setActualCost] = useState("");
+  const [durationDays, setDurationDays] = useState("");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [newTaskAssignee, setNewTaskAssignee] = useState("");
+  const [newTaskPhase, setNewTaskPhase] = useState<RenovationPhase>(DEFAULT_RENOVATION_PHASE);
+  const [error, setError] = useState<string | null>(null);
+
+  const sortedTasks = useMemo(() => sortTasksForPlanning(tasks), [tasks]);
+
+  function confirmRemoveRoom() {
+    const n = tasks.length;
+    const detail =
+      n > 0 ? (n === 1 ? t("projectDetail.removeRoomTasksOne") : t("projectDetail.removeRoomTasksMany", { count: n })) : "";
+    if (
+      typeof window !== "undefined" &&
+      window.confirm(`${t("projectDetail.removeRoomConfirm", { name: room.name })}${detail}${t("projectDetail.removeRoomIrreversible")}`)
+    ) {
+      onDeleteRoom(room.id);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold">{room.name}</div>
+          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            {tasks.length === 1 ? t("projectDetail.taskCountOne") : t("projectDetail.taskCountMany", { count: tasks.length })}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={confirmRemoveRoom}
+          className="shrink-0 text-xs font-medium text-red-600 hover:underline dark:text-red-400"
+        >
+          {t("projectDetail.removeRoom")}
+        </button>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {sortedTasks.length === 0 ? (
+          <div className="rounded-md border border-dashed border-zinc-200 bg-white p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+            {t("projectDetail.noTasksInRoom")}
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {sortedTasks.map((task) => (
+              <TaskEditor
+                key={task.id}
+                task={task}
+                roomName={room.name}
+                projectTaskOptions={projectTasks}
+                rosterOptions={rosterForProject}
+                deps={taskDependencies.filter((d) => d.taskId === task.id)}
+                attachments={taskAttachments.filter((a) => a.taskId === task.id)}
+                onUpdate={onUpdateTask}
+                onDelete={() => onDeleteTask(task.id)}
+                onAddDep={(dependsOnTaskId) => onAddDep(task.id, dependsOnTaskId)}
+                onRemoveDep={onRemoveDep}
+                onUploadFile={async (file) => {
+                  const r = await onUploadAttachment(task.id, file);
+                  if (!r.ok) setError(r.error);
+                }}
+                onRemoveAttachment={onRemoveAttachment}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <form
+        className="mt-4 flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = title.trim();
+          if (!trimmed) {
+            setError(t("projectDetail.taskTitleRequired"));
+            return;
+          }
+          const parsed = estimatedCost.trim() === "" ? 0 : Number.parseFloat(estimatedCost);
+          const parsedActual = actualCost.trim() === "" ? 0 : Number.parseFloat(actualCost);
+          if (!Number.isFinite(parsed) || !Number.isFinite(parsedActual)) {
+            setError(t("projectDetail.taskCostsNumber"));
+            return;
+          }
+          const parsedDuration = durationDays.trim() === "" ? 0 : Number.parseInt(durationDays, 10);
+          if (!Number.isFinite(parsedDuration) || parsedDuration < 0) {
+            setError(t("projectDetail.taskDurationInvalid"));
+            return;
+          }
+
+          onCreateTask({
+            title: trimmed,
+            roomId: room.id,
+            status,
+            estimatedCost: parsed,
+            actualCost: parsedActual,
+            durationDays: parsedDuration,
+            priority,
+            description: description.trim(),
+            startDate: startDate.trim() || null,
+            assignedRosterId: newTaskAssignee.trim() || null,
+            renovationPhase: newTaskPhase,
+          });
+          setTitle("");
+          setStatus("todo");
+          setEstimatedCost("");
+          setActualCost("");
+          setDurationDays("");
+          setPriority("medium");
+          setDescription("");
+          setStartDate("");
+          setNewTaskAssignee("");
+          setNewTaskPhase(DEFAULT_RENOVATION_PHASE);
+          setError(null);
+        }}
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t("projectDetail.taskTitlePlaceholder")}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as TaskStatus)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
+          >
+            <option value="todo">{t("task.status.todo")}</option>
+            <option value="doing">{t("task.status.doing")}</option>
+            <option value="done">{t("task.status.done")}</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            value={estimatedCost}
+            onChange={(e) => setEstimatedCost(e.target.value)}
+            placeholder={t("projectDetail.estimatedCost")}
+            inputMode="decimal"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
+          />
+          <input
+            value={actualCost}
+            onChange={(e) => setActualCost(e.target.value)}
+            placeholder={t("projectDetail.actualCost")}
+            inputMode="decimal"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
+          />
+          <input
+            value={durationDays}
+            onChange={(e) => setDurationDays(e.target.value)}
+            placeholder={t("projectDetail.durationDays")}
+            inputMode="numeric"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-64"
+          />
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-44"
+          />
+        </div>
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={t("projectDetail.descriptionOptional")}
+          rows={2}
+          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+        />
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as TaskPriority)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
+          >
+            <option value="low">{t("task.priority.low")}</option>
+            <option value="medium">{t("task.priority.medium")}</option>
+            <option value="high">{t("task.priority.high")}</option>
+          </select>
+          <select
+            value={newTaskPhase}
+            onChange={(e) => setNewTaskPhase(e.target.value as RenovationPhase)}
+            className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-52"
+            aria-label={t("projectDetail.taskPhaseLabel")}
+          >
+            {RENOVATION_PHASE_ORDER.map((ph) => (
+              <option key={ph} value={ph}>
+                {t(`renovationPhase.${ph}`)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={newTaskAssignee}
+            onChange={(e) => setNewTaskAssignee(e.target.value)}
+            className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-56"
+          >
+            <option value="">{t("projectDetail.assigneeNone")}</option>
+            {rosterForProject.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.displayName}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" className="w-full sm:w-auto">
+            {t("projectDetail.addTask")}
+          </Button>
+        </div>
+
+        {error ? <div className="text-xs text-red-600 dark:text-red-400">{error}</div> : null}
+      </form>
+    </Card>
+  );
+}
+
+export default function ProjectDetailPageClient({ projectId }: { projectId: string }) {
+  const {
+    projects,
+    rooms,
+    tasks,
+    projectExpenses,
+    taskDependencies,
+    taskAttachments,
+    checklistItems,
+    teamRoster,
+    createRoom,
+    deleteRoom,
+    createTask,
+    updateTask,
+    deleteTask,
+    updateProject,
+    createProjectExpense,
+    updateProjectExpense,
+    deleteProjectExpense,
+    addTaskDependency,
+    removeTaskDependency,
+    uploadTaskAttachment,
+    removeTaskAttachment,
+    addChecklistItem,
+    updateChecklistItem,
+    deleteChecklistItem,
+    addTeamRosterEntry,
+    deleteTeamRosterEntry,
+  } = useRenovation();
+
+  const { t } = useI18n();
+
+  const project = useMemo(() => projects.find((p) => p.id === projectId), [projects, projectId]);
+  const roomsForProject = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
+  const roomIds = useMemo(() => new Set(roomsForProject.map((r) => r.id)), [roomsForProject]);
+  const projectTasks = useMemo(() => tasks.filter((t) => roomIds.has(t.roomId)), [tasks, roomIds]);
+  const roomNameById = useMemo(() => new Map(rooms.map((r) => [r.id, r.name])), [rooms]);
+
+  const tasksByRoomId = useMemo(() => {
+    const map = new Map<ID, Task[]>();
+    for (const task of tasks) {
+      const arr = map.get(task.roomId) ?? [];
+      arr.push(task);
+      map.set(task.roomId, arr);
+    }
+    return map;
+  }, [tasks]);
+
+  const timelineTasks = useMemo(() => sortTasksForPlanning(projectTasks), [projectTasks]);
+
+  const checklistForProject = useMemo(
+    () =>
+      checklistItems
+        .filter((c) => c.projectId === projectId)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)),
+    [checklistItems, projectId]
+  );
+
+  const rosterForProject = useMemo(
+    () =>
+      teamRoster
+        .filter((r) => r.projectId === projectId)
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.displayName.localeCompare(b.displayName)),
+    [teamRoster, projectId]
+  );
+
+  const expensesForProject = useMemo(
+    () => projectExpenses.filter((e) => e.projectId === projectId),
+    [projectExpenses, projectId]
+  );
+
+  const [roomName, setRoomName] = useState("");
+  const [roomError, setRoomError] = useState<string | null>(null);
+
+  const [checkTitle, setCheckTitle] = useState("");
+  const [rosterName, setRosterName] = useState("");
+  const [rosterEmail, setRosterEmail] = useState("");
+  const [rosterRole, setRosterRole] = useState("");
+
+  if (!project) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold">{t("projectDetail.notFoundTitle")}</h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.notFoundBody")}</p>
+        <Link
+          href="/dashboard/projects"
+          className="inline-flex rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        >
+          {t("projectDetail.backToProjects")}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{project.name}</h1>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.subtitle")}</p>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            {t("projectDetail.budgetLine", { budget: formatCost(project.totalBudget) })}
+            {project.address ? ` • ${project.address}` : ""}
+            {project.expectedKeyHandover ? ` • ${t("projectDetail.keyDate", { date: project.expectedKeyHandover })}` : ""}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/dashboard/projects/${projectId}/planning`}
+            className="inline-flex rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+          >
+            {t("nav.planning")}
+          </Link>
+          <Link
+            href="/dashboard/projects"
+            className="inline-flex rounded-xl border border-renovation-border px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
+          >
+            {t("common.back")}
+          </Link>
+        </div>
+      </div>
+
+      <ProjectEditSection
+        key={`${project.id}|${project.name}|${project.totalBudget}|${project.address}|${project.expectedKeyHandover ?? ""}|${project.notes}`}
+        project={project}
+        updateProject={updateProject}
+      />
+
+      <ProjectLooseExpensesSection
+        projectId={projectId}
+        expenses={expensesForProject}
+        createProjectExpense={createProjectExpense}
+        updateProjectExpense={updateProjectExpense}
+        deleteProjectExpense={deleteProjectExpense}
+      />
+
+      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("projectDetail.timelineTitle")}</h2>
+            <p className="mt-1 text-xs text-renovation-concrete">
+              {timelineTasks.length === 0
+                ? t("projectDetail.timelineEmpty")
+                : timelineTasks.length === 1
+                  ? t("projectDetail.timelineSummaryOne")
+                  : t("projectDetail.timelineSummaryMany", { count: timelineTasks.length })}
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/projects/${projectId}/planning`}
+            className="inline-flex shrink-0 rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+          >
+            {t("projectDetail.openFullPlanning")}
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <h2 className="text-base font-semibold">{t("projectDetail.checklistTitle")}</h2>
+        <form
+          className="mt-3 flex flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!checkTitle.trim()) return;
+            addChecklistItem(projectId, checkTitle.trim());
+            setCheckTitle("");
+          }}
+        >
+          <input
+            value={checkTitle}
+            onChange={(e) => setCheckTitle(e.target.value)}
+            placeholder={t("projectDetail.checklistPlaceholder")}
+            className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <Button type="submit">{t("projectDetail.checklistAdd")}</Button>
+        </form>
+        <ul className="mt-4 space-y-2">
+          {checklistForProject.map((item) => (
+            <li key={item.id} className="flex items-center gap-3 rounded-md border border-zinc-100 px-3 py-2 dark:border-zinc-800">
+              <input
+                type="checkbox"
+                checked={item.isDone}
+                onChange={(e) => updateChecklistItem({ id: item.id, isDone: e.target.checked })}
+              />
+              <span className={item.isDone ? "flex-1 text-sm line-through text-zinc-500" : "flex-1 text-sm"}>{item.title}</span>
+              <button
+                type="button"
+                className="text-xs text-red-600 dark:text-red-400"
+                onClick={() => deleteChecklistItem(item.id)}
+              >
+                {t("projectDetail.checklistDelete")}
+              </button>
+            </li>
+          ))}
+          {checklistForProject.length === 0 ? <li className="text-sm text-zinc-500">{t("projectDetail.checklistEmpty")}</li> : null}
+        </ul>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <h2 className="text-base font-semibold">{t("projectDetail.rosterTitle")}</h2>
+        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projectDetail.rosterHint")}</p>
+        <form
+          className="mt-3 grid gap-2 sm:grid-cols-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!rosterName.trim()) return;
+            addTeamRosterEntry(projectId, {
+              displayName: rosterName.trim(),
+              email: rosterEmail,
+              roleHint: rosterRole,
+            });
+            setRosterName("");
+            setRosterEmail("");
+            setRosterRole("");
+          }}
+        >
+          <input
+            value={rosterName}
+            onChange={(e) => setRosterName(e.target.value)}
+            placeholder={t("projectDetail.rosterName")}
+            className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <input
+            value={rosterEmail}
+            onChange={(e) => setRosterEmail(e.target.value)}
+            placeholder={t("projectDetail.rosterEmail")}
+            className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <input
+            value={rosterRole}
+            onChange={(e) => setRosterRole(e.target.value)}
+            placeholder={t("projectDetail.rosterRole")}
+            className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+          <Button type="submit" className="sm:col-span-3 w-fit">
+            {t("projectDetail.rosterAddPerson")}
+          </Button>
+        </form>
+        <ul className="mt-4 space-y-2 text-sm">
+          {rosterForProject.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-100 px-3 py-2 dark:border-zinc-800">
+              <div>
+                <div className="font-medium">{r.displayName}</div>
+                <div className="text-xs text-zinc-500">
+                  {r.email || t("common.emDash")} {r.roleHint ? `• ${r.roleHint}` : ""}
+                </div>
+              </div>
+              <button type="button" className="text-xs text-red-600 dark:text-red-400" onClick={() => deleteTeamRosterEntry(r.id)}>
+                {t("common.remove")}
+              </button>
+            </li>
+          ))}
+          {rosterForProject.length === 0 ? <li className="text-zinc-500">{t("projectDetail.rosterEmpty")}</li> : null}
+        </ul>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">{t("projectDetail.roomsTitle")}</h2>
+            <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+              {roomsForProject.length === 1
+                ? t("projectDetail.roomsCountOne")
+                : t("projectDetail.roomsCountMany", { count: roomsForProject.length })}
+            </div>
+          </div>
+        </div>
+
+        <form
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const trimmed = roomName.trim();
+            if (!trimmed) {
+              setRoomError(t("projectDetail.roomErrorName"));
+              return;
+            }
+            createRoom({ name: trimmed, projectId });
+            setRoomName("");
+            setRoomError(null);
+          }}
+        >
+          <div className="flex-1">
+            <input
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder={t("projectDetail.roomPlaceholder")}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+            />
+            {roomError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{roomError}</div> : null}
+          </div>
+          <Button type="submit" className="w-full sm:w-auto">
+            {t("projectDetail.addRoom")}
+          </Button>
+        </form>
+      </section>
+
+      <section>
+        {roomsForProject.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+            {t("projectDetail.roomsEmpty")}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {roomsForProject.map((room) => {
+              const roomTasks = tasksByRoomId.get(room.id) ?? [];
+              return (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  tasks={roomTasks}
+                  projectTasks={projectTasks}
+                  rosterForProject={rosterForProject}
+                  taskDependencies={taskDependencies}
+                  taskAttachments={taskAttachments}
+                  onCreateTask={(input) => createTask(input)}
+                  onUpdateTask={updateTask}
+                  onDeleteTask={deleteTask}
+                  onDeleteRoom={deleteRoom}
+                  onAddDep={addTaskDependency}
+                  onRemoveDep={removeTaskDependency}
+                  onUploadAttachment={uploadTaskAttachment}
+                  onRemoveAttachment={removeTaskAttachment}
+                />
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
