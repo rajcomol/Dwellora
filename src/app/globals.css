@@ -67,11 +67,24 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/** Full-viewport login / auth screens: deep gradient + soft grain. */
-.login-auth-bg {
-  background:
-    linear-gradient(165deg, rgb(15 23 42 / 0.97) 0%, rgb(30 27 75 / 0.92) 42%, rgb(49 46 129 / 0.88) 100%),
-    radial-gradient(ellipse 100% 80% at 50% -10%, rgb(168 85 247 / 0.22), transparent 50%);
+/** Login / auth: base tone (layers below add photo + AI mesh in the component). */
+.login-auth-page {
+  background-color: rgb(15 23 42);
+}
+
+/** Subtle “AI” grid + glow — sits above blurred photography, under content. */
+.login-auth-ai-overlay {
+  background-image:
+    linear-gradient(rgb(56 189 248 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(139 92 246 / 0.06) 1px, transparent 1px),
+    radial-gradient(ellipse 120% 80% at 50% 0%, rgb(168 85 247 / 0.18), transparent 55%),
+    linear-gradient(165deg, rgb(15 23 42 / 0.88) 0%, rgb(30 27 75 / 0.82) 45%, rgb(49 46 129 / 0.78) 100%);
+  background-size:
+    56px 56px,
+    56px 56px,
+    auto,
+    auto;
+  background-position: center top, center top, center, center;
 }
 
 .bg-renovation-app {
