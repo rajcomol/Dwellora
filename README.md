@@ -33,4 +33,4 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deployment
 
-Deze repo is alleen voor **versiebeheer** (Git/GitHub). Productie (bijv. op Vercel) deployen we **zelf**, los van deze workflow—GitHub CI bouwt en test, maar deployt niet. Zie [Next.js deployment](https://nextjs.org/docs/app/building-your-application/deploying) bij het live zetten.
+Productie-deploy loopt via de **Vercel Git-integratie** met deze GitHub-repo: commits op de gekoppelde branch (meestal `main`) triggeren build en deploy op Vercel. Er staat (voorlopig) geen aparte GitHub Action in dit project. Zie [Next.js deployment](https://nextjs.org/docs/app/building-your-application/deploying) voor algemene opties.
