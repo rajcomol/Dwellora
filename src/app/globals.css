@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Anchor scanner to repo root (stable on Vercel; cwd can differ from local dev). */
+@import "tailwindcss" source("../..");
 
 :root {
   --background: #f7f6f3;
