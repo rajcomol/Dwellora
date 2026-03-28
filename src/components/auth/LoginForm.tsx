@@ -122,13 +122,10 @@ export default function LoginForm() {
 
   return (
     <div className={glass}>
-      <div className="border-b border-white/10 pb-5">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-300">{t("login.cardHeading")}</h2>
-        <div className="mt-3 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
-      </div>
+      <h2 className="mb-8 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-300">{t("login.cardHeading")}</h2>
 
       {user ? (
-        <div className="mt-8 space-y-6">
+        <div className="space-y-6">
           <p className="text-sm text-zinc-300">
             {t("login.signedInAs")}{" "}
             <span className="font-medium text-white">{user.email}</span>
@@ -151,7 +148,7 @@ export default function LoginForm() {
           </div>
         </div>
       ) : (
-        <div className="mt-8 space-y-6">
+        <div className="space-y-6">
           <div>
             <label htmlFor="login-email" className="sr-only">
               {t("login.email")}
