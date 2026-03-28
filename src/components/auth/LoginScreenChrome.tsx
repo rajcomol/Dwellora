@@ -31,7 +31,7 @@ export default function LoginScreenChrome({ children, belowLogo }: Props) {
               width={280}
               height={64}
               priority
-              className="h-auto w-[min(72vw,280px)] max-w-full"
+              className="h-auto w-[min(72vw,280px)] max-w-full bg-transparent object-contain shadow-none ring-0"
             />
             {belowLogo ? <div className="mt-5 max-w-md text-center">{belowLogo}</div> : null}
           </div>

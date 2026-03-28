@@ -30,7 +30,7 @@ export default function LoginPage() {
   return (
     <LoginScreenChrome
       belowLogo={
-        <p className="text-sm leading-relaxed text-zinc-200/90 sm:text-base">{nl.login.tagline}</p>
+        <p className="text-sm font-medium leading-relaxed text-black sm:text-base">{nl.login.tagline}</p>
       }
     >
       <Suspense fallback={<LoginFormFallback />}>
