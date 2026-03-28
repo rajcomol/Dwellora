@@ -67,6 +67,13 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/** Full-viewport login / auth screens: deep gradient + soft grain. */
+.login-auth-bg {
+  background:
+    linear-gradient(165deg, rgb(15 23 42 / 0.97) 0%, rgb(30 27 75 / 0.92) 42%, rgb(49 46 129 / 0.88) 100%),
+    radial-gradient(ellipse 100% 80% at 50% -10%, rgb(168 85 247 / 0.22), transparent 50%);
+}
+
 .bg-renovation-app {
   background-color: var(--renovation-surface);
   background-image: radial-gradient(

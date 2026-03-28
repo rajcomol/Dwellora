@@ -8,7 +8,9 @@
     "dashboardTitle": "Dashboard | Dwellora",
     "dashboardDescription": "Overzicht en planning voor je verbouwing in Dwellora.",
     "loginTitle": "Inloggen | Dwellora",
-    "loginDescription": "Log in of maak een account voor Dwellora."
+    "loginDescription": "Log in of maak een account voor Dwellora.",
+    "forgotPasswordTitle": "Wachtwoord resetten | Dwellora",
+    "forgotPasswordDescription": "Vraag een wachtwoordresetlink voor je Dwellora-account."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -44,8 +46,21 @@
   "login": {
     "welcomeTitle": "Welkom terug",
     "welcomeSubtitle": "Log in om in Dwellora projecten, taken en budgetten op één plek te beheren.",
+    "tagline": "Veilig inloggen. Je renovatiegegevens op één plek.",
+    "cardHeading": "Klantlogin",
     "accountHeading": "Account",
     "accountIntro": "Dezelfde sessie voor het dashboard, documenten en de AI-assistent.",
+    "rememberMe": "Onthoud mij",
+    "forgotPassword": "Wachtwoord vergeten?",
+    "signUpPrompt": "Nog geen account?",
+    "signUpLink": "Account aanmaken",
+    "forgotLead": "We sturen een resetlink naar je e-mail (controleer ook spam).",
+    "forgotCardHeading": "Wachtwoord resetten",
+    "forgotDescription": "Vul je e-mailadres in. Je ontvangt een link om een nieuw wachtwoord te kiezen (als dit adres bij ons bekend is).",
+    "forgotSubmit": "Resetlink versturen",
+    "forgotBackToLogin": "Terug naar inloggen",
+    "forgotSuccess": "Als dit e-mailadres bij ons bekend is, ontvang je zo een resetlink. Controleer je inbox.",
+    "forgotEmailRequired": "Vul een geldig e-mailadres in.",
     "signedInAs": "Ingelogd als",
     "goToDashboard": "Naar dashboard",
     "email": "E-mail",
