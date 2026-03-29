@@ -83,6 +83,17 @@ export const loginCredentialsSchema = z.object({
   password: z.string().min(PASSWORD_MIN_LENGTH),
 });
 
+export const signUpFormSchema = z
+  .object({
+    email: z.string().trim().email(),
+    password: z.string().min(PASSWORD_MIN_LENGTH),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "mismatch",
+  });
+
 export const forgotEmailSchema = z.object({
   email: z.string().trim().email(),
 });

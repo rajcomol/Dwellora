@@ -25,6 +25,10 @@ export default function LoginForm() {
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
       ? `/login/forgot?next=${encodeURIComponent(nextParam)}`
       : "/login/forgot";
+  const registerHref =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? `/login/register?next=${encodeURIComponent(nextParam)}`
+      : "/login/register";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,32 +70,6 @@ export default function LoginForm() {
     } catch {
       /* ignore */
     }
-  }
-
-  async function handleSignUp() {
-    setMessage(null);
-    const creds = loginCredentialsSchema.safeParse({ email, password });
-    if (!creds.success) {
-      setMessage({ type: "error", text: loginCredentialsZodMessage(t, creds.error) });
-      return;
-    }
-    setBusy(true);
-    const { data, error } = await supabase.auth.signUp({ email: creds.data.email, password: creds.data.password });
-    setBusy(false);
-    if (error) {
-      setMessage({ type: "error", text: error.message });
-      return;
-    }
-    persistRememberEmail(creds.data.email);
-    if (data.user && !data.session) {
-      setMessage({
-        type: "success",
-        text: t("login.signUpCheckEmail"),
-      });
-      return;
-    }
-    setMessage({ type: "success", text: t("login.signUpSuccessSession") });
-    window.location.assign(safeNextPath(nextParam));
   }
 
   async function handleSignIn() {
@@ -229,14 +207,12 @@ export default function LoginForm() {
 
           <p className="text-center text-sm text-zinc-500">
             <span className="text-zinc-500">{t("login.signUpPrompt")} </span>
-            <button
-              type="button"
-              onClick={() => void handleSignUp()}
-              disabled={busy}
-              className="font-medium text-zinc-300 underline-offset-2 transition-colors hover:text-white hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+            <Link
+              href={registerHref}
+              className="font-medium text-zinc-300 underline-offset-2 transition-colors hover:text-white hover:underline"
             >
               {t("login.signUpLink")}
-            </button>
+            </Link>
           </p>
         </div>
       )}

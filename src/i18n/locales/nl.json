@@ -10,7 +10,9 @@
     "loginTitle": "Inloggen | Dwellora",
     "loginDescription": "Log in of maak een account voor Dwellora.",
     "forgotPasswordTitle": "Wachtwoord resetten | Dwellora",
-    "forgotPasswordDescription": "Vraag een wachtwoordresetlink voor je Dwellora-account."
+    "forgotPasswordDescription": "Vraag een wachtwoordresetlink voor je Dwellora-account.",
+    "signUpTitle": "Account aanmaken | Dwellora",
+    "signUpDescription": "Maak een account voor Dwellora met je e-mailadres en een wachtwoord."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -77,7 +79,12 @@
     "signUpCheckEmail": "Controleer je e-mail om je account te bevestigen (indien nodig) en log daarna in.",
     "signUpSuccessSession": "Account aangemaakt. Je bent ingelogd.",
     "signInSuccess": "Succesvol ingelogd.",
-    "errorPasswordMin": "Wachtwoord moet minimaal {{min}} tekens zijn."
+    "errorPasswordMin": "Wachtwoord moet minimaal {{min}} tekens zijn.",
+    "signUpCardHeading": "Account aanmaken",
+    "signUpDescription": "Vul je e-mailadres in en kies een wachtwoord. Bevestig je wachtwoord om door te gaan.",
+    "confirmPassword": "Wachtwoord bevestigen",
+    "signUpPasswordMismatch": "De wachtwoorden komen niet overeen.",
+    "signUpBackToLogin": "Terug naar inloggen"
   },
   "dashboard": {
     "heroEyebrow": "Dwellora",

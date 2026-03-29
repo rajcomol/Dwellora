@@ -13,3 +13,18 @@ export function loginCredentialsZodMessage(t: TranslateFn, err: ZodError): strin
   }
   return t("validation.generic");
 }
+
+export function signUpFormZodMessage(t: TranslateFn, err: ZodError): string {
+  const issue = err.issues[0];
+  const path = issue?.path[0];
+  if (path === "confirmPassword") {
+    return t("login.signUpPasswordMismatch");
+  }
+  if (path === "password" && issue?.code === "too_small") {
+    return t("login.errorPasswordMin", { min: String(PASSWORD_MIN_LENGTH) });
+  }
+  if (path === "email") {
+    return t("login.forgotEmailRequired");
+  }
+  return t("validation.generic");
+}
