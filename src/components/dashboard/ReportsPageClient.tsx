@@ -5,6 +5,7 @@ import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import { aggregateSpendByRoom, projectBudgetSummary } from "@/lib/dashboard/reports";
 
 export default function ReportsPageClient() {
@@ -126,7 +127,9 @@ export default function ReportsPageClient() {
                 </div>
                 <div>
                   <dt className="text-xs text-zinc-500">{t("reports.keyHandover")}</dt>
-                  <dd>{p.expectedKeyHandover ?? t("common.emDash")}</dd>
+                  <dd>
+                    {p.expectedKeyHandover ? formatDisplayDate(p.expectedKeyHandover) : t("common.emDash")}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs text-zinc-500">{t("reports.budgetVsEstimated")}</dt>
@@ -177,7 +180,9 @@ export default function ReportsPageClient() {
                         <td className="py-2 pr-2">{projectNameById.get(row.projectId) ?? row.projectId}</td>
                       ) : null}
                       <td className="py-2 pr-2">{row.title}</td>
-                      <td className="py-2 pr-2 tabular-nums">{row.spentOn ?? t("common.emDash")}</td>
+                      <td className="py-2 pr-2 tabular-nums">
+                        {row.spentOn ? formatDisplayDate(row.spentOn) : t("common.emDash")}
+                      </td>
                       <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.amount)}</td>
                       <td className="max-w-[12rem] truncate py-2 text-zinc-600 dark:text-zinc-400" title={row.notes}>
                         {row.notes || t("common.emDash")}

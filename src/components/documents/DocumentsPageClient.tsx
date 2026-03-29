@@ -7,6 +7,7 @@ import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
 import type { DocumentRecord } from "@/lib/documents/types";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import {
   documentCompareSelectionSchema,
   documentUploadRefinedSchema,
@@ -23,12 +24,6 @@ type DocumentRow = {
   created_at: string;
   ai_summary?: string | null;
 };
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
 
 function mapDocument(row: DocumentRow): DocumentRecord {
   return {
@@ -416,7 +411,7 @@ export default function DocumentsPageClient() {
                       {t("documents.projectLabel")}: {projectNameById.get(doc.projectId) ?? doc.projectId}
                     </div>
                     <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                      {t("documents.uploadedAt")}: {formatDate(doc.createdAt)}
+                      {t("documents.uploadedAt")}: {formatDisplayDate(doc.createdAt)}
                     </div>
                   </div>
                   <Button

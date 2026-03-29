@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/i18n/provider";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import { buildPlanningRows } from "@/lib/renovation/planningSchedule";
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
 import type { ID, Task, TaskStatus } from "@/lib/renovation/types";
@@ -124,11 +125,16 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-renovation-concrete">
                       <span className="tabular-nums font-medium text-renovation-steel dark:text-zinc-300">{dayLabel}</span>
                       {row.estimatedStart && row.estimatedEnd ? (
-                        <span>{t("planning.estRange", { from: row.estimatedStart, to: row.estimatedEnd })}</span>
+                        <span>
+                          {t("planning.estRange", {
+                            from: formatDisplayDate(row.estimatedStart),
+                            to: formatDisplayDate(row.estimatedEnd),
+                          })}
+                        </span>
                       ) : null}
                       <span>
                         {task.startDate
-                          ? t("projectDetail.startsOn", { date: task.startDate })
+                          ? t("projectDetail.startsOn", { date: formatDisplayDate(task.startDate) })
                           : t("planning.noStartDate")}{" "}
                         • {assignee}
                       </span>

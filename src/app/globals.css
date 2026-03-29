@@ -86,7 +86,7 @@ body {
 }
 
 /**
- * Login: glasstijl voor logo-pill (LoginScreenChrome). Formulierkaart gebruikt gradient + blur in de componenten.
+ * Login + dashboard header: glasstijl voor logo-pill (`BrandLogoPill`). Formulierkaart gebruikt gradient + blur in de componenten.
  * Geen `opacity` op het element — alleen rgba + backdrop-filter.
  */
 .glass-card {

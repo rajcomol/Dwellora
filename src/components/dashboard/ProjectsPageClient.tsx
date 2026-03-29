@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import { projectCreateFormSchema } from "@/lib/validation/schemas";
 
 export default function ProjectsPageClient() {
@@ -142,7 +143,7 @@ export default function ProjectsPageClient() {
                     <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                       {t("projects.budgetLabel")}: {formatCurrency(project.totalBudget)}
                       {project.expectedKeyHandover
-                        ? ` • ${t("projects.keyLabel")}: ${project.expectedKeyHandover}`
+                        ? ` • ${t("projects.keyLabel")}: ${formatDisplayDate(project.expectedKeyHandover)}`
                         : ""}
                     </div>
                     {project.address ? (

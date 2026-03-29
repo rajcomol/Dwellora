@@ -7,6 +7,7 @@ import { RENOVATION_PHASE_ORDER } from "@/lib/renovation/phases";
 import { roomMapById, sortTasksForPlanning } from "@/lib/renovation/planningSort";
 import type { RenovationPhase, Task } from "@/lib/renovation/types";
 import { useI18n } from "@/i18n/provider";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 
 export default function PlanningHubPageClient() {
   const { t } = useI18n();
@@ -102,7 +103,7 @@ export default function PlanningHubPageClient() {
                             ? (rosterNameById.get(task.assignedRosterId) ?? t("planning.assigneeUnknown"))
                             : t("planning.assigneeUnassigned");
                         const dateLabel = task.startDate
-                          ? t("projectDetail.startsOn", { date: task.startDate })
+                          ? t("projectDetail.startsOn", { date: formatDisplayDate(task.startDate) })
                           : t("planning.noStartDate");
 
                         return (

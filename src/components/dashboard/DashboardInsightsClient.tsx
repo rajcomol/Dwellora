@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n/provider";
 import { computeMetrics, generateInsights } from "@/lib/dashboard/insights";
 import { getUpcomingTasks } from "@/lib/dashboard/upcomingTasks";
 import { formatCurrency } from "@/lib/format/currency";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 
 function MetricCard({
   label,
@@ -142,7 +143,7 @@ export default function DashboardInsightsClient() {
                 <div className="font-medium text-zinc-900 dark:text-zinc-100">{u.title}</div>
                 <div className="text-xs text-renovation-concrete">
                   {u.projectName} → {u.roomName} • {t(`task.priority.${u.priority}`)} • {t(`task.status.${u.status}`)}
-                  {u.startDate ? ` • ${u.startDate}` : ""}
+                  {u.startDate ? ` • ${formatDisplayDate(u.startDate)}` : ""}
                   {u.durationDays > 0 ? ` • ${u.durationDays}d` : ""}
                 </div>
               </li>

@@ -20,6 +20,7 @@ import type {
   TeamRosterEntry,
 } from "@/lib/renovation/types";
 import { formatCurrency as formatCost } from "@/lib/format/currency";
+import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import type { TranslateFn } from "@/i18n/create-translator";
 import { useI18n } from "@/i18n/provider";
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
@@ -177,7 +178,7 @@ function TaskEditor({
             {t(`renovationPhase.${task.renovationPhase}`)}
             {" • "}
             {t(`task.priority.${task.priority}`)}
-            {task.startDate ? ` • ${t("projectDetail.startsOn", { date: task.startDate })}` : ""}
+            {task.startDate ? ` • ${t("projectDetail.startsOn", { date: formatDisplayDate(task.startDate) })}` : ""}
             {" • "}
             {assigneeLabel}
           </div>
@@ -664,7 +665,7 @@ function ExpenseLine({
         <div className="font-medium text-zinc-900 dark:text-zinc-50">{expense.title}</div>
         <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
           {formatCost(expense.amount)}
-          {expense.spentOn ? ` • ${expense.spentOn}` : ""}
+          {expense.spentOn ? ` • ${formatDisplayDate(expense.spentOn)}` : ""}
         </div>
         {expense.notes ? <div className="mt-1 text-xs text-zinc-500">{expense.notes}</div> : null}
       </div>
@@ -1198,7 +1199,9 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
             {t("projectDetail.budgetLine", { budget: formatCost(project.totalBudget) })}
             {project.address ? ` • ${project.address}` : ""}
-            {project.expectedKeyHandover ? ` • ${t("projectDetail.keyDate", { date: project.expectedKeyHandover })}` : ""}
+            {project.expectedKeyHandover
+              ? ` • ${t("projectDetail.keyDate", { date: formatDisplayDate(project.expectedKeyHandover) })}`
+              : ""}
           </p>
         </div>
 

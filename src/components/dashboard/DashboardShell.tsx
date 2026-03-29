@@ -1,36 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import BrandLogoPill from "@/components/brand/BrandLogoPill";
 import AuthHeader from "@/components/dashboard/AuthHeader";
 import DashboardMobileNav from "@/components/dashboard/DashboardMobileNav";
 import DashboardShellNav from "@/components/dashboard/DashboardShellNav";
 import nl from "@/i18n/locales/nl.json";
-
-function BrandWordmark({ className }: { className?: string }) {
-  return (
-    <Image
-      src="/brand/dwellora-logo-wordmark-v3.png"
-      alt={nl.brand.name}
-      width={1376}
-      height={768}
-      className={className}
-      priority
-    />
-  );
-}
-
-function BrandIcon({ className }: { className?: string }) {
-  return (
-    <Image
-      src="/brand/dwellora-icon-d-house.png"
-      alt=""
-      width={40}
-      height={40}
-      className={className}
-      priority
-    />
-  );
-}
 
 export default function DashboardShell({
   children,
@@ -42,15 +16,6 @@ export default function DashboardShell({
       <div className="flex min-h-screen">
         <aside className="hidden w-64 border-r border-renovation-border bg-renovation-elevated shadow-sm dark:border-renovation-border dark:bg-renovation-elevated lg:block">
           <div className="flex h-full flex-col p-5">
-            <Link
-              href="/dashboard"
-              className="flex flex-col gap-2 rounded-xl px-1 py-0.5 transition-opacity hover:opacity-90"
-            >
-              <BrandWordmark className="h-10 w-auto max-w-full object-contain object-left drop-shadow-[0_1px_2px_rgb(15_23_42/0.08)] dark:drop-shadow-[0_1px_2px_rgb(0_0_0/0.35)]" />
-              <div className="text-lg font-semibold leading-tight text-renovation-steel dark:text-zinc-100">
-                {nl.shell.sidebarSubtitle}
-              </div>
-            </Link>
             <DashboardShellNav />
             <div className="mt-auto flex flex-col gap-2 pt-6 text-xs text-renovation-concrete">
               <Link href="/privacy" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
@@ -65,17 +30,22 @@ export default function DashboardShell({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header
-            className="flex items-center justify-between gap-4 border-b border-renovation-border bg-renovation-elevated px-4 py-3 dark:border-renovation-border dark:bg-renovation-elevated"
+            className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-renovation-border bg-renovation-elevated px-4 py-3 dark:border-renovation-border dark:bg-renovation-elevated"
             style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 justify-self-start">
               <DashboardMobileNav />
-              <BrandIcon className="h-8 w-8 shrink-0 lg:hidden" />
-              <div className="min-w-0 truncate text-sm font-semibold text-renovation-steel dark:text-zinc-100">
-                {nl.shell.headerTitle}
-              </div>
             </div>
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex min-w-0 justify-center justify-self-center">
+              <Link
+                href="/dashboard"
+                aria-label={nl.brand.name}
+                className="min-w-0 shrink transition-opacity hover:opacity-90"
+              >
+                <BrandLogoPill size="compact" />
+              </Link>
+            </div>
+            <div className="flex justify-end justify-self-end text-sm">
               <AuthHeader />
             </div>
           </header>

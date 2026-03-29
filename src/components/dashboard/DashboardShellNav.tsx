@@ -10,7 +10,7 @@ export default function DashboardShellNav() {
   const { t } = useI18n();
 
   return (
-    <nav className="mt-6 space-y-1">
+    <nav className="mt-2 space-y-1">
       {DASHBOARD_NAV_DEFS.map(({ href, labelKey, match }) => (
         <Link key={href} href={href} className={dashboardNavLinkClass(match(pathname))}>
           {t(labelKey)}
