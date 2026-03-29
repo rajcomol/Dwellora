@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/i18n/provider";
+import { chatComposerMessageSchema } from "@/lib/validation/schemas";
 
 export default function ChatComposer({
   onSend,
@@ -19,9 +20,10 @@ export default function ChatComposer({
       className="flex flex-col gap-3 sm:flex-row sm:items-start"
       onSubmit={(e) => {
         e.preventDefault();
-        const trimmed = value.trim();
-        if (!trimmed || disabled) return;
-        onSend(trimmed);
+        if (disabled) return;
+        const parsed = chatComposerMessageSchema.safeParse(value);
+        if (!parsed.success) return;
+        onSend(parsed.data);
         setValue("");
       }}
     >

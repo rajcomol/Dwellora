@@ -25,11 +25,15 @@
   "shell": {
     "headerTitle": "Dashboard",
     "sidebarSubtitle": "Dashboard",
-    "privacyLink": "Privacy"
+    "privacyLink": "Privacy",
+    "menu": "Menu"
   },
   "auth": {
     "signIn": "Inloggen",
     "signOut": "Uitloggen"
+  },
+  "validation": {
+    "generic": "Controleer je invoer."
   },
   "common": {
     "save": "Opslaan",
@@ -72,7 +76,8 @@
     "placeholderEmail": "jij@voorbeeld.nl",
     "signUpCheckEmail": "Controleer je e-mail om je account te bevestigen (indien nodig) en log daarna in.",
     "signUpSuccessSession": "Account aangemaakt. Je bent ingelogd.",
-    "signInSuccess": "Succesvol ingelogd."
+    "signInSuccess": "Succesvol ingelogd.",
+    "errorPasswordMin": "Wachtwoord moet minimaal {{min}} tekens zijn."
   },
   "dashboard": {
     "heroEyebrow": "Dwellora",
@@ -215,7 +220,11 @@
     "taskPhaseLabel": "Renovatiefase (planning)",
     "assigneeNone": "— Niet toegewezen",
     "assigneeUnassigned": "Niet toegewezen",
-    "assigneeUnknown": "Onbekend teamlid"
+    "assigneeUnknown": "Onbekend teamlid",
+    "checklistItemRequired": "Beschrijving is verplicht.",
+    "rosterNameRequired": "Naam is verplicht.",
+    "rosterEmailInvalid": "Vul een geldig e-mailadres in of laat het veld leeg.",
+    "projectSaveInvalid": "Vul een projectnaam en een geldig budget in."
   },
   "renovationPhase": {
     "slopen": "Slopen",
@@ -306,7 +315,8 @@
     "errorSelectDifferent": "Kies twee verschillende documenten.",
     "errorCompareFailed": "Vergelijken mislukt.",
     "errorNoComparison": "Geen vergelijking ontvangen.",
-    "errorLoadList": "Kon documenten niet laden: {{message}}"
+    "errorLoadList": "Kon documenten niet laden: {{message}}",
+    "errorFileTooLarge": "Het bestand is te groot (max. 25 MB)."
   },
   "chat": {
     "title": "AI-assistent",
@@ -324,7 +334,8 @@
     "send": "Versturen",
     "errorLoadThread": "Kon het gesprek niet laden.",
     "errorSendFailed": "Bericht versturen mislukt.",
-    "noProjectsOption": "Geen projecten beschikbaar"
+    "noProjectsOption": "Geen projecten beschikbaar",
+    "errorMessageInvalid": "Bericht is ongeldig of te lang."
   },
   "reports": {
     "title": "Rapporten",

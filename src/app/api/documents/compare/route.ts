@@ -2,12 +2,9 @@ import OpenAI from "openai";
 import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
-import { isUuid, requireAccessibleProject } from "@/lib/supabase/project-access";
-
-type CompareRequest = {
-  documentIdA?: unknown;
-  documentIdB?: unknown;
-};
+import { requireAccessibleProject } from "@/lib/supabase/project-access";
+import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
+import { documentsCompareBodySchema } from "@/lib/validation/schemas";
 
 type DocumentRow = {
   id: string;
@@ -58,25 +55,13 @@ export async function POST(req: Request) {
   const rl = rateLimitResponse(`docs:compare:${clientIpFromRequest(req)}`, 16, 60_000);
   if (rl) return rl;
 
-  let body: CompareRequest | null = null;
-  try {
-    body = (await req.json()) as CompareRequest;
-  } catch {
-    // ignore
+  const rawBody = await readJsonUnknown(req);
+  const parsed = documentsCompareBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return jsonValidationError(parsed.error);
   }
-
-  const idA = typeof body?.documentIdA === "string" ? body.documentIdA.trim() : "";
-  const idB = typeof body?.documentIdB === "string" ? body.documentIdB.trim() : "";
-
-  if (!idA || !idB) {
-    return Response.json({ error: "documentIdA and documentIdB are required." }, { status: 400 });
-  }
-  if (!isUuid(idA) || !isUuid(idB)) {
-    return Response.json({ error: "Invalid document id." }, { status: 400 });
-  }
-  if (idA === idB) {
-    return Response.json({ error: "Select two different documents." }, { status: 400 });
-  }
+  const idA = parsed.data.documentIdA;
+  const idB = parsed.data.documentIdB;
 
   const auth = await createUserSupabaseFromRequest(req);
   if (!auth) {

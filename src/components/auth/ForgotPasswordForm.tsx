@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useI18n } from "@/i18n/provider";
 import { MailIcon } from "@/components/auth/login-icons";
+import { forgotEmailSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
 
 export default function ForgotPasswordForm() {
@@ -20,11 +21,12 @@ export default function ForgotPasswordForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
-    const trimmed = email.trim();
-    if (!trimmed) {
+    const parsed = forgotEmailSchema.safeParse({ email });
+    if (!parsed.success) {
       setMessage({ type: "error", text: t("login.forgotEmailRequired") });
       return;
     }
+    const trimmed = parsed.data.email;
     setBusy(true);
     const redirectTo = `${window.location.origin}/login`;
     const { error } = await supabase.auth.resetPasswordForEmail(trimmed, { redirectTo });
@@ -90,8 +92,8 @@ export default function ForgotPasswordForm() {
           className={[
             "mt-6 rounded-xl border px-3.5 py-3 text-sm leading-snug",
             message.type === "error"
-              ? "border-red-400/40 bg-red-950/40 text-red-100"
-              : "border-emerald-400/30 bg-emerald-950/35 text-emerald-100",
+              ? "border-[rgba(248,113,113,0.45)] bg-[rgba(69,10,10,0.55)] text-red-50 backdrop-blur-[10px]"
+              : "border-[rgba(52,211,153,0.4)] bg-[rgba(6,78,59,0.5)] text-emerald-50 backdrop-blur-[10px]",
           ].join(" ")}
         >
           {message.text}

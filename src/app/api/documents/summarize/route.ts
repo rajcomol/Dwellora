@@ -2,11 +2,9 @@ import { completeChat } from "@/lib/ai/completeChat";
 import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
-import { isUuid, requireAccessibleProject } from "@/lib/supabase/project-access";
-
-type SummarizeRequest = {
-  documentId?: unknown;
-};
+import { requireAccessibleProject } from "@/lib/supabase/project-access";
+import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
+import { documentsSummarizeBodySchema } from "@/lib/validation/schemas";
 
 type DocumentRow = {
   id: string;
@@ -33,21 +31,12 @@ export async function POST(req: Request) {
   const rl = rateLimitResponse(`docs:summarize:${clientIpFromRequest(req)}`, 24, 60_000);
   if (rl) return rl;
 
-  let body: SummarizeRequest | null = null;
-  try {
-    body = (await req.json()) as SummarizeRequest;
-  } catch {
-    // ignore
+  const rawBody = await readJsonUnknown(req);
+  const parsed = documentsSummarizeBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return jsonValidationError(parsed.error);
   }
-
-  const docIdRaw = body?.documentId;
-  const documentId = typeof docIdRaw === "string" ? docIdRaw.trim() : "";
-  if (!documentId) {
-    return Response.json({ error: "documentId is required." }, { status: 400 });
-  }
-  if (!isUuid(documentId)) {
-    return Response.json({ error: "Invalid documentId." }, { status: 400 });
-  }
+  const documentId = parsed.data.documentId;
 
   const auth = await createUserSupabaseFromRequest(req);
   if (!auth) {

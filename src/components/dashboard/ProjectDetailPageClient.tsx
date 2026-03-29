@@ -20,9 +20,34 @@ import type {
   TeamRosterEntry,
 } from "@/lib/renovation/types";
 import { formatCurrency as formatCost } from "@/lib/format/currency";
+import type { TranslateFn } from "@/i18n/create-translator";
 import { useI18n } from "@/i18n/provider";
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
+import {
+  checklistItemTitleSchema,
+  expenseLineFormSchema,
+  projectUpdateFormSchema,
+  rosterEntryFormSchema,
+  roomNameFormSchema,
+  taskFormFieldsSchema,
+} from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
+import type { ZodError } from "zod";
+
+function taskFormZodMessage(t: TranslateFn, err: ZodError): string {
+  const path = err.issues[0]?.path[0];
+  if (path === "title") return t("projectDetail.taskTitleRequired");
+  if (path === "estimatedCost" || path === "actualCost") return t("projectDetail.taskCostsNumber");
+  if (path === "durationDays") return t("projectDetail.taskDurationInvalid");
+  return t("validation.generic");
+}
+
+function expenseFormZodMessage(t: TranslateFn, err: ZodError): string {
+  const path = err.issues[0]?.path[0];
+  if (path === "title") return t("projectDetail.expenseTitleRequired");
+  if (path === "amount") return t("projectDetail.expenseAmountInvalid");
+  return t("validation.generic");
+}
 
 function statusBadge(status: TaskStatus) {
   switch (status) {
@@ -280,26 +305,38 @@ function TaskEditor({
               disabled={saveBusy}
               onClick={() => {
                 void (async () => {
-                  const ec = Number.parseFloat(estimatedCost);
-                  const ac = Number.parseFloat(actualCost);
-                  const dd = Number.parseInt(durationDays, 10);
-                  if (!title.trim()) return;
-                  if (!Number.isFinite(ec) || !Number.isFinite(ac) || !Number.isFinite(dd) || dd < 0) return;
+                  const parsed = taskFormFieldsSchema.safeParse({
+                    title,
+                    estimatedCost,
+                    actualCost,
+                    durationDays,
+                    description,
+                    startDate,
+                    status,
+                    priority,
+                    renovationPhase,
+                    assignedRosterId,
+                  });
+                  if (!parsed.success) {
+                    setSaveError(taskFormZodMessage(t, parsed.error));
+                    return;
+                  }
                   setSaveError(null);
                   setSaveBusy(true);
+                  const d = parsed.data;
                   try {
                     const ok = await onUpdate({
                       id: task.id,
-                      title: title.trim(),
-                      status,
-                      estimatedCost: ec,
-                      actualCost: ac,
-                      durationDays: dd,
-                      priority,
-                      description: description.trim(),
-                      startDate: startDate.trim() || null,
-                      assignedRosterId: assignedRosterId.trim() || null,
-                      renovationPhase,
+                      title: d.title,
+                      status: d.status,
+                      estimatedCost: d.estimatedCost,
+                      actualCost: d.actualCost,
+                      durationDays: d.durationDays,
+                      priority: d.priority,
+                      description: d.description.trim(),
+                      startDate: d.startDate.trim() || null,
+                      assignedRosterId: d.assignedRosterId.trim() || null,
+                      renovationPhase: d.renovationPhase,
                     });
                     if (ok) {
                       setOpen(false);
@@ -436,6 +473,7 @@ function ProjectEditSection({
   const [editAddress, setEditAddress] = useState(project.address);
   const [editKeyDate, setEditKeyDate] = useState(project.expectedKeyHandover ?? "");
   const [editNotes, setEditNotes] = useState(project.notes);
+  const [projectFormError, setProjectFormError] = useState<string | null>(null);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
@@ -444,15 +482,26 @@ function ProjectEditSection({
         className="mt-4 grid gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
-          const b = Number.parseFloat(editBudget);
-          if (!editName.trim() || !Number.isFinite(b)) return;
+          const parsed = projectUpdateFormSchema.safeParse({
+            name: editName,
+            totalBudget: editBudget,
+            address: editAddress,
+            expectedKeyHandover: editKeyDate,
+            notes: editNotes,
+          });
+          if (!parsed.success) {
+            setProjectFormError(t("projectDetail.projectSaveInvalid"));
+            return;
+          }
+          setProjectFormError(null);
+          const d = parsed.data;
           updateProject({
             id: project.id,
-            name: editName.trim(),
-            totalBudget: b,
-            address: editAddress,
-            expectedKeyHandover: editKeyDate.trim() || null,
-            notes: editNotes,
+            name: d.name,
+            totalBudget: d.totalBudget,
+            address: d.address,
+            expectedKeyHandover: d.expectedKeyHandover.trim() || null,
+            notes: d.notes,
           });
         }}
       >
@@ -497,6 +546,11 @@ function ProjectEditSection({
           {t("projectDetail.saveProject")}
         </Button>
       </form>
+      {projectFormError ? (
+        <div className="mt-2 text-xs text-red-600 dark:text-red-400" role="alert">
+          {projectFormError}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -522,6 +576,7 @@ function ExpenseLine({
   const [amount, setAmount] = useState(String(expense.amount));
   const [spentOn, setSpentOn] = useState(expense.spentOn ?? "");
   const [notes, setNotes] = useState(expense.notes);
+  const [editError, setEditError] = useState<string | null>(null);
 
   if (editing) {
     return (
@@ -559,14 +614,19 @@ function ExpenseLine({
             type="button"
             className="text-xs"
             onClick={() => {
-              const a = Number.parseFloat(amount);
-              if (!title.trim() || !Number.isFinite(a) || a < 0) return;
+              const parsed = expenseLineFormSchema.safeParse({ title, amount, spentOn, notes });
+              if (!parsed.success) {
+                setEditError(expenseFormZodMessage(t, parsed.error));
+                return;
+              }
+              setEditError(null);
+              const d = parsed.data;
               onUpdate({
                 id: expense.id,
-                title: title.trim(),
-                amount: a,
-                spentOn: spentOn.trim() || null,
-                notes: notes.trim(),
+                title: d.title,
+                amount: d.amount,
+                spentOn: d.spentOn.trim() || null,
+                notes: d.notes.trim(),
               });
               setEditing(false);
             }}
@@ -582,12 +642,18 @@ function ExpenseLine({
               setAmount(String(expense.amount));
               setSpentOn(expense.spentOn ?? "");
               setNotes(expense.notes);
+              setEditError(null);
               setEditing(false);
             }}
           >
             {t("common.close")}
           </Button>
         </div>
+        {editError ? (
+          <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+            {editError}
+          </p>
+        ) : null}
       </li>
     );
   }
@@ -611,6 +677,7 @@ function ExpenseLine({
             setAmount(String(expense.amount));
             setSpentOn(expense.spentOn ?? "");
             setNotes(expense.notes);
+            setEditError(null);
             setEditing(true);
           }}
         >
@@ -670,22 +737,18 @@ function ProjectLooseExpensesSection({
         className="mt-4 grid gap-2 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
-          const trimmed = title.trim();
-          if (!trimmed) {
-            setError(t("projectDetail.expenseTitleRequired"));
+          const parsed = expenseLineFormSchema.safeParse({ title, amount, spentOn, notes });
+          if (!parsed.success) {
+            setError(expenseFormZodMessage(t, parsed.error));
             return;
           }
-          const a = amount.trim() === "" ? 0 : Number.parseFloat(amount);
-          if (!Number.isFinite(a) || a < 0) {
-            setError(t("projectDetail.expenseAmountInvalid"));
-            return;
-          }
+          const d = parsed.data;
           createProjectExpense({
             projectId,
-            title: trimmed,
-            amount: a,
-            spentOn: spentOn.trim() || null,
-            notes: notes.trim(),
+            title: d.title,
+            amount: d.amount,
+            spentOn: d.spentOn.trim() || null,
+            notes: d.notes.trim(),
           });
           setTitle("");
           setAmount("");
@@ -888,35 +951,35 @@ function RoomCard({
         className="mt-4 flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
-          const trimmed = title.trim();
-          if (!trimmed) {
-            setError(t("projectDetail.taskTitleRequired"));
-            return;
-          }
-          const parsed = estimatedCost.trim() === "" ? 0 : Number.parseFloat(estimatedCost);
-          const parsedActual = actualCost.trim() === "" ? 0 : Number.parseFloat(actualCost);
-          if (!Number.isFinite(parsed) || !Number.isFinite(parsedActual)) {
-            setError(t("projectDetail.taskCostsNumber"));
-            return;
-          }
-          const parsedDuration = durationDays.trim() === "" ? 0 : Number.parseInt(durationDays, 10);
-          if (!Number.isFinite(parsedDuration) || parsedDuration < 0) {
-            setError(t("projectDetail.taskDurationInvalid"));
-            return;
-          }
-
-          onCreateTask({
-            title: trimmed,
-            roomId: room.id,
+          const parsed = taskFormFieldsSchema.safeParse({
+            title,
+            estimatedCost,
+            actualCost,
+            durationDays,
+            description,
+            startDate,
             status,
-            estimatedCost: parsed,
-            actualCost: parsedActual,
-            durationDays: parsedDuration,
             priority,
-            description: description.trim(),
-            startDate: startDate.trim() || null,
-            assignedRosterId: newTaskAssignee.trim() || null,
             renovationPhase: newTaskPhase,
+            assignedRosterId: newTaskAssignee,
+          });
+          if (!parsed.success) {
+            setError(taskFormZodMessage(t, parsed.error));
+            return;
+          }
+          const d = parsed.data;
+          onCreateTask({
+            title: d.title,
+            roomId: room.id,
+            status: d.status,
+            estimatedCost: d.estimatedCost,
+            actualCost: d.actualCost,
+            durationDays: d.durationDays,
+            priority: d.priority,
+            description: d.description.trim(),
+            startDate: d.startDate.trim() || null,
+            assignedRosterId: d.assignedRosterId.trim() || null,
+            renovationPhase: d.renovationPhase,
           });
           setTitle("");
           setStatus("todo");
@@ -1068,8 +1131,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   const roomsForProject = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
   const roomIds = useMemo(() => new Set(roomsForProject.map((r) => r.id)), [roomsForProject]);
   const projectTasks = useMemo(() => tasks.filter((t) => roomIds.has(t.roomId)), [tasks, roomIds]);
-  const roomNameById = useMemo(() => new Map(rooms.map((r) => [r.id, r.name])), [rooms]);
-
   const tasksByRoomId = useMemo(() => {
     const map = new Map<ID, Task[]>();
     for (const task of tasks) {
@@ -1107,9 +1168,11 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   const [roomError, setRoomError] = useState<string | null>(null);
 
   const [checkTitle, setCheckTitle] = useState("");
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [rosterName, setRosterName] = useState("");
   const [rosterEmail, setRosterEmail] = useState("");
   const [rosterRole, setRosterRole] = useState("");
+  const [rosterError, setRosterError] = useState<string | null>(null);
 
   if (!project) {
     return (
@@ -1127,9 +1190,9 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.subtitle")}</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
@@ -1196,19 +1259,28 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
           className="mt-3 flex flex-col gap-2 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!checkTitle.trim()) return;
-            addChecklistItem(projectId, checkTitle.trim());
+            const parsed = checklistItemTitleSchema.safeParse({ title: checkTitle });
+            if (!parsed.success) {
+              setCheckError(t("projectDetail.checklistItemRequired"));
+              return;
+            }
+            setCheckError(null);
+            addChecklistItem(projectId, parsed.data.title);
             setCheckTitle("");
           }}
         >
           <input
             value={checkTitle}
-            onChange={(e) => setCheckTitle(e.target.value)}
+            onChange={(e) => {
+              setCheckTitle(e.target.value);
+              setCheckError(null);
+            }}
             placeholder={t("projectDetail.checklistPlaceholder")}
             className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
           <Button type="submit">{t("projectDetail.checklistAdd")}</Button>
         </form>
+        {checkError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{checkError}</div> : null}
         <ul className="mt-4 space-y-2">
           {checklistForProject.map((item) => (
             <li key={item.id} className="flex items-center gap-3 rounded-md border border-zinc-100 px-3 py-2 dark:border-zinc-800">
@@ -1238,11 +1310,24 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
           className="mt-3 grid gap-2 sm:grid-cols-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!rosterName.trim()) return;
-            addTeamRosterEntry(projectId, {
-              displayName: rosterName.trim(),
+            const parsed = rosterEntryFormSchema.safeParse({
+              displayName: rosterName,
               email: rosterEmail,
               roleHint: rosterRole,
+            });
+            if (!parsed.success) {
+              const path = parsed.error.issues[0]?.path[0];
+              setRosterError(
+                path === "email" ? t("projectDetail.rosterEmailInvalid") : t("projectDetail.rosterNameRequired")
+              );
+              return;
+            }
+            setRosterError(null);
+            const d = parsed.data;
+            addTeamRosterEntry(projectId, {
+              displayName: d.displayName,
+              email: d.email,
+              roleHint: d.roleHint.trim(),
             });
             setRosterName("");
             setRosterEmail("");
@@ -1251,19 +1336,28 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         >
           <input
             value={rosterName}
-            onChange={(e) => setRosterName(e.target.value)}
+            onChange={(e) => {
+              setRosterName(e.target.value);
+              setRosterError(null);
+            }}
             placeholder={t("projectDetail.rosterName")}
             className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
           <input
             value={rosterEmail}
-            onChange={(e) => setRosterEmail(e.target.value)}
+            onChange={(e) => {
+              setRosterEmail(e.target.value);
+              setRosterError(null);
+            }}
             placeholder={t("projectDetail.rosterEmail")}
             className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
           <input
             value={rosterRole}
-            onChange={(e) => setRosterRole(e.target.value)}
+            onChange={(e) => {
+              setRosterRole(e.target.value);
+              setRosterError(null);
+            }}
             placeholder={t("projectDetail.rosterRole")}
             className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
@@ -1271,6 +1365,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
             {t("projectDetail.rosterAddPerson")}
           </Button>
         </form>
+        {rosterError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{rosterError}</div> : null}
         <ul className="mt-4 space-y-2 text-sm">
           {rosterForProject.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-100 px-3 py-2 dark:border-zinc-800">
@@ -1305,12 +1400,12 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
           className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
           onSubmit={(e) => {
             e.preventDefault();
-            const trimmed = roomName.trim();
-            if (!trimmed) {
+            const parsed = roomNameFormSchema.safeParse({ name: roomName });
+            if (!parsed.success) {
               setRoomError(t("projectDetail.roomErrorName"));
               return;
             }
-            createRoom({ name: trimmed, projectId });
+            createRoom({ name: parsed.data.name, projectId });
             setRoomName("");
             setRoomError(null);
           }}
@@ -1336,7 +1431,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
             {t("projectDetail.roomsEmpty")}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid min-w-0 gap-4 md:grid-cols-2">
             {roomsForProject.map((room) => {
               const roomTasks = tasksByRoomId.get(room.id) ?? [];
               return (

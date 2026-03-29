@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
+import { projectCreateFormSchema } from "@/lib/validation/schemas";
 
 export default function ProjectsPageClient() {
   const { t } = useI18n();
@@ -44,22 +45,33 @@ export default function ProjectsPageClient() {
           className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
           onSubmit={(e) => {
             e.preventDefault();
-            const trimmed = name.trim();
-            if (!trimmed) {
-              setError(t("projects.errorNameRequired"));
+            const parsed = projectCreateFormSchema.safeParse({
+              name,
+              totalBudget,
+              address,
+              expectedKeyHandover,
+              notes,
+            });
+            if (!parsed.success) {
+              const path = parsed.error.issues[0]?.path[0];
+              if (path === "name") {
+                setError(t("projects.errorNameRequired"));
+                return;
+              }
+              if (path === "totalBudget") {
+                setError(t("projects.errorBudgetNumber"));
+                return;
+              }
+              setError(t("validation.generic"));
               return;
             }
-            const parsedBudget = totalBudget.trim() === "" ? 0 : Number.parseFloat(totalBudget);
-            if (!Number.isFinite(parsedBudget)) {
-              setError(t("projects.errorBudgetNumber"));
-              return;
-            }
+            const d = parsed.data;
             createProject({
-              name: trimmed,
-              totalBudget: parsedBudget,
-              address: address.trim(),
-              expectedKeyHandover: expectedKeyHandover.trim() || null,
-              notes: notes.trim(),
+              name: d.name,
+              totalBudget: d.totalBudget,
+              address: d.address.trim(),
+              expectedKeyHandover: d.expectedKeyHandover.trim() || null,
+              notes: d.notes.trim(),
             });
             setName("");
             setTotalBudget("");

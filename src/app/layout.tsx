@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import nl from "@/i18n/locales/nl.json";
@@ -34,6 +34,12 @@ function siteMetadataBase(): URL | undefined {
 }
 
 const metadataBase = siteMetadataBase();
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   ...(metadataBase ? { metadataBase } : {}),

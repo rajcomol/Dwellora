@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LockIcon, MailIcon } from "@/components/auth/login-icons";
 import { useI18n } from "@/i18n/provider";
+import { loginCredentialsZodMessage } from "@/lib/validation/loginZodMessage";
+import { loginCredentialsSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
 
 const REMEMBER_EMAIL_KEY = "dwellora_login_email";
@@ -68,14 +70,19 @@ export default function LoginForm() {
 
   async function handleSignUp() {
     setMessage(null);
+    const creds = loginCredentialsSchema.safeParse({ email, password });
+    if (!creds.success) {
+      setMessage({ type: "error", text: loginCredentialsZodMessage(t, creds.error) });
+      return;
+    }
     setBusy(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email: creds.data.email, password: creds.data.password });
     setBusy(false);
     if (error) {
       setMessage({ type: "error", text: error.message });
       return;
     }
-    persistRememberEmail(email);
+    persistRememberEmail(creds.data.email);
     if (data.user && !data.session) {
       setMessage({
         type: "success",
@@ -89,14 +96,22 @@ export default function LoginForm() {
 
   async function handleSignIn() {
     setMessage(null);
+    const creds = loginCredentialsSchema.safeParse({ email, password });
+    if (!creds.success) {
+      setMessage({ type: "error", text: loginCredentialsZodMessage(t, creds.error) });
+      return;
+    }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: creds.data.email,
+      password: creds.data.password,
+    });
     setBusy(false);
     if (error) {
       setMessage({ type: "error", text: error.message });
       return;
     }
-    persistRememberEmail(email);
+    persistRememberEmail(creds.data.email);
     setMessage({ type: "success", text: t("login.signInSuccess") });
     window.location.assign(safeNextPath(nextParam));
   }
@@ -232,8 +247,8 @@ export default function LoginForm() {
           className={[
             "mt-8 rounded-xl border px-3.5 py-3 text-sm leading-snug",
             message.type === "error"
-              ? "border-red-400/40 bg-red-950/40 text-red-100"
-              : "border-emerald-400/30 bg-emerald-950/35 text-emerald-100",
+              ? "border-[rgba(248,113,113,0.45)] bg-[rgba(69,10,10,0.55)] text-red-50 backdrop-blur-[10px]"
+              : "border-[rgba(52,211,153,0.4)] bg-[rgba(6,78,59,0.5)] text-emerald-50 backdrop-blur-[10px]",
           ].join(" ")}
         >
           {message.text}

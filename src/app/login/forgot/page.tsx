@@ -25,7 +25,11 @@ function ForgotFallback() {
 
 export default function ForgotPasswordPage() {
   return (
-    <LoginScreenChrome belowLogo={<p className="text-sm text-zinc-300/90">{nl.login.forgotLead}</p>}>
+    <LoginScreenChrome
+      belowLogo={
+        <p className="text-sm text-white/95 drop-shadow-[0_1px_3px_rgb(0_0_0/0.85)]">{nl.login.forgotLead}</p>
+      }
+    >
       <Suspense fallback={<ForgotFallback />}>
         <ForgotPasswordForm />
       </Suspense>

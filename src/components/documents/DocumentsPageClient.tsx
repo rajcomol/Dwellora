@@ -7,6 +7,11 @@ import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
 import type { DocumentRecord } from "@/lib/documents/types";
+import {
+  documentCompareSelectionSchema,
+  documentUploadRefinedSchema,
+  summarizeDocumentIdSchema,
+} from "@/lib/validation/schemas";
 
 const DOCUMENTS_BUCKET = "documents";
 
@@ -118,25 +123,42 @@ export default function DocumentsPageClient() {
   }, [t]);
 
   async function uploadDocument() {
-    if (!selectedProjectId) {
-      setError(t("documents.errorSelectProject"));
-      return;
-    }
-    if (!file) {
+    const uploadParsed = documentUploadRefinedSchema.safeParse({
+      projectId: selectedProjectId,
+      file: file ?? undefined,
+    });
+    if (!uploadParsed.success) {
+      const issue = uploadParsed.error.issues[0];
+      const path = issue?.path[0];
+      const msg = issue?.message;
+      if (path === "projectId") {
+        setError(t("documents.errorSelectProject"));
+        return;
+      }
+      if (path === "file") {
+        if (msg === "pdf_only") {
+          setError(t("documents.errorPdfOnly"));
+          return;
+        }
+        if (msg === "too_large") {
+          setError(t("documents.errorFileTooLarge"));
+          return;
+        }
+        setError(t("documents.errorSelectPdf"));
+        return;
+      }
       setError(t("documents.errorSelectPdf"));
       return;
     }
-    if (file.type !== "application/pdf") {
-      setError(t("documents.errorPdfOnly"));
-      return;
-    }
+
+    const { projectId: uploadProjectId, file: uploadFile } = uploadParsed.data;
 
     setError(null);
     setUploading(true);
 
     try {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `${selectedProjectId}/${Date.now()}-${safeName}`;
+      const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `${uploadProjectId}/${Date.now()}-${safeName}`;
 
       const { data: authData, error: getUserError } = await supabase.auth.getUser();
       if (!authData.user) {
@@ -145,7 +167,7 @@ export default function DocumentsPageClient() {
         return;
       }
 
-      const { error: uploadError } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(filePath, file, {
+      const { error: uploadError } = await supabase.storage.from(DOCUMENTS_BUCKET).upload(filePath, uploadFile, {
         cacheControl: "3600",
         upsert: false,
       });
@@ -158,8 +180,8 @@ export default function DocumentsPageClient() {
       const { data: insertedRows, error: dbError } = await supabase
         .from("documents")
         .insert({
-          project_id: selectedProjectId,
-          file_name: file.name,
+          project_id: uploadProjectId,
+          file_name: uploadFile.name,
           file_path: filePath,
         })
         .select("id,project_id,file_name,file_path,created_at,ai_summary");
@@ -191,14 +213,19 @@ export default function DocumentsPageClient() {
 
   async function summarizeDocument(documentId: string) {
     setError(null);
-    setSummarizingDocumentId(documentId);
+    const sumParsed = summarizeDocumentIdSchema.safeParse({ documentId });
+    if (!sumParsed.success) {
+      setError(t("documents.errorSummarizeFailed"));
+      return;
+    }
+    setSummarizingDocumentId(sumParsed.data.documentId);
 
     try {
       const authHeaders = await getBearerAuthHeaders();
       const res = await fetch("/api/documents/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ documentId }),
+        body: JSON.stringify({ documentId: sumParsed.data.documentId }),
       });
 
       if (!res.ok) {
@@ -210,7 +237,7 @@ export default function DocumentsPageClient() {
       const summary = typeof data.summary === "string" ? data.summary.trim() : "";
       if (!summary) throw new Error(t("documents.errorNoSummary"));
 
-      setSummaryByDocumentId((prev) => ({ ...prev, [documentId]: summary }));
+      setSummaryByDocumentId((prev) => ({ ...prev, [sumParsed.data.documentId]: summary }));
     } catch (e) {
       setError(e instanceof Error ? e.message : t("documents.errorSummarizeFailed"));
     } finally {
@@ -219,12 +246,17 @@ export default function DocumentsPageClient() {
   }
 
   async function runCompare() {
-    if (!compareDocA || !compareDocB) {
+    const cmpParsed = documentCompareSelectionSchema.safeParse({
+      documentIdA: compareDocA,
+      documentIdB: compareDocB,
+    });
+    if (!cmpParsed.success) {
+      const issue = cmpParsed.error.issues[0];
+      if (issue?.message === "different") {
+        setError(t("documents.errorSelectDifferent"));
+        return;
+      }
       setError(t("documents.errorSelectTwo"));
-      return;
-    }
-    if (compareDocA === compareDocB) {
-      setError(t("documents.errorSelectDifferent"));
       return;
     }
     setError(null);
@@ -236,7 +268,10 @@ export default function DocumentsPageClient() {
       const res = await fetch("/api/documents/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ documentIdA: compareDocA, documentIdB: compareDocB }),
+        body: JSON.stringify({
+          documentIdA: cmpParsed.data.documentIdA,
+          documentIdB: cmpParsed.data.documentIdB,
+        }),
       });
 
       if (!res.ok) {

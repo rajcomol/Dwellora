@@ -3,14 +3,8 @@ import { completeChat, type ChatMessageParam } from "@/lib/ai/completeChat";
 import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { isUuid } from "@/lib/supabase/project-access";
-
-const CHAT_MESSAGE_MAX_CHARS = 16_000;
-
-type ChatRequestBody = {
-  message?: unknown;
-  projectId?: unknown;
-  threadId?: unknown;
-};
+import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
+import { chatPostBodySchema } from "@/lib/validation/schemas";
 
 function mockAssistantReply(message: string) {
   return `Mock response: I received your message "${message}". In the next step, I can tailor suggestions (cost, materials, sequencing) for your renovation plan.`;
@@ -218,40 +212,19 @@ export async function POST(req: Request) {
   const rl = rateLimitResponse(`chat:post:${clientIpFromRequest(req)}`, 60, 60_000);
   if (rl) return rl;
 
-  let body: ChatRequestBody | null = null;
-  try {
-    body = (await req.json()) as ChatRequestBody;
-  } catch {
-    // ignore
+  const rawBody = await readJsonUnknown(req);
+  const parsedBody = chatPostBodySchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return jsonValidationError(parsedBody.error);
   }
 
-  const messageRaw = body?.message;
-  const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
-  const projectIdRaw = body?.projectId;
-  const projectId =
-    typeof projectIdRaw === "string" && projectIdRaw.trim().length > 0 ? projectIdRaw.trim() : null;
-  const threadIdRaw = body?.threadId;
-  const threadIdIn =
-    typeof threadIdRaw === "string" && threadIdRaw.trim().length > 0 ? threadIdRaw.trim() : null;
-
-  if (!message) {
-    return Response.json({ error: "Message is required." }, { status: 400 });
-  }
-  if (message.length > CHAT_MESSAGE_MAX_CHARS) {
-    return Response.json(
-      { error: `Message is too long (max ${CHAT_MESSAGE_MAX_CHARS} characters).` },
-      { status: 400 }
-    );
-  }
+  const { message, projectId, threadId: threadIdIn } = parsedBody.data;
 
   const auth = await createUserSupabaseFromRequest(req);
   const usePersistence = Boolean(auth);
 
   let projectContext = "";
   if (projectId) {
-    if (!isUuid(projectId)) {
-      return Response.json({ error: "Invalid projectId." }, { status: 400 });
-    }
     if (!auth) {
       return Response.json({ error: "Sign in to use project context." }, { status: 401 });
     }
@@ -269,9 +242,6 @@ export async function POST(req: Request) {
     let activeThreadId = threadIdIn;
 
     if (activeThreadId) {
-      if (!isUuid(activeThreadId)) {
-        return Response.json({ error: "Invalid threadId." }, { status: 400 });
-      }
       const own = await auth.client
         .from("chat_threads")
         .select("id")
@@ -287,7 +257,7 @@ export async function POST(req: Request) {
         .from("chat_threads")
         .insert({
           user_id: auth.userId,
-          project_id: projectId && isUuid(projectId) ? projectId : null,
+          project_id: projectId,
           title,
         })
         .select("id")

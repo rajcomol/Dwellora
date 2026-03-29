@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 function LoginFormFallback() {
   return (
     <div
-      className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-zinc-900/80 to-zinc-950/85 p-8 shadow-2xl backdrop-blur-xl dark:from-zinc-900/80 dark:to-zinc-950/85 sm:p-10"
+      className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-zinc-900/80 to-zinc-950/85 p-8 shadow-2xl backdrop-blur-xl sm:p-10"
       aria-busy="true"
     >
       <div className="mx-auto h-9 w-48 animate-pulse rounded-md bg-white/10" />
@@ -30,7 +30,9 @@ export default function LoginPage() {
   return (
     <LoginScreenChrome
       belowLogo={
-        <p className="text-sm font-medium leading-relaxed text-black sm:text-base">{nl.login.tagline}</p>
+        <p className="text-sm font-medium leading-relaxed text-white drop-shadow-[0_1px_3px_rgb(0_0_0/0.85)] sm:text-base">
+          {nl.login.tagline}
+        </p>
       }
     >
       <Suspense fallback={<LoginFormFallback />}>

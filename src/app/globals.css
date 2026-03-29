@@ -72,6 +72,31 @@ body {
   background-color: rgb(15 23 42);
 }
 
+/** Zeer subtiel patroon in de sluier (referentie: lichte structuur in de achtergrond). */
+.login-auth-veil {
+  background-color: rgb(15 23 42 / 0.38);
+  background-image: radial-gradient(ellipse 90% 70% at 50% 35%, transparent 0%, rgb(15 23 42 / 0.35) 100%),
+    repeating-linear-gradient(
+      -18deg,
+      transparent,
+      transparent 48px,
+      rgb(255 255 255 / 0.025) 48px,
+      rgb(255 255 255 / 0.025) 49px
+    );
+}
+
+/**
+ * Login: glasstijl voor logo-pill (LoginScreenChrome). Formulierkaart gebruikt gradient + blur in de componenten.
+ * Geen `opacity` op het element — alleen rgba + backdrop-filter.
+ */
+.glass-card {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
 .bg-renovation-app {
   background-color: var(--renovation-surface);
   background-image: radial-gradient(

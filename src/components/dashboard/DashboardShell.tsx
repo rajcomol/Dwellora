@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import AuthHeader from "@/components/dashboard/AuthHeader";
+import DashboardMobileNav from "@/components/dashboard/DashboardMobileNav";
 import DashboardShellNav from "@/components/dashboard/DashboardShellNav";
 import nl from "@/i18n/locales/nl.json";
 
@@ -10,8 +11,8 @@ function BrandWordmark({ className }: { className?: string }) {
     <Image
       src="/brand/dwellora-logo-wordmark-v3.png"
       alt={nl.brand.name}
-      width={280}
-      height={64}
+      width={1376}
+      height={768}
       className={className}
       priority
     />
@@ -63,17 +64,23 @@ export default function DashboardShell({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center justify-between gap-4 border-b border-renovation-border bg-renovation-elevated px-4 py-3 dark:border-renovation-border dark:bg-renovation-elevated">
-            <div className="flex items-center gap-3">
+          <header
+            className="flex items-center justify-between gap-4 border-b border-renovation-border bg-renovation-elevated px-4 py-3 dark:border-renovation-border dark:bg-renovation-elevated"
+            style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <DashboardMobileNav />
               <BrandIcon className="h-8 w-8 shrink-0 lg:hidden" />
-              <div className="text-sm font-semibold text-renovation-steel dark:text-zinc-100">{nl.shell.headerTitle}</div>
+              <div className="min-w-0 truncate text-sm font-semibold text-renovation-steel dark:text-zinc-100">
+                {nl.shell.headerTitle}
+              </div>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <AuthHeader />
             </div>
           </header>
 
-          <main className="bg-renovation-app flex-1 px-4 py-6 sm:px-6">{children}</main>
+          <main className="min-w-0 flex-1 bg-renovation-app px-4 py-6 sm:px-6">{children}</main>
         </div>
       </div>
     </div>

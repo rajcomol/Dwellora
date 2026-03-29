@@ -38,7 +38,7 @@ export default function AuthHeader() {
         <button
           type="button"
           onClick={() => void handleSignOut()}
-          className="rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-xs font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-900"
+          className="min-h-10 rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-xs font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-900"
         >
           {t("auth.signOut")}
         </button>
@@ -49,7 +49,7 @@ export default function AuthHeader() {
   return (
     <Link
       href="/login"
-      className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+      className="inline-flex min-h-10 items-center rounded-md bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
     >
       {t("auth.signIn")}
     </Link>

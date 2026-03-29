@@ -60,7 +60,7 @@ export default function ReportsPageClient() {
   }, [filteredTasks, filteredExpenses, projects, projectFilter]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{t("reports.title")}</h1>
@@ -157,34 +157,36 @@ export default function ReportsPageClient() {
           {sortedExpenses.length === 0 ? (
             <p className="mt-3 text-sm text-zinc-500">{t("reports.noLooseExpensesScope")}</p>
           ) : (
-            <table className="mt-4 w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
-                  {projectFilter === "all" ? (
-                    <th className="pb-2 pr-2 font-medium">{t("reports.thProject")}</th>
-                  ) : null}
-                  <th className="pb-2 pr-2 font-medium">{t("reports.thExpenseTitle")}</th>
-                  <th className="pb-2 pr-2 font-medium">{t("reports.thDate")}</th>
-                  <th className="pb-2 pr-2 font-medium">{t("reports.thAmount")}</th>
-                  <th className="pb-2 font-medium">{t("reports.thNotes")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedExpenses.map((row) => (
-                  <tr key={row.id} className="border-b border-zinc-100 dark:border-zinc-800/80">
+            <div className="mt-4 min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[28rem] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
                     {projectFilter === "all" ? (
-                      <td className="py-2 pr-2">{projectNameById.get(row.projectId) ?? row.projectId}</td>
+                      <th className="pb-2 pr-2 font-medium">{t("reports.thProject")}</th>
                     ) : null}
-                    <td className="py-2 pr-2">{row.title}</td>
-                    <td className="py-2 pr-2 tabular-nums">{row.spentOn ?? t("common.emDash")}</td>
-                    <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.amount)}</td>
-                    <td className="max-w-[12rem] truncate py-2 text-zinc-600 dark:text-zinc-400" title={row.notes}>
-                      {row.notes || t("common.emDash")}
-                    </td>
+                    <th className="pb-2 pr-2 font-medium">{t("reports.thExpenseTitle")}</th>
+                    <th className="pb-2 pr-2 font-medium">{t("reports.thDate")}</th>
+                    <th className="pb-2 pr-2 font-medium">{t("reports.thAmount")}</th>
+                    <th className="pb-2 font-medium">{t("reports.thNotes")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sortedExpenses.map((row) => (
+                    <tr key={row.id} className="border-b border-zinc-100 dark:border-zinc-800/80">
+                      {projectFilter === "all" ? (
+                        <td className="py-2 pr-2">{projectNameById.get(row.projectId) ?? row.projectId}</td>
+                      ) : null}
+                      <td className="py-2 pr-2">{row.title}</td>
+                      <td className="py-2 pr-2 tabular-nums">{row.spentOn ?? t("common.emDash")}</td>
+                      <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.amount)}</td>
+                      <td className="max-w-[12rem] truncate py-2 text-zinc-600 dark:text-zinc-400" title={row.notes}>
+                        {row.notes || t("common.emDash")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
 
@@ -194,26 +196,28 @@ export default function ReportsPageClient() {
           {byRoom.length === 0 ? (
             <p className="mt-3 text-sm text-zinc-500">{t("reports.noRoomsScope")}</p>
           ) : (
-            <table className="mt-4 w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
-                  <th className="pb-2 pr-2 font-medium">{t("reports.thRoom")}</th>
-                  <th className="pb-2 pr-2 font-medium">{t("reports.thTasks")}</th>
-                  <th className="pb-2 pr-2 font-medium">{t("reports.thEstimated")}</th>
-                  <th className="pb-2 font-medium">{t("reports.thActual")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byRoom.map((row) => (
-                  <tr key={row.roomId} className="border-b border-zinc-100 dark:border-zinc-800/80">
-                    <td className="py-2 pr-2">{row.roomName}</td>
-                    <td className="py-2 pr-2 tabular-nums">{row.taskCount}</td>
-                    <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.estimated)}</td>
-                    <td className="py-2 tabular-nums">{formatCurrency(row.actual)}</td>
+            <div className="mt-4 min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[22rem] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
+                    <th className="pb-2 pr-2 font-medium">{t("reports.thRoom")}</th>
+                    <th className="pb-2 pr-2 font-medium">{t("reports.thTasks")}</th>
+                    <th className="pb-2 pr-2 font-medium">{t("reports.thEstimated")}</th>
+                    <th className="pb-2 font-medium">{t("reports.thActual")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {byRoom.map((row) => (
+                    <tr key={row.roomId} className="border-b border-zinc-100 dark:border-zinc-800/80">
+                      <td className="py-2 pr-2">{row.roomName}</td>
+                      <td className="py-2 pr-2 tabular-nums">{row.taskCount}</td>
+                      <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.estimated)}</td>
+                      <td className="py-2 tabular-nums">{formatCurrency(row.actual)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       </div>

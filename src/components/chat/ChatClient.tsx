@@ -9,6 +9,7 @@ import ChatComposer from "@/components/chat/ChatComposer";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
+import { chatPostBodySchema } from "@/lib/validation/schemas";
 
 function makeId(prefix: string) {
   if (globalThis.crypto?.randomUUID) return `${prefix}_${globalThis.crypto.randomUUID()}`;
@@ -112,6 +113,17 @@ export default function ChatClient() {
   async function sendMessage(message: string) {
     setError(null);
 
+    const body: Record<string, string | undefined> = {
+      message,
+      ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
+      ...(persistenceAvailable && activeThreadId !== "new" ? { threadId: activeThreadId } : {}),
+    };
+    const parsedBody = chatPostBodySchema.safeParse(body);
+    if (!parsedBody.success) {
+      setError(t("chat.errorMessageInvalid"));
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: makeId("m"),
       role: "user",
@@ -123,13 +135,6 @@ export default function ChatClient() {
 
     try {
       const authHeaders = await getBearerAuthHeaders();
-      const body: Record<string, string | undefined> = {
-        message,
-        projectId: selectedProjectId || undefined,
-      };
-      if (persistenceAvailable && activeThreadId !== "new") {
-        body.threadId = activeThreadId;
-      }
 
       const res = await fetch("/api/chat", {
         method: "POST",
