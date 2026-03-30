@@ -64,9 +64,16 @@ async function main() {
     checks.push({ name: "projects.user_id column", ok: true, detail: "select=id,user_id accepted" });
   }
 
-  // 2) Related tables
-  for (const table of ["rooms", "tasks", "documents", "project_members", "project_invites"]) {
-    const r = await restGet(`${base}/rest/v1/${table}?select=id&limit=1`, anon);
+  // 2) Related tables (project_members has composite PK: no `id` column)
+  const tables = [
+    { table: "rooms", select: "id" },
+    { table: "tasks", select: "id" },
+    { table: "documents", select: "id" },
+    { table: "project_members", select: "project_id,user_id" },
+    { table: "project_invites", select: "id" },
+  ];
+  for (const { table, select } of tables) {
+    const r = await restGet(`${base}/rest/v1/${table}?select=${select}&limit=1`, anon);
     const msg = r.json?.message ?? r.json?.hint ?? "";
     checks.push({
       name: `table ${table}`,
@@ -82,13 +89,17 @@ async function main() {
   const serviceRole = env.SUPABASE_SERVICE_ROLE_KEY;
   if (serviceRole) {
     const b = await restGet(`${base}/storage/v1/bucket/documents`, serviceRole);
-    const bucketOk = b.ok && b.json && typeof b.json === "object" && b.json.id === "documents";
+    const metaOk = b.ok && b.json && typeof b.json === "object" && b.json.id === "documents";
+    const isPublic = Boolean(b.json?.public);
+    const bucketOk = metaOk && !isPublic;
     checks.push({
       name: 'storage bucket "documents" (service role)',
       ok: bucketOk,
-      detail: bucketOk
-        ? `public=${Boolean(b.json.public)}`
-        : `HTTP ${b.status} ${JSON.stringify(b.json).slice(0, 150)}`,
+      detail: !metaOk
+        ? `HTTP ${b.status} ${JSON.stringify(b.json).slice(0, 150)}`
+        : isPublic
+          ? "INSECURE: bucket is public=true; set private in Dashboard or run migrations"
+          : "private bucket (public=false)",
     });
   } else {
     checks.push({

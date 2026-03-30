@@ -329,7 +329,7 @@
   },
   "documents": {
     "title": "Documenten",
-    "subtitle": "Upload offerte-PDF’s per project en genereer een korte AI-samenvatting.",
+    "subtitle": "Upload offerte-PDF’s per project. Bestanden zijn alleen zichtbaar voor jou en eventueel je uitgenodigde medewerker op dat project (niet voor andere gebruikers).",
     "uploadTitle": "Document uploaden",
     "noProjectsOption": "Geen projecten beschikbaar",
     "uploadPdf": "PDF uploaden",
@@ -470,7 +470,7 @@
     "title": "Privacy",
     "lead": "Dwellora verwerkt alleen gegevens die je zelf invoert of uploadt, en wat nodig is om je account te laten werken (bijv. e-mail via de aanbieder van inlog).",
     "hosting": "Als je de app online zet (bijv. via Vercel) en een database gebruikt (bijv. Supabase), gelden ook hun verwerking en beveiliging. Zet geen wachtwoorden of API-sleutels in de app zelf; gebruik omgevingsvariabelen op de server.",
-    "documents": "Documenten die je uploadt, blijven onder jouw account en de regels van je database (row level security). Verwijder gevoelige bestanden als je ze niet meer nodig hebt.",
+    "documents": "PDF’s en bijlagen staan in een privé-storagebucket: alleen jij en een geaccepteerde medewerker op hetzelfde project kunnen ze via de app benaderen (row level security). Zet de Storage-bucket in Supabase niet op ‘public’. Verwijder gevoelige bestanden als je ze niet meer nodig hebt.",
     "ai": "Als je de AI-assistent gebruikt met een externe dienst, worden berichten naar die dienst gestuurd volgens de instellingen van je project. Gebruik geen gegevens die je niet wilt delen.",
     "contact": "Voor vragen over verwerking: neem contact op met de beheerder van jouw Dwellora-omgeving.",
     "back": "Terug naar dashboard"

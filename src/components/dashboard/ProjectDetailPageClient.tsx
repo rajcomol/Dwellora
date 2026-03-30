@@ -161,7 +161,7 @@ function TaskEditor({
       : t("projectDetail.assigneeUnassigned");
 
   async function signedUrl(path: string) {
-    const { data, error } = await supabase.storage.from("documents").createSignedUrl(path, 3600);
+    const { data, error } = await supabase.storage.from("documents").createSignedUrl(path, 600);
     if (error || !data?.signedUrl) return null;
     return data.signedUrl;
   }

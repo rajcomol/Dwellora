@@ -42,3 +42,7 @@ Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — stand
 ## Projectuitnodigingen en e-mail
 
 Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via **Resend**: `RESEND_API_KEY` en `INVITE_EMAIL_FROM` in Vercel / `.env.local`. Zonder die variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
+
+## Documenten (Supabase Storage)
+
+Offertes en bijlagen gebruiken de bucket **`documents`**. Die moet **privé** blijven (`public = false`); anders zijn bestanden via een geraden URL mogelijk bereikbaar zonder inloggen. Voer de migraties uit (`supabase db push` of SQL Editor) en controleer in het Supabase-dashboard onder Storage dat de bucket niet publiek is. Toegang tot bestanden en metadata loopt via Row Level Security: alleen de projecteigenaar en een geaccepteerde medewerker op dat project.
