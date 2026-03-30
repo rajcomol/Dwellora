@@ -1,6 +1,10 @@
 /**
  * Verifies migration artifacts against a live Supabase project.
  * Reads .env.local from repo root (no secrets printed).
+ *
+ * Run from repo root with Node.js — NOT in the Supabase SQL Editor:
+ *   node scripts/verify-supabase-migration.mjs
+ * (Pasting this file into SQL causes: syntax error at "import".)
  */
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -72,6 +76,19 @@ async function main() {
     { table: "project_members", select: "project_id,user_id" },
     { table: "project_invites", select: "id" },
   ];
+  // documents.uploaded_by (private enforcement migration)
+  const docUploadedBy = await restGet(
+    `${base}/rest/v1/documents?select=id,uploaded_by,project_id&limit=1`,
+    anon
+  );
+  const docUbMsg = docUploadedBy.json?.message ?? docUploadedBy.json?.hint ?? "";
+  checks.push({
+    name: "documents.uploaded_by column",
+    ok: docUploadedBy.ok,
+    detail: docUploadedBy.ok
+      ? "select=id,uploaded_by,project_id accepted"
+      : `HTTP ${docUploadedBy.status} ${docUbMsg || JSON.stringify(docUploadedBy.json).slice(0, 120)}`,
+  });
   for (const { table, select } of tables) {
     const r = await restGet(`${base}/rest/v1/${table}?select=${select}&limit=1`, anon);
     const msg = r.json?.message ?? r.json?.hint ?? "";

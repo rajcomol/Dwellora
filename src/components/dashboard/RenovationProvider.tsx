@@ -338,13 +338,11 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
         .eq("user_id", sessionUserId);
 
-      if (projectsRes.error || !(projectsRes.data?.length)) {
+      if (projectsRes.error) {
         if (cancelled) return;
-        if (projectsRes.error) {
-          console.error("Failed to load renovation data", {
-            projectsError: projectsRes.error.message,
-          });
-        }
+        console.error("Failed to load renovation data", {
+          projectsError: projectsRes.error.message,
+        });
         setState({
           projects: [],
           rooms: [],
@@ -358,7 +356,65 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const projectIds = projectsRes.data.map((p) => String(p.id));
+      const membersRes = await supabase
+        .from("project_members")
+        .select("project_id")
+        .eq("user_id", sessionUserId);
+
+      if (membersRes.error) {
+        console.warn("Failed to load project memberships", membersRes.error.message);
+      }
+
+      const ownedRows = projectsRes.data ?? [];
+      const sharedProjectIds = [
+        ...new Set(
+          (membersRes.data ?? [])
+            .map((m) => (m.project_id != null ? String(m.project_id) : ""))
+            .filter(Boolean)
+        ),
+      ];
+
+      let sharedRows: typeof ownedRows = [];
+      if (sharedProjectIds.length > 0) {
+        const sharedRes = await supabase
+          .from("projects")
+          .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
+          .in("id", sharedProjectIds);
+        if (sharedRes.error) {
+          console.warn("Failed to load shared projects", sharedRes.error.message);
+        } else {
+          sharedRows = sharedRes.data ?? [];
+        }
+      }
+
+      const mergedById = new Map<string, (typeof ownedRows)[number]>();
+      for (const row of ownedRows) {
+        mergedById.set(String(row.id), row);
+      }
+      for (const row of sharedRows) {
+        const id = String(row.id);
+        if (!mergedById.has(id)) {
+          mergedById.set(id, row);
+        }
+      }
+      const mergedProjects = Array.from(mergedById.values());
+
+      if (mergedProjects.length === 0) {
+        if (cancelled) return;
+        setState({
+          projects: [],
+          rooms: [],
+          tasks: [],
+          projectExpenses: [],
+          taskDependencies: [],
+          taskAttachments: [],
+          checklistItems: [],
+          teamRoster: [],
+        });
+        return;
+      }
+
+      const projectIds = mergedProjects.map((p) => String(p.id));
 
       const roomsRes = await supabase.from("rooms").select("id,name,project_id").in("project_id", projectIds);
 
@@ -418,9 +474,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       logExt("team_roster", rosterRes.error);
 
       setState({
-        projects: (projectsRes.data ?? []).map((r) =>
-          mapProject(r as Parameters<typeof mapProject>[0])
-        ),
+        projects: mergedProjects.map((r) => mapProject(r as Parameters<typeof mapProject>[0])),
         rooms: (roomsRes.data ?? []).map((r) =>
           mapRoom(r as { id: unknown; name: unknown; project_id: unknown })
         ),

@@ -57,6 +57,8 @@ export default function DocumentsPageClient() {
     return map;
   }, [projects]);
 
+  const accessibleProjectIds = useMemo(() => projects.map((p) => p.id), [projects]);
+
   useEffect(() => {
     if (projects.length === 0) {
       setSelectedProjectId("");
@@ -87,9 +89,15 @@ export default function DocumentsPageClient() {
         return;
       }
 
+      if (accessibleProjectIds.length === 0) {
+        setDocuments([]);
+        return;
+      }
+
       const res = await supabase
         .from("documents")
         .select("id,project_id,file_name,file_path,created_at,ai_summary")
+        .in("project_id", accessibleProjectIds)
         .order("created_at", { ascending: false });
 
       if (res.error) {
@@ -115,7 +123,7 @@ export default function DocumentsPageClient() {
     });
 
     return () => subscription.unsubscribe();
-  }, [t]);
+  }, [t, accessibleProjectIds]);
 
   async function uploadDocument() {
     const uploadParsed = documentUploadRefinedSchema.safeParse({
