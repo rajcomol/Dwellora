@@ -6,25 +6,55 @@ import LoginScreenChrome from "@/components/auth/LoginScreenChrome";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
 
+function readInviteTokenFromBrowser(searchParams: ReturnType<typeof useSearchParams>): string | null {
+  const fromParams = searchParams.get("token")?.trim() ?? "";
+  if (fromParams) return fromParams;
+  if (typeof window !== "undefined") {
+    const fromUrl = new URLSearchParams(window.location.search).get("token")?.trim() ?? "";
+    if (fromUrl) return fromUrl;
+  }
+  return null;
+}
+
+const INVITE_ERROR_I18N_KEYS: Record<string, string> = {
+  email_mismatch: "inviteAccept.errorEmailMismatch",
+  expired: "inviteAccept.errorExpired",
+  invalid_or_expired: "inviteAccept.errorInvalidOrExpired",
+  already_has_member: "inviteAccept.errorAlreadyHasMember",
+  owner_cannot_accept_own_invite: "inviteAccept.errorOwnerSelf",
+};
+
 function InviteAcceptInner() {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const [tokenReady, setTokenReady] = useState(false);
+  const [resolvedToken, setResolvedToken] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "redirect_login" | "working" | "ok" | "err">("idle");
   const [projectId, setProjectId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const ran = useRef(false);
+  const [errHint, setErrHint] = useState<"needLogin" | "wrongAccount" | null>(null);
+  const ranForToken = useRef<string | null>(null);
 
   useEffect(() => {
-    if (ran.current) return;
-    if (!token?.trim()) {
+    const tkn = readInviteTokenFromBrowser(searchParams);
+    setResolvedToken(tkn);
+    setTokenReady(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!tokenReady) return;
+
+    if (!resolvedToken) {
       setStatus("err");
       setMessage(t("inviteAccept.missingToken"));
+      setErrHint("needLogin");
       return;
     }
-    const tkn = token.trim();
-    ran.current = true;
+
+    const tkn = resolvedToken;
+    if (ranForToken.current === tkn) return;
+    ranForToken.current = tkn;
 
     async function run() {
       const {
@@ -50,20 +80,26 @@ function InviteAcceptInner() {
       const body = (await res.json().catch(() => ({}))) as { projectId?: string; error?: string };
       if (!res.ok) {
         setStatus("err");
-        setMessage(t("inviteAccept.error"));
+        const code = typeof body.error === "string" ? body.error : "";
+        const key = INVITE_ERROR_I18N_KEYS[code] ?? "inviteAccept.error";
+        setMessage(t(key));
+        setErrHint(code === "email_mismatch" ? "wrongAccount" : null);
         return;
       }
       setProjectId(typeof body.projectId === "string" ? body.projectId : null);
       setStatus("ok");
+      setErrHint(null);
     }
 
     void run();
-  }, [token, router, t]);
+  }, [tokenReady, resolvedToken, router, t]);
 
-  if (status === "idle" || status === "redirect_login" || status === "working") {
+  if (!tokenReady || status === "idle" || status === "redirect_login" || status === "working") {
     return (
       <p className="text-center text-sm text-zinc-200">
-        {status === "working" ? t("inviteAccept.accepting") : t("common.loading")}
+        {!tokenReady || status === "idle" || status === "redirect_login"
+          ? t("common.loading")
+          : t("inviteAccept.accepting")}
       </p>
     );
   }
@@ -72,7 +108,12 @@ function InviteAcceptInner() {
     return (
       <div className="space-y-4 text-center">
         <p className="text-sm text-red-200">{message ?? t("inviteAccept.error")}</p>
-        <p className="text-xs text-zinc-400">{t("inviteAccept.needLogin")}</p>
+        {errHint === "needLogin" ? (
+          <p className="text-xs text-zinc-400">{t("inviteAccept.needLogin")}</p>
+        ) : null}
+        {errHint === "wrongAccount" ? (
+          <p className="text-xs text-zinc-400">{t("inviteAccept.hintWrongAccount")}</p>
+        ) : null}
       </div>
     );
   }

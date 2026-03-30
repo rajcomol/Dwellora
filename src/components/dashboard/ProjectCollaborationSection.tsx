@@ -20,6 +20,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
@@ -42,6 +43,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
     e.preventDefault();
     setError(null);
     setInviteUrl(null);
+    setEmailSent(false);
     setBusy(true);
     try {
       const headers = {
@@ -53,7 +55,11 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
         headers,
         body: JSON.stringify({ email: email.trim() }),
       });
-      const body = (await res.json().catch(() => ({}))) as { inviteUrl?: string; error?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        inviteUrl?: string;
+        emailSent?: boolean;
+        error?: string;
+      };
       if (!res.ok) {
         if (res.status === 409) {
           setError(t("projectDetail.collaborationConflict"));
@@ -63,6 +69,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
         return;
       }
       if (body.inviteUrl) setInviteUrl(body.inviteUrl);
+      setEmailSent(body.emailSent === true);
       setEmail("");
       await load();
     } finally {
@@ -84,6 +91,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
         return;
       }
       setInviteUrl(null);
+      setEmailSent(false);
       await load();
     } finally {
       setBusy(false);
@@ -161,7 +169,11 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
       ) : null}
 
       {inviteUrl ? (
-        <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="mt-4 space-y-3">
+          {emailSent ? (
+            <p className="text-sm text-emerald-700 dark:text-emerald-400">{t("projectDetail.collaborationEmailSent")}</p>
+          ) : null}
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{t("projectDetail.collaborationInviteLink")}</p>
           <p className="mt-1 break-all font-mono text-xs text-zinc-800 dark:text-zinc-200">{inviteUrl}</p>
           <button
@@ -171,6 +183,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
           >
             {copied ? t("projectDetail.collaborationCopied") : t("projectDetail.collaborationCopyLink")}
           </button>
+          </div>
         </div>
       ) : null}
     </section>

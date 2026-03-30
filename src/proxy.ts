@@ -59,6 +59,19 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/login") && user) {
+    const nextRaw = request.nextUrl.searchParams.get("next");
+    if (nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")) {
+      try {
+        const dest = new URL(nextRaw, request.nextUrl.origin);
+        if (dest.origin === request.nextUrl.origin) {
+          const redirectResponse = NextResponse.redirect(dest);
+          copyCookies(response, redirectResponse);
+          return redirectResponse;
+        }
+      } catch {
+        /* fall through to dashboard */
+      }
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";

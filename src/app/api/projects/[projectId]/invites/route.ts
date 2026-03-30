@@ -4,6 +4,7 @@ import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { getPublicSiteUrlServer } from "@/lib/site-url";
 import { isUuid } from "@/lib/supabase/project-access";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
+import { sendProjectInviteEmail } from "@/lib/email/sendProjectInviteEmail";
 import { projectInviteEmailBodySchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
@@ -41,7 +42,7 @@ export async function POST(
 
   const projRes = await auth.client
     .from("projects")
-    .select("user_id")
+    .select("user_id,name")
     .eq("id", projectId)
     .maybeSingle();
 
@@ -97,9 +98,23 @@ export async function POST(
   const base = site || new URL(req.url).origin;
   const inviteUrl = `${base.replace(/\/$/, "")}/invite/accept?token=${encodeURIComponent(plainToken)}`;
 
+  const projectName =
+    projRes.data && typeof (projRes.data as { name?: unknown }).name === "string"
+      ? (projRes.data as { name: string }).name
+      : null;
+
+  const mailResult = await sendProjectInviteEmail({
+    to: email,
+    inviteUrl,
+    expiresAtIso: expiresAt.toISOString(),
+    projectName,
+  });
+  const emailSent = mailResult.ok === true;
+
   return Response.json({
     inviteUrl,
     expiresAt: expiresAt.toISOString(),
+    emailSent,
   });
 }
 

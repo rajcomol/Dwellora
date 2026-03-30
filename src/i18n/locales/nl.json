@@ -96,11 +96,17 @@
     "title": "Uitnodiging accepteren",
     "missingToken": "Geen geldige uitnodigingslink.",
     "needLogin": "Log in of maak een account met het e-mailadres waarmee je bent uitgenodigd.",
+    "hintWrongAccount": "Je bent ingelogd met een ander adres dan waarmee je bent uitgenodigd. Meld af en log in (of registreer) met het uitgenodigde e-mailadres.",
     "accepting": "Bezig met accepteren…",
     "success": "Je hebt nu toegang tot het project.",
     "goToDashboard": "Naar dashboard",
     "goToProject": "Naar project",
-    "error": "De uitnodiging kon niet worden geaccepteerd. Controleer of je met het juiste e-mailadres bent ingelogd."
+    "error": "De uitnodiging kon niet worden geaccepteerd. Controleer of je met het juiste e-mailadres bent ingelogd.",
+    "errorEmailMismatch": "Dit uitnodigingslink hoort bij een ander e-mailadres dan je huidige account.",
+    "errorExpired": "Deze uitnodiging is verlopen. Vraag de projecteigenaar om een nieuwe uitnodiging.",
+    "errorInvalidOrExpired": "Deze uitnodiging is ongeldig of niet meer actief. Vraag een nieuwe link aan de projecteigenaar.",
+    "errorAlreadyHasMember": "Dit project heeft al een medewerker. De uitnodiging kan niet meer worden gebruikt.",
+    "errorOwnerSelf": "Je kunt je eigen project niet als medewerker accepteren."
   },
   "dashboard": {
     "heroEyebrow": "Dwellora",
@@ -173,6 +179,7 @@
     "collaborationPending": "Openstaande uitnodiging naar {{email}}. Geldig tot {{expires}}.",
     "collaborationCancelInvite": "Uitnodiging intrekken",
     "collaborationInviteLink": "Uitnodigingslink (deel handmatig als nodig)",
+    "collaborationEmailSent": "Er is ook een e-mail verstuurd naar dit adres met de uitnodigingslink.",
     "collaborationCopyLink": "Link kopiëren",
     "collaborationCopied": "Gekopieerd.",
     "collaborationError": "Uitnodiging mislukt. Probeer het opnieuw.",

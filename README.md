@@ -38,3 +38,7 @@ Productie-deploy loopt via de **Vercel Git-integratie** met deze GitHub-repo: co
 ## AI (OpenAI)
 
 Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — standaard is `gpt-4o-mini` (goedkoper/sneller); voor zwaardere redeneer-taken (chat, offertesamenvatting, offertevergelijking) kun je bijvoorbeeld `gpt-4o` zetten voor merkbaar betere kwaliteit tegen hogere kosten en latency. Output- en invoerformaten zijn begrensd via omgevingsvariabelen zoals `OPENAI_MAX_OUTPUT_TOKENS` en `OPENAI_COMPARE_PDF_MAX_CHARS_PER_DOC`; zie `.env.example` voor alle opties en uitleg.
+
+## Projectuitnodigingen en e-mail
+
+Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via **Resend**: `RESEND_API_KEY` en `INVITE_EMAIL_FROM` in Vercel / `.env.local`. Zonder die variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
