@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n/provider";
 import { MailIcon } from "@/components/auth/login-icons";
 import { forgotEmailSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
+import { getPublicSiteUrlClient } from "@/lib/site-url";
 
 export default function ForgotPasswordForm() {
   const { t } = useI18n();
@@ -28,7 +29,8 @@ export default function ForgotPasswordForm() {
     }
     const trimmed = parsed.data.email;
     setBusy(true);
-    const redirectTo = `${window.location.origin}/login`;
+    const base = getPublicSiteUrlClient() || window.location.origin;
+    const redirectTo = `${base.replace(/\/$/, "")}/login`;
     const { error } = await supabase.auth.resetPasswordForEmail(trimmed, { redirectTo });
     setBusy(false);
     if (error) {

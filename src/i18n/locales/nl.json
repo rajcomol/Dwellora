@@ -12,7 +12,9 @@
     "forgotPasswordTitle": "Wachtwoord resetten | Dwellora",
     "forgotPasswordDescription": "Vraag een wachtwoordresetlink voor je Dwellora-account.",
     "signUpTitle": "Account aanmaken | Dwellora",
-    "signUpDescription": "Maak een account voor Dwellora met je e-mailadres en een wachtwoord."
+    "signUpDescription": "Maak een account voor Dwellora met je e-mailadres en een wachtwoord.",
+    "inviteAcceptTitle": "Uitnodiging | Dwellora",
+    "inviteAcceptDescription": "Accepteer een uitnodiging om samen aan een renovatieproject te werken."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -90,6 +92,16 @@
     "recoverySubmit": "Wachtwoord opslaan",
     "recoverySuccess": "Je wachtwoord is bijgewerkt. Je wordt doorgestuurd."
   },
+  "inviteAccept": {
+    "title": "Uitnodiging accepteren",
+    "missingToken": "Geen geldige uitnodigingslink.",
+    "needLogin": "Log in of maak een account met het e-mailadres waarmee je bent uitgenodigd.",
+    "accepting": "Bezig met accepteren…",
+    "success": "Je hebt nu toegang tot het project.",
+    "goToDashboard": "Naar dashboard",
+    "goToProject": "Naar project",
+    "error": "De uitnodiging kon niet worden geaccepteerd. Controleer of je met het juiste e-mailadres bent ingelogd."
+  },
   "dashboard": {
     "heroEyebrow": "Dwellora",
     "heroTitle": "Jouw renovatie-overzicht",
@@ -151,6 +163,20 @@
     "notFoundBody": "Dit project is niet beschikbaar.",
     "backToProjects": "Terug naar projecten",
     "subtitle": "Ruimtes, taken, planning en opleveringschecklist.",
+    "collaborationTitle": "Samenwerken",
+    "collaborationHint": "Nodig één persoon uit om dit project te delen. Na acceptatie kan de medebewoner niet meer worden vervangen.",
+    "collaborationOwnerOnly": "Alleen de projecteigenaar kan iemand uitnodigen.",
+    "collaborationHasCollaborator": "Dit project wordt gedeeld met een medebewoner.",
+    "collaborationYouAreCollaborator": "Je bent medebewoner: je ziet dezelfde projectdata als de eigenaar.",
+    "collaborationInviteEmail": "E-mailadres medebewoner",
+    "collaborationSendInvite": "Uitnodiging aanmaken",
+    "collaborationPending": "Openstaande uitnodiging naar {{email}}. Geldig tot {{expires}}.",
+    "collaborationCancelInvite": "Uitnodiging intrekken",
+    "collaborationInviteLink": "Uitnodigingslink (deel handmatig als nodig)",
+    "collaborationCopyLink": "Link kopiëren",
+    "collaborationCopied": "Gekopieerd.",
+    "collaborationError": "Uitnodiging mislukt. Probeer het opnieuw.",
+    "collaborationConflict": "Er is al een medebewoner of een openstaande uitnodiging.",
     "budgetLine": "Budget: {{budget}}",
     "keyDate": "Sleuteldatum {{date}}",
     "planning": "Planning",

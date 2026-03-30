@@ -65,7 +65,7 @@ async function main() {
   }
 
   // 2) Related tables
-  for (const table of ["rooms", "tasks", "documents"]) {
+  for (const table of ["rooms", "tasks", "documents", "project_members", "project_invites"]) {
     const r = await restGet(`${base}/rest/v1/${table}?select=id&limit=1`, anon);
     const msg = r.json?.message ?? r.json?.hint ?? "";
     checks.push({

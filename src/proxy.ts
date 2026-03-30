@@ -76,5 +76,13 @@ export async function proxy(request: NextRequest) {
  * session refresh and Supabase cookies stay stale → server layout sees no user → redirect loop.
  */
 export const config = {
-  matcher: ["/", "/login", "/login/:path*", "/dashboard", "/dashboard/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/login/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
+    "/auth/:path*",
+    "/invite/:path*",
+  ],
 };

@@ -8,6 +8,7 @@ import { useI18n } from "@/i18n/provider";
 import { signUpFormZodMessage } from "@/lib/validation/loginZodMessage";
 import { signUpFormSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
+import { getPublicSiteUrlClient } from "@/lib/site-url";
 
 const REMEMBER_EMAIL_KEY = "dwellora_login_email";
 
@@ -50,9 +51,14 @@ export default function RegisterForm() {
       return;
     }
     setBusy(true);
+    const base = getPublicSiteUrlClient() || (typeof window !== "undefined" ? window.location.origin : "");
+    const emailRedirectTo = `${base.replace(/\/$/, "")}/auth/confirm?next=${encodeURIComponent(safeNextPath(nextParam))}`;
     const { data, error } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
+      options: {
+        emailRedirectTo,
+      },
     });
     setBusy(false);
     if (error) {

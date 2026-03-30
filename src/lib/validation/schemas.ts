@@ -210,3 +210,11 @@ export const documentCompareSelectionSchema = z
 export const summarizeDocumentIdSchema = z.object({
   documentId: z.string().trim().uuid(),
 });
+
+export const projectInviteEmailBodySchema = z.object({
+  email: z.string().trim().email().max(320).transform((s) => s.toLowerCase()),
+});
+
+export const acceptProjectInviteBodySchema = z.object({
+  token: z.string().trim().min(32).max(512),
+});

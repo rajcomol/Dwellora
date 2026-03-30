@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 export type UserSupabase = {
   client: SupabaseClient;
   userId: string;
+  email: string | null;
 };
 
 /**
@@ -28,5 +29,5 @@ export async function createUserSupabaseFromRequest(req: Request): Promise<UserS
   } = await client.auth.getUser();
   if (error || !user) return null;
 
-  return { client, userId: user.id };
+  return { client, userId: user.id, email: user.email ?? null };
 }

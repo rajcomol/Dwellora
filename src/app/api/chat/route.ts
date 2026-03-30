@@ -46,12 +46,7 @@ export async function GET(req: Request) {
     if (!isUuid(threadId)) {
       return Response.json({ error: "Invalid threadId." }, { status: 400 });
     }
-    const th = await auth.client
-      .from("chat_threads")
-      .select("id")
-      .eq("id", threadId)
-      .eq("user_id", auth.userId)
-      .maybeSingle();
+    const th = await auth.client.from("chat_threads").select("id").eq("id", threadId).maybeSingle();
     if (!th.data) {
       return Response.json({ error: "Thread not found." }, { status: 404 });
     }
@@ -76,7 +71,6 @@ export async function GET(req: Request) {
   const listRes = await auth.client
     .from("chat_threads")
     .select("id,title,project_id,updated_at,created_at")
-    .eq("user_id", auth.userId)
     .order("updated_at", { ascending: false })
     .limit(30);
 
@@ -242,12 +236,7 @@ export async function POST(req: Request) {
     let activeThreadId = threadIdIn;
 
     if (activeThreadId) {
-      const own = await auth.client
-        .from("chat_threads")
-        .select("id")
-        .eq("id", activeThreadId)
-        .eq("user_id", auth.userId)
-        .maybeSingle();
+      const own = await auth.client.from("chat_threads").select("id").eq("id", activeThreadId).maybeSingle();
       if (!own.data) {
         return Response.json({ error: "Thread not found." }, { status: 404 });
       }

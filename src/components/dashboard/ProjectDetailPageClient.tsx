@@ -32,6 +32,7 @@ import {
   roomNameFormSchema,
   taskFormFieldsSchema,
 } from "@/lib/validation/schemas";
+import ProjectCollaborationSection from "@/components/dashboard/ProjectCollaborationSection";
 import { supabase } from "@/lib/supabase/client";
 import type { ZodError } from "zod";
 
@@ -1226,6 +1227,8 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         project={project}
         updateProject={updateProject}
       />
+
+      <ProjectCollaborationSection projectId={projectId} />
 
       <ProjectLooseExpensesSection
         projectId={projectId}
