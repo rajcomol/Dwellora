@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
+import { Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { defaultLocale, isLocale, LOCALE_COOKIE_NAME, type Locale } from "@/i18n/config";
 import nl from "@/i18n/locales/nl.json";
 import { I18nProvider } from "@/i18n/provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/** Cosmos-inspired UI: geometric sans (Google Fonts), per Envato kit style guidance. */
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -60,19 +64,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const fromCookie = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
+  const locale: Locale = fromCookie && isLocale(fromCookie) ? fromCookie : defaultLocale;
+
   return (
     <html
-      lang="nl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      className={`${outfit.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
-        <I18nProvider>{children}</I18nProvider>
+        <ThemeProvider>
+          <I18nProvider locale={locale}>{children}</I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

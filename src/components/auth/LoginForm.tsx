@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import RecoveryPasswordForm from "@/components/auth/RecoveryPasswordForm";
 import { LockIcon, MailIcon } from "@/components/auth/login-icons";
 import { useI18n } from "@/i18n/provider";
 import { loginCredentialsZodMessage } from "@/lib/validation/loginZodMessage";
@@ -34,6 +35,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -53,8 +55,11 @@ export default function LoginForm() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "PASSWORD_RECOVERY") {
+        setRecoveryMode(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -107,15 +112,19 @@ export default function LoginForm() {
   }
 
   const glass =
-    "rounded-[2rem] border border-white/10 bg-gradient-to-b from-zinc-900/80 to-zinc-950/85 p-8 shadow-2xl backdrop-blur-xl sm:p-10";
+    "rounded-[2rem] border border-cyan-400/15 bg-gradient-to-b from-slate-950/90 to-slate-950/95 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl sm:p-10";
   const underlineWrap =
-    "flex items-end gap-3 border-b border-white/25 pb-2 transition-colors focus-within:border-white/55";
+    "flex items-end gap-3 border-b border-cyan-200/20 pb-2 transition-colors focus-within:border-cyan-300/45";
   const inputClass =
     "min-h-[2.75rem] flex-1 border-0 bg-transparent text-sm text-zinc-50 outline-none ring-0 placeholder:text-zinc-500 focus:ring-0";
 
+  if (recoveryMode) {
+    return <RecoveryPasswordForm redirectTo={safeNextPath(nextParam)} />;
+  }
+
   return (
     <div className={glass}>
-      <h2 className="mb-8 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-300">{t("login.cardHeading")}</h2>
+      <h2 className="mb-8 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100/90">{t("login.cardHeading")}</h2>
 
       {user ? (
         <div className="space-y-6">
@@ -134,7 +143,7 @@ export default function LoginForm() {
             </button>
             <Link
               href="/dashboard"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-200 px-5 text-sm font-semibold text-zinc-900 transition-opacity hover:bg-white"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-cyan-400 px-5 text-sm font-semibold text-slate-950 transition-opacity hover:bg-cyan-300"
             >
               {t("login.goToDashboard")}
             </Link>
@@ -200,7 +209,7 @@ export default function LoginForm() {
             type="button"
             onClick={() => void handleSignIn()}
             disabled={busy}
-            className="flex h-12 w-full items-center justify-center rounded-full bg-zinc-200 text-sm font-semibold uppercase tracking-wide text-zinc-900 transition-opacity hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-12 w-full items-center justify-center rounded-full bg-cyan-400 text-sm font-semibold uppercase tracking-wide text-slate-950 transition-opacity hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? t("login.pleaseWait") : t("login.signInButton")}
           </button>

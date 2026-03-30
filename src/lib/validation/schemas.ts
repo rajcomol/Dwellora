@@ -98,6 +98,16 @@ export const forgotEmailSchema = z.object({
   email: z.string().trim().email(),
 });
 
+export const updatePasswordFormSchema = z
+  .object({
+    password: z.string().min(PASSWORD_MIN_LENGTH),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "mismatch",
+  });
+
 const budgetFromString = z
   .string()
   .transform((s) => (s.trim() === "" ? 0 : Number.parseFloat(s)))
