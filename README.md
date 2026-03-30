@@ -34,3 +34,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Deployment
 
 Productie-deploy loopt via de **Vercel Git-integratie** met deze GitHub-repo: commits op de gekoppelde branch (meestal `main`) triggeren build en deploy op Vercel. Er staat (voorlopig) geen aparte GitHub Action in dit project. Zie [Next.js deployment](https://nextjs.org/docs/app/building-your-application/deploying) voor algemene opties.
+
+## AI (OpenAI)
+
+Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — standaard is `gpt-4o-mini` (goedkoper/sneller); voor zwaardere redeneer-taken (chat, offertesamenvatting, offertevergelijking) kun je bijvoorbeeld `gpt-4o` zetten voor merkbaar betere kwaliteit tegen hogere kosten en latency. Output- en invoerformaten zijn begrensd via omgevingsvariabelen zoals `OPENAI_MAX_OUTPUT_TOKENS` en `OPENAI_COMPARE_PDF_MAX_CHARS_PER_DOC`; zie `.env.example` voor alle opties en uitleg.

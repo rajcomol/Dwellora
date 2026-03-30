@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
+import { getCompareMaxOutputTokens, getComparePdfMaxCharsPerDoc, truncateTextForModel } from "@/lib/ai/limits";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
 import { requireAccessibleProject } from "@/lib/supabase/project-access";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
@@ -38,17 +39,22 @@ function mockComparison(nameA: string, nameB: string) {
 }
 
 const COMPARISON_SYSTEM_PROMPT = [
-  "You compare two renovation quotation texts.",
-  "Be practical and concise. Use plain text with exactly these section headings (each on its own line, then content):",
+  "Je vergelijkt twee renovatie-offertes op basis van de meegeleverde tekstfragmenten.",
+  "Gebruik plain text met de volgende sectiekoppen (elk op een eigen regel, daarna de inhoud):",
   "Scope in offerte A",
   "Scope in offerte B",
+  "Sterke punten offerte A",
+  "Sterke punten offerte B",
+  "Waar welke offerte beter lijkt te passen",
   "Waarschijnlijk ontbrekende onderdelen",
   "Prijs- of scopeverschillen (indien genoemd)",
   "Risico's / onduidelijke formuleringen",
+  "Als je nog twijfelt — vergelijkingsvragen",
   "Vragen voor de aannemer",
-  "Under each heading use short bullets or short paragraphs.",
-  "If the text does not mention prices, say so and avoid inventing numbers.",
-  "Max ~250 words.",
+  "Wees grondig en concreet: trek citaten of parafraas wat er echt in de tekst staat. Richtlijn lengte: ongeveer 500–800 woorden wanneer de bron dat toelaat; liever inhoudelijk dan oppervlakkig.",
+  "Prijzen en bedragen: nooit verzinnen. Als er geen prijzen in de tekst staan, zeg dat expliciet.",
+  "Bij ‘Waar welke offerte beter lijkt te passen’: denk in termen van snelheid, scope, prijs-kwaliteit, garanties, planning — alleen als de documenten dat toelaten. Voeg een korte disclaimer toe: geen juridisch advies; jouw oordeel is ondersteuning bij lezen, geen vervanging van eigen controle of een second opinion.",
+  "Onder elke kop: bullets of korte alinea’s, wat het leesbaarst is.",
 ].join("\n");
 
 export async function POST(req: Request) {
@@ -104,10 +110,13 @@ export async function POST(req: Request) {
     return Response.json({ error: projectAccess.message }, { status: projectAccess.status });
   }
 
-  const [textA, textB] = await Promise.all([
+  const [rawA, rawB] = await Promise.all([
     extractPdfTextOrPlaceholder(docA, auth.client),
     extractPdfTextOrPlaceholder(docB, auth.client),
   ]);
+  const maxPdfChars = getComparePdfMaxCharsPerDoc();
+  const textA = truncateTextForModel(rawA, maxPdfChars).text;
+  const textB = truncateTextForModel(rawB, maxPdfChars).text;
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -128,7 +137,8 @@ export async function POST(req: Request) {
   try {
     const completion = await openai.chat.completions.create({
       model,
-      temperature: 0.35,
+      temperature: 0.55,
+      max_tokens: getCompareMaxOutputTokens(),
       messages: [
         { role: "system", content: COMPARISON_SYSTEM_PROMPT },
         { role: "user", content: userContent },

@@ -1,4 +1,5 @@
 import { completeChat } from "@/lib/ai/completeChat";
+import { getComparePdfMaxCharsPerDoc, truncateTextForModel } from "@/lib/ai/limits";
 import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
@@ -65,21 +66,29 @@ export async function POST(req: Request) {
     return Response.json({ error: projectAccess.message }, { status: projectAccess.status });
   }
 
-  const extractedText = await extractPdfTextOrPlaceholder(doc, auth.client);
+  const rawExtracted = await extractPdfTextOrPlaceholder(doc, auth.client);
+  const extractedText = truncateTextForModel(rawExtracted, getComparePdfMaxCharsPerDoc()).text;
 
   let summaryText: string;
   try {
     summaryText = await completeChat({
-      temperature: 0.4,
+      temperature: 0.45,
       messages: [
         {
           role: "system",
-          content:
-            "You summarize renovation quotations. Keep concise (max 120 words). Return plain text with exactly these headings in Dutch: 'Wat offerte bevat', 'Mogelijk ontbreekt', 'Risico of onduidelijk'. Under each heading, use 1-3 bullet points.",
+          content: [
+            "Je vat renovatie-offertes samen voor gebruikers van deze app. Toon: warm en praktisch, nuchter, geen marketingtaal.",
+            "Antwoord in het Nederlands in plain text met exact deze koppen (elk op een eigen regel):",
+            "Wat de offerte bevat",
+            "Mogelijk ontbreekt",
+            "Risico of onduidelijk",
+            "Onder elke kop: 1–4 korte bullets. Totaal ongeveer 120–200 woorden; wees concreet.",
+            "Verzin geen bedragen, posten of voorwaarden die niet in de brontekst staan. Als iets onduidelijk is, zeg dat.",
+          ].join("\n"),
         },
         {
           role: "user",
-          content: `Summarize this quotation text:\n\n${extractedText}`,
+          content: `Vat deze offertetekst samen:\n\n${extractedText}`,
         },
       ],
     });

@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/** Truncate long PDF extracts before sending to the model (see `@/lib/ai/limits`). */
+export { truncateTextForModel } from "@/lib/ai/limits";
+
 export const DOCUMENTS_BUCKET = "documents";
 
 /** Minimal row shape needed for download + placeholder (matches documents table columns). */

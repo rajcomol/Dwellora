@@ -1,15 +1,19 @@
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { getChatMaxOutputTokens } from "@/lib/ai/limits";
 
 export type ChatMessageParam = ChatCompletionMessageParam;
 
 /**
  * Single entry point for chat completions. Extend with AI_PROVIDER when adding Anthropic etc.
+ * Output length is capped via `max_tokens` (env `OPENAI_MAX_OUTPUT_TOKENS`, see `getChatMaxOutputTokens`).
  */
 export async function completeChat(params: {
   messages: ChatMessageParam[];
   model?: string;
   temperature?: number;
+  /** Overrides env default when set. */
+  maxTokens?: number;
 }): Promise<string> {
   const provider = (process.env.AI_PROVIDER ?? "openai").toLowerCase();
   if (provider !== "openai") {
@@ -23,10 +27,12 @@ export async function completeChat(params: {
 
   const openai = new OpenAI({ apiKey });
   const model = params.model ?? process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const maxTokens = params.maxTokens ?? getChatMaxOutputTokens();
   const completion = await openai.chat.completions.create({
     model,
     messages: params.messages,
     temperature: params.temperature ?? 0.7,
+    max_tokens: maxTokens,
   });
 
   const text = completion.choices?.[0]?.message?.content?.trim();

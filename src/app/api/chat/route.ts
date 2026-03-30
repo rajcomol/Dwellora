@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { completeChat, type ChatMessageParam } from "@/lib/ai/completeChat";
+import {
+  CHAT_CONTEXT_MAX_TASKS_PER_ROOM,
+  getProjectContextMaxChars,
+  truncateTextForModel,
+} from "@/lib/ai/limits";
 import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { isUuid } from "@/lib/supabase/project-access";
@@ -13,21 +18,16 @@ function mockAssistantReply(message: string) {
 export const runtime = "nodejs";
 
 const RENOVATION_COACH_SYSTEM_PROMPT = [
-  "You are a practical home-renovation coach.",
-  "Use selected project context if it is available.",
-  "Be concise, concrete, and actionable. Avoid long generic explanations.",
-  "Response length must stay between about 150 and 200 words maximum.",
-  "Use these section headers when relevant:",
-  "Wat eerst",
-  "Risico's",
-  "Volgende stap",
-  "Each section should be short and useful (1-3 bullets or compact sentences).",
-  "If project data is missing or incomplete, explicitly state what is missing.",
-  "Suggest exactly what the user should add: rooms, tasks, budget, duration_days, priority, or loose project expenses (e.g. hardware store) where relevant.",
-  "If the user asks for order of work, provide a practical sequence and include dependencies between tasks.",
-  "If budget data appears incomplete, warn carefully and do not pretend exact real-world costs.",
-  "Use cautious language for costs and assumptions (for example: 'indicatie', 'globale inschatting').",
-  "Prioritize safety, sequencing, and realistic next actions.",
+  "Je bent een ervaren, warme renovatie-assistent in deze app: je helpt bij plannen, keuzes en stress rond de klus — als een goede vriend: empathisch en direct, zonder marketingpraat of overdreven formaliteit.",
+  "Antwoord standaard in het Nederlands, tenzij de gebruiker duidelijk in een andere taal schrijft; schakel dan mee in die taal.",
+  "Domein: woningrenovatie en alles wat daarbij hoort: volgorde van werk, afhankelijkheden, aannemer vs. zelf doen, vergunningen en regels, materialen en kwaliteit, planning en buffer, budget en inschattingen (altijd voorzichtig), stress en prioriteit — ook als er weinig data in de app staat. Gebruik projectcontext als die er is; vul aan met algemene, realistische richtlijnen.",
+  "Structuur: geen verplichte vaste koppen bij elk antwoord. Gebruik alleen tussenkopjes of bullets als ze de leesbaarheid echt verbeteren; anders vloeiende alinea’s.",
+  "Lengte: wees uitgebreid genoeg om echt te helpen (richtlijn ongeveer 250–400 woorden wanneer de vraag dat rechtvaardigt). Wees niet eindeloos; liever kernachtig dan opvullen.",
+  "Veiligheid en eerlijkheid gaan vóór ‘gezelligheid’: waarschuw voor risico’s (bijv. elektriciteit, dragende constructies, vocht, gas) en verzin geen prijzen, maten of garanties die niet in de context staan.",
+  "Kosten: geen verzonnen bedragen; spreek van indicaties of globale inschattingen en wat de gebruiker in de app kan aanvullen (budget, taken, offertes).",
+  "Als projectdata ontbreekt of onvolledig is: zeg wat er mist en wat de gebruiker concreet kan toevoegen (kamers, taken, budget, duration_days, prioriteit, losse uitgaven).",
+  "Scope van de assistent: alleen dit project en renovatie/verbouwen/offertes/planning in deze app. Geen antwoorden op puur privé-, medische, relationele of algemene levensvragen zonder link met de klus. Bij zulke vragen: kort en vriendelijk doorverwijzen naar het project (bijv. hoe stress rond de verbouwing te structureren is wél oké; relatieadvies niet). Geen losse chit-chat zonder verbouw-link.",
+  "Toon: warm en steunend, maar realistisch en nuchter.",
 ].join("\n");
 
 export async function GET(req: Request) {
@@ -142,7 +142,10 @@ async function buildProjectContext(
   const scopedTasks = (tasksRes.data ?? []).filter((task) => roomIds.has(String(task.room_id)));
 
   const roomLines = rooms.map((room) => {
-    const tasksForRoom = scopedTasks.filter((task) => String(task.room_id) === String(room.id));
+    const tasksForRoom = scopedTasks
+      .filter((task) => String(task.room_id) === String(room.id))
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+      .slice(0, CHAT_CONTEXT_MAX_TASKS_PER_ROOM);
     const taskSummary =
       tasksForRoom.length === 0
         ? "no tasks yet"
@@ -193,13 +196,15 @@ async function buildProjectContext(
     "Uploaded documents (for quote context):",
     ...docLines,
     "If any of these are missing, mention that clearly and ask the user to add them: rooms, tasks, total budget, duration_days, priority, and loose expenses if they shop outside tasks.",
+    `Per room at most ${CHAT_CONTEXT_MAX_TASKS_PER_ROOM} tasks are listed (sorted by sort_order).`,
     "Room/task details:",
     ...roomLines,
   ]
     .filter(Boolean)
     .join("\n");
 
-  return { ok: true, text };
+  const capped = truncateTextForModel(text, getProjectContextMaxChars());
+  return { ok: true, text: capped.text };
 }
 
 export async function POST(req: Request) {
