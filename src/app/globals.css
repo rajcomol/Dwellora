@@ -1,5 +1,6 @@
-/* Anchor scanner to repo root (stable on Vercel; cwd can differ from local dev). */
-@import "tailwindcss" source("../..");
+/* Tailwind v4: split import + @source so PostCSS always resolves scanning (avoids empty utilities in some setups). */
+@import "tailwindcss";
+@source "../..";
 
 /**
  * Design tokens — Cosmos-inspired tech UI (cool neutrals, cyan + violet accents, space grid).

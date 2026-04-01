@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import GlobalChatLauncher from "@/components/dashboard/GlobalChatLauncher";
 import { RenovationProvider } from "@/components/dashboard/RenovationProvider";
 import nl from "@/i18n/locales/nl.json";
 import { createSupabaseServerClient } from "@/lib/supabase/server-user";
@@ -25,7 +26,10 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell>
-      <RenovationProvider>{children}</RenovationProvider>
+      <RenovationProvider>
+        {children}
+        <GlobalChatLauncher />
+      </RenovationProvider>
     </DashboardShell>
   );
 }

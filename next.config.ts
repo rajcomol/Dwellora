@@ -8,6 +8,12 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const tailwindPkg = path.join(appRoot, "node_modules", "tailwindcss");
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: "/dashboard/assistant", destination: "/dashboard", permanent: false },
+      { source: "/dashboard/assistant/:path*", destination: "/dashboard", permanent: false },
+    ];
+  },
   async headers() {
     /** HSTS alleen op Vercel Production: voorkomt dat browsers op http:// blijven (localhost/previews niet forceren). */
     const base: { key: string; value: string }[] = [

@@ -12,7 +12,6 @@ export const DASHBOARD_NAV_DEFS = [
   { href: "/dashboard", labelKey: "nav.dashboard", match: (p: string) => p === "/dashboard" || p === "/dashboard/" },
   { href: "/dashboard/projects", labelKey: "nav.projects", match: matchProjectsNav },
   { href: "/dashboard/planning", labelKey: "nav.planning", match: matchPlanningNav },
-  { href: "/dashboard/assistant", labelKey: "nav.assistant", match: (p: string) => p.startsWith("/dashboard/assistant") },
   { href: "/dashboard/documents", labelKey: "nav.documents", match: (p: string) => p.startsWith("/dashboard/documents") },
   { href: "/dashboard/settings", labelKey: "nav.settings", match: (p: string) => p.startsWith("/dashboard/settings") },
   { href: "/dashboard/reports", labelKey: "nav.reports", match: (p: string) => p.startsWith("/dashboard/reports") },

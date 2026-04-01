@@ -34,6 +34,8 @@ export default function BrandLogoPill({ size = "default", className }: Props) {
               ? "h-6 w-6 shrink-0 sm:h-6 sm:w-6"
               : "h-9 w-9 shrink-0 sm:h-10 sm:w-10"
           }
+          width={compact ? 24 : 36}
+          height={compact ? 24 : 36}
           viewBox="18 4 16 15"
           fill="currentColor"
           aria-hidden

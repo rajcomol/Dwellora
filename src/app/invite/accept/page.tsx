@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import LoginScreenChrome from "@/components/auth/LoginScreenChrome";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
@@ -28,8 +28,7 @@ function InviteAcceptInner() {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [tokenReady, setTokenReady] = useState(false);
-  const [resolvedToken, setResolvedToken] = useState<string | null>(null);
+  const resolvedToken = useMemo(() => readInviteTokenFromBrowser(searchParams), [searchParams]);
   const [status, setStatus] = useState<"idle" | "redirect_login" | "working" | "ok" | "err">("idle");
   const [projectId, setProjectId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,20 +36,7 @@ function InviteAcceptInner() {
   const ranForToken = useRef<string | null>(null);
 
   useEffect(() => {
-    const tkn = readInviteTokenFromBrowser(searchParams);
-    setResolvedToken(tkn);
-    setTokenReady(true);
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!tokenReady) return;
-
-    if (!resolvedToken) {
-      setStatus("err");
-      setMessage(t("inviteAccept.missingToken"));
-      setErrHint("needLogin");
-      return;
-    }
+    if (!resolvedToken) return;
 
     const tkn = resolvedToken;
     if (ranForToken.current === tkn) return;
@@ -92,14 +78,21 @@ function InviteAcceptInner() {
     }
 
     void run();
-  }, [tokenReady, resolvedToken, router, t]);
+  }, [resolvedToken, router, t]);
 
-  if (!tokenReady || status === "idle" || status === "redirect_login" || status === "working") {
+  if (!resolvedToken) {
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-sm text-red-200">{t("inviteAccept.missingToken")}</p>
+        <p className="text-xs text-zinc-400">{t("inviteAccept.needLogin")}</p>
+      </div>
+    );
+  }
+
+  if (status === "idle" || status === "redirect_login" || status === "working") {
     return (
       <p className="text-center text-sm text-zinc-200">
-        {!tokenReady || status === "idle" || status === "redirect_login"
-          ? t("common.loading")
-          : t("inviteAccept.accepting")}
+        {status === "idle" || status === "redirect_login" ? t("common.loading") : t("inviteAccept.accepting")}
       </p>
     );
   }
