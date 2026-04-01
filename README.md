@@ -38,9 +38,27 @@ Productie-deploy loopt via de **Vercel Git-integratie** met deze GitHub-repo: co
 **Productiedomein (renotasker.com)**
 
 - Vercel: koppel **renotasker.com** en **www.renotasker.com**; kies één canonieke host (apex of `www`) en zet in Vercel een redirect naar de andere. Vercel levert **HTTPS** automatisch; gebruik in productie geen `http://` in env-vars.
-- Omgevingsvariabele: `NEXT_PUBLIC_SITE_URL` op je canonieke URL, bijv. `https://www.renotasker.com` als dat je primaire adres is (moet overeenkomen met waar gebruikers landen).
+
+**`NEXT_PUBLIC_SITE_URL` staat niet automatisch in Vercel** — die variabele moet je zelf eenmalig toevoegen (hij staat niet in een standaardlijst):
+
+1. [Vercel Dashboard](https://vercel.com) → jouw **project** → **Settings** → **Environment Variables**.
+2. **Add New** (of **Add**):
+   - **Key:** `NEXT_PUBLIC_SITE_URL`
+   - **Value:** `https://www.renotasker.com` (of je echte canonieke URL, zonder slash aan het eind)
+   - **Environment:** vink **Production** aan (en eventueel Preview als je daar dezelfde URL wilt).
+3. **Save**, daarna **Deployments** → open de laatste deployment → **⋯** → **Redeploy** (omdat `NEXT_PUBLIC_*` bij de **build** wordt ingevoegd).
+
+Zonder deze variabele vallen de app terug op `VERCEL_URL` voor metadata; uitnodigingslinks en canonieke Open Graph-URL’s zijn dan betrouwbaarder met een expliciete waarde die overeenkomt met je domein (www vs apex).
 - Supabase Auth: **Site URL** en **Redirect URLs** moeten dezelfde HTTPS-host(s) bevatten (bijv. `https://www.renotasker.com/**` en `https://renotasker.com/**` als beide actief zijn), plus preview-URLs voor staging.
 - Resend (of vergelijkbaar): verifieer het domein **renotasker.com** voor uitgaande mail; gebruik een afzender zoals `uitnodigingen@renotasker.com` in `INVITE_EMAIL_FROM`.
+- Op **Vercel Production** stuurt deze app een **HSTS**-header (`Strict-Transport-Security`), zodat browsers na een eerste bezoek over HTTPS voorkeur geven aan HTTPS voor dit domein.
+
+### "Niet beveiligd" in Chrome (Nederlands)
+
+1. **Adresbalk:** Controleer of de URL begint met **`https://`**. Begin je met **`http://`**, dan toont Chrome "Niet beveiligd" — ook als er elders een geldig certificaat is. Gebruik bookmarks en gedeelde links altijd met **`https://`**.
+2. **Vercel → Settings → Domains:** Zorg dat `renotasker.com` en `www.renotasker.com` zijn toegevoegd en de status **Valid** is (DNS A/CNAME volgens Vercel). Wacht tot SSL is uitgegeven.
+3. **Canonieke host:** Stel in Vercel een redirect in van secundair domein naar primair (bijv. apex → `www`). Zet **`NEXT_PUBLIC_SITE_URL`** in Vercel Production exact op die HTTPS-URL (zie `.env.example`).
+4. **Nog steeds een waarschuwing op `https://`?** Open DevTools (F12) → **Console** / **Security** en zoek naar **mixed content** (resources via `http://`). Lokaal blijft `http://localhost` normaal en ongewijzigd.
 
 ## AI (OpenAI)
 
