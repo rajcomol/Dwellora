@@ -11,7 +11,7 @@ import { loginCredentialsZodMessage } from "@/lib/validation/loginZodMessage";
 import { loginCredentialsSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
 
-const REMEMBER_EMAIL_KEY = "dwellora_login_email";
+const REMEMBER_EMAIL_KEY = "renotasker_login_email";
 
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";

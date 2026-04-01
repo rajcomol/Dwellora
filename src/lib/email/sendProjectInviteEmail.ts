@@ -26,12 +26,12 @@ export async function sendProjectInviteEmail(
   const projectLinePlain =
     params.projectName && params.projectName.trim() !== ""
       ? `Project: ${params.projectName.trim()}`
-      : "Je bent uitgenodigd om mee te werken aan een renovatieproject in Dwellora.";
+      : "Je bent uitgenodigd om mee te werken aan een renovatieproject in RenoTasker.";
 
   const projectLineHtml =
     params.projectName && params.projectName.trim() !== ""
       ? `Project: ${escapeHtml(params.projectName.trim())}`
-      : "Je bent uitgenodigd om mee te werken aan een renovatieproject in Dwellora.";
+      : "Je bent uitgenodigd om mee te werken aan een renovatieproject in RenoTasker.";
 
   const text = [
     "Hallo,",
@@ -46,7 +46,7 @@ export async function sendProjectInviteEmail(
     "Als de knop niet werkt, kopieer de link en plak die in je browser.",
     "",
     "Groet,",
-    "Het Dwellora-team",
+    "Het RenoTasker-team",
   ].join("\n");
 
   const html = `
@@ -72,7 +72,7 @@ export async function sendProjectInviteEmail(
       body: JSON.stringify({
         from,
         to: [params.to],
-        subject: "Uitnodiging voor Dwellora — renovatieproject",
+        subject: "Uitnodiging voor RenoTasker — renovatieproject",
         text,
         html,
       }),

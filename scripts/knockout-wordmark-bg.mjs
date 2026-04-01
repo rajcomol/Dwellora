@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const inputPath = path.join(root, "public", "brand", "dwellora-logo-wordmark-v3.png");
+const inputPath = path.join(root, "public", "brand", "renotasker-logo-wordmark-v1.png");
 
 function knockOutCreamWhite(r, g, b) {
   const max = Math.max(r, g, b);

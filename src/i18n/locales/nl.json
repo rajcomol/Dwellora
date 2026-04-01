@@ -1,19 +1,19 @@
 {
   "brand": {
-    "name": "Dwellora"
+    "name": "RenoTasker"
   },
   "meta": {
-    "appTitle": "Dwellora",
-    "appDescription": "Dwellora: dashboard voor verbouwingsplanning, budgetten en documenten.",
-    "dashboardTitle": "Dashboard | Dwellora",
-    "dashboardDescription": "Overzicht en planning voor je verbouwing in Dwellora.",
-    "loginTitle": "Inloggen | Dwellora",
-    "loginDescription": "Log in of maak een account voor Dwellora.",
-    "forgotPasswordTitle": "Wachtwoord resetten | Dwellora",
-    "forgotPasswordDescription": "Vraag een wachtwoordresetlink voor je Dwellora-account.",
-    "signUpTitle": "Account aanmaken | Dwellora",
-    "signUpDescription": "Maak een account voor Dwellora met je e-mailadres en een wachtwoord.",
-    "inviteAcceptTitle": "Uitnodiging | Dwellora",
+    "appTitle": "RenoTasker",
+    "appDescription": "RenoTasker: dashboard voor verbouwingsplanning, budgetten en documenten.",
+    "dashboardTitle": "Dashboard | RenoTasker",
+    "dashboardDescription": "Overzicht en planning voor je verbouwing in RenoTasker.",
+    "loginTitle": "Inloggen | RenoTasker",
+    "loginDescription": "Log in of maak een account voor RenoTasker.",
+    "forgotPasswordTitle": "Wachtwoord resetten | RenoTasker",
+    "forgotPasswordDescription": "Vraag een wachtwoordresetlink voor je RenoTasker-account.",
+    "signUpTitle": "Account aanmaken | RenoTasker",
+    "signUpDescription": "Maak een account voor RenoTasker met je e-mailadres en een wachtwoord.",
+    "inviteAcceptTitle": "Uitnodiging | RenoTasker",
     "inviteAcceptDescription": "Accepteer een uitnodiging om samen aan een renovatieproject te werken."
   },
   "nav": {
@@ -53,7 +53,7 @@
   },
   "login": {
     "welcomeTitle": "Welkom terug",
-    "welcomeSubtitle": "Log in om in Dwellora projecten, taken en budgetten op één plek te beheren.",
+    "welcomeSubtitle": "Log in om in RenoTasker projecten, taken en budgetten op één plek te beheren.",
     "tagline": "Waar je project wél volgens planning loopt.",
     "cardHeading": "Klantlogin",
     "accountHeading": "Account",
@@ -109,7 +109,7 @@
     "errorOwnerSelf": "Je kunt je eigen project niet als medewerker accepteren."
   },
   "dashboard": {
-    "heroEyebrow": "Dwellora",
+    "heroEyebrow": "RenoTasker",
     "heroTitle": "Jouw renovatie-overzicht",
     "heroSubtitle": "Live cijfers uit je projecten en taken: budget, voortgang en wat je hierna kunt doen.",
     "nextUp": "Volgende stap",
@@ -463,16 +463,16 @@
   },
   "notFound": {
     "title": "Pagina niet gevonden",
-    "description": "Deze pagina bestaat niet (meer). Ga terug naar je Dwellora-dashboard.",
+    "description": "Deze pagina bestaat niet (meer). Ga terug naar je RenoTasker-dashboard.",
     "dashboard": "Naar dashboard"
   },
   "privacy": {
     "title": "Privacy",
-    "lead": "Dwellora verwerkt alleen gegevens die je zelf invoert of uploadt, en wat nodig is om je account te laten werken (bijv. e-mail via de aanbieder van inlog).",
+    "lead": "RenoTasker verwerkt alleen gegevens die je zelf invoert of uploadt, en wat nodig is om je account te laten werken (bijv. e-mail via de aanbieder van inlog).",
     "hosting": "Als je de app online zet (bijv. via Vercel) en een database gebruikt (bijv. Supabase), gelden ook hun verwerking en beveiliging. Zet geen wachtwoorden of API-sleutels in de app zelf; gebruik omgevingsvariabelen op de server.",
     "documents": "PDF’s en bijlagen staan in een privé-storagebucket: alleen jij en een geaccepteerde medewerker op hetzelfde project kunnen ze via de app benaderen (row level security). Zet de Storage-bucket in Supabase niet op ‘public’. Verwijder gevoelige bestanden als je ze niet meer nodig hebt.",
     "ai": "Als je de AI-assistent gebruikt met een externe dienst, worden berichten naar die dienst gestuurd volgens de instellingen van je project. Gebruik geen gegevens die je niet wilt delen.",
-    "contact": "Voor vragen over verwerking: neem contact op met de beheerder van jouw Dwellora-omgeving.",
+    "contact": "Voor vragen over verwerking: neem contact op met de beheerder van jouw RenoTasker-omgeving.",
     "back": "Terug naar dashboard"
   }
 }

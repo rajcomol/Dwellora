@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isLocale, LOCALE_COOKIE_NAME } from "@/i18n/config";
 
 /**
- * Stelt `dwellora-locale` voor toekomstige meertaligheid. Alleen geregistreerde locales zijn geldig.
+ * Stelt `renotasker-locale` voor toekomstige meertaligheid. Alleen geregistreerde locales zijn geldig.
  * Na een wijziging: `router.refresh()` in de client om de server layout opnieuw te laden.
  */
 export async function POST(request: Request) {

@@ -1,6 +1,6 @@
-# Dwellora
+# RenoTasker
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+[RenoTasker](https://renotasker.com) is a [Next.js](https://nextjs.org) app for renovation planning, budgets, and documents (bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)).
 
 ## Getting Started
 
@@ -34,6 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Deployment
 
 Productie-deploy loopt via de **Vercel Git-integratie** met deze GitHub-repo: commits op de gekoppelde branch (meestal `main`) triggeren build en deploy op Vercel. Er staat (voorlopig) geen aparte GitHub Action in dit project. Zie [Next.js deployment](https://nextjs.org/docs/app/building-your-application/deploying) voor algemene opties.
+
+**Productiedomein (renotasker.com)**
+
+- Vercel: koppel **renotasker.com** en **www.renotasker.com**; kies één canonieke host (apex of `www`) en zet in Vercel een redirect naar de andere. Vercel levert **HTTPS** automatisch; gebruik in productie geen `http://` in env-vars.
+- Omgevingsvariabele: `NEXT_PUBLIC_SITE_URL` op je canonieke URL, bijv. `https://www.renotasker.com` als dat je primaire adres is (moet overeenkomen met waar gebruikers landen).
+- Supabase Auth: **Site URL** en **Redirect URLs** moeten dezelfde HTTPS-host(s) bevatten (bijv. `https://www.renotasker.com/**` en `https://renotasker.com/**` als beide actief zijn), plus preview-URLs voor staging.
+- Resend (of vergelijkbaar): verifieer het domein **renotasker.com** voor uitgaande mail; gebruik een afzender zoals `uitnodigingen@renotasker.com` in `INVITE_EMAIL_FROM`.
 
 ## AI (OpenAI)
 

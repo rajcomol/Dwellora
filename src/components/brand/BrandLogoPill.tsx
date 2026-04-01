@@ -24,8 +24,8 @@ export default function BrandLogoPill({ size = "default", className }: Props) {
       <div
         className={
           compact
-            ? "flex max-w-[min(92vw,220px)] items-center gap-1.5 whitespace-nowrap text-white sm:gap-2"
-            : "flex max-w-[min(92vw,280px)] items-center gap-2.5 whitespace-nowrap text-white sm:gap-3"
+            ? "flex max-w-[min(94vw,260px)] items-center gap-1.5 whitespace-nowrap text-white sm:gap-2"
+            : "flex max-w-[min(94vw,320px)] items-center gap-2.5 whitespace-nowrap text-white sm:gap-3"
         }
       >
         <svg
@@ -44,8 +44,8 @@ export default function BrandLogoPill({ size = "default", className }: Props) {
         <span
           className={
             compact
-              ? "text-sm font-bold leading-none tracking-tight sm:text-[0.9375rem]"
-              : "text-[1.625rem] font-bold leading-none tracking-tight sm:text-[1.7rem]"
+              ? "text-[0.8125rem] font-bold leading-none tracking-tight sm:text-[0.9375rem]"
+              : "text-[1.5rem] font-bold leading-none tracking-tight sm:text-[1.625rem]"
           }
         >
           {name}

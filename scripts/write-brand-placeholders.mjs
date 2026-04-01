@@ -69,6 +69,6 @@ function createSolidPng(w, h, r, g, b) {
 const brandDir = path.join(root, "public", "brand");
 fs.mkdirSync(brandDir, { recursive: true });
 // Cream #F5F3ED — replace with wordmark/icon exports when available
-fs.writeFileSync(path.join(brandDir, "dwellora-logo-wordmark-v3.png"), createSolidPng(280, 72, 245, 243, 237));
-fs.writeFileSync(path.join(brandDir, "dwellora-icon-d-house.png"), createSolidPng(96, 96, 245, 243, 237));
+fs.writeFileSync(path.join(brandDir, "renotasker-logo-wordmark-v1.png"), createSolidPng(280, 72, 245, 243, 237));
+fs.writeFileSync(path.join(brandDir, "renotasker-icon.png"), createSolidPng(96, 96, 245, 243, 237));
 console.log("Wrote public/brand/*.png (placeholder cream tiles — swap for brand assets).");
