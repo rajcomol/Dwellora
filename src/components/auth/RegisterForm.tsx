@@ -93,7 +93,7 @@ export default function RegisterForm() {
 
       <form className="mt-8 space-y-6" onSubmit={(e) => void handleSubmit(e)} noValidate>
         <div>
-          <label htmlFor="register-email" className="sr-only">
+          <label htmlFor="register-email" className="mb-2 block text-xs font-medium text-zinc-400">
             {t("login.email")}
           </label>
           <div className={underlineWrap}>
@@ -110,7 +110,7 @@ export default function RegisterForm() {
           </div>
         </div>
         <div>
-          <label htmlFor="register-password" className="sr-only">
+          <label htmlFor="register-password" className="mb-2 block text-xs font-medium text-zinc-400">
             {t("login.password")}
           </label>
           <div className={underlineWrap}>
@@ -119,7 +119,6 @@ export default function RegisterForm() {
               id="register-password"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
@@ -127,7 +126,7 @@ export default function RegisterForm() {
           </div>
         </div>
         <div>
-          <label htmlFor="register-confirm-password" className="sr-only">
+          <label htmlFor="register-confirm-password" className="mb-2 block text-xs font-medium text-zinc-400">
             {t("login.confirmPassword")}
           </label>
           <div className={underlineWrap}>
@@ -136,7 +135,6 @@ export default function RegisterForm() {
               id="register-confirm-password"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className={inputClass}

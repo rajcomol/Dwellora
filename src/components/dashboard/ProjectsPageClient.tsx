@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { ProjectsPageSkeleton } from "@/components/ui/Skeleton";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
@@ -12,7 +13,7 @@ import { projectCreateFormSchema } from "@/lib/validation/schemas";
 
 export default function ProjectsPageClient() {
   const { t } = useI18n();
-  const { projects, createProject } = useRenovation();
+  const { projects, createProject, isRenovationDataReady } = useRenovation();
   const [name, setName] = useState("");
   const [totalBudget, setTotalBudget] = useState("");
   const [address, setAddress] = useState("");
@@ -24,6 +25,12 @@ export default function ProjectsPageClient() {
     () => [...projects].sort((a, b) => a.name.localeCompare(b.name)),
     [projects]
   );
+
+  if (!isRenovationDataReady) {
+    return <ProjectsPageSkeleton />;
+  }
+
+  const fieldLabelClass = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
 
   return (
     <div className="space-y-6">
@@ -82,42 +89,69 @@ export default function ProjectsPageClient() {
             setError(null);
           }}
         >
-          <div className="flex-1 space-y-2">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t("projects.placeholderName")}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <input
-              value={totalBudget}
-              onChange={(e) => setTotalBudget(e.target.value)}
-              placeholder={t("projects.placeholderBudget")}
-              inputMode="decimal"
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder={t("projects.placeholderAddress")}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">{t("projects.labelKeyHandover")}</label>
+          <div className="flex-1 space-y-3">
+            <div>
+              <label htmlFor="project-create-name" className={fieldLabelClass}>
+                {t("projects.labelName")}
+              </label>
               <input
+                id="project-create-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t("projects.placeholderName")}
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor="project-create-budget" className={fieldLabelClass}>
+                {t("projects.labelBudget")}
+              </label>
+              <input
+                id="project-create-budget"
+                value={totalBudget}
+                onChange={(e) => setTotalBudget(e.target.value)}
+                placeholder={t("projects.placeholderBudget")}
+                inputMode="decimal"
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor="project-create-address" className={fieldLabelClass}>
+                {t("projects.labelAddress")}
+              </label>
+              <input
+                id="project-create-address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={t("projects.placeholderAddress")}
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor="project-create-key" className={fieldLabelClass}>
+                {t("projects.labelKeyHandover")}
+              </label>
+              <input
+                id="project-create-key"
                 type="date"
                 value={expectedKeyHandover}
                 onChange={(e) => setExpectedKeyHandover(e.target.value)}
                 className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
               />
             </div>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t("projects.placeholderNotes")}
-              rows={2}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-            />
+            <div>
+              <label htmlFor="project-create-notes" className={fieldLabelClass}>
+                {t("projects.labelNotes")}
+              </label>
+              <textarea
+                id="project-create-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t("projects.placeholderNotes")}
+                rows={2}
+                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
             {error ? (
               <div className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</div>
             ) : null}

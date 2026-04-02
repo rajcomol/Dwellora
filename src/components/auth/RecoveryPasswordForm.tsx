@@ -52,7 +52,7 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
 
       <div className="space-y-6">
         <div>
-          <label htmlFor="recovery-password" className="sr-only">
+          <label htmlFor="recovery-password" className="mb-2 block text-xs font-medium text-zinc-400">
             {t("login.password")}
           </label>
           <div className={underlineWrap}>
@@ -61,7 +61,6 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
               id="recovery-password"
               type="password"
               autoComplete="new-password"
-              placeholder={t("login.password")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
@@ -69,7 +68,7 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
           </div>
         </div>
         <div>
-          <label htmlFor="recovery-confirm" className="sr-only">
+          <label htmlFor="recovery-confirm" className="mb-2 block text-xs font-medium text-zinc-400">
             {t("login.confirmPassword")}
           </label>
           <div className={underlineWrap}>
@@ -78,7 +77,6 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
               id="recovery-confirm"
               type="password"
               autoComplete="new-password"
-              placeholder={t("login.confirmPassword")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className={inputClass}

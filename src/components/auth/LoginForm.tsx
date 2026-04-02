@@ -152,7 +152,7 @@ export default function LoginForm() {
       ) : (
         <div className="space-y-6">
           <div>
-            <label htmlFor="login-email" className="sr-only">
+            <label htmlFor="login-email" className="mb-2 block text-xs font-medium text-zinc-400">
               {t("login.email")}
             </label>
             <div className={underlineWrap}>
@@ -169,7 +169,7 @@ export default function LoginForm() {
             </div>
           </div>
           <div>
-            <label htmlFor="login-password" className="sr-only">
+            <label htmlFor="login-password" className="mb-2 block text-xs font-medium text-zinc-400">
               {t("login.password")}
             </label>
             <div className={underlineWrap}>
@@ -178,7 +178,6 @@ export default function LoginForm() {
                 id="login-password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={inputClass}

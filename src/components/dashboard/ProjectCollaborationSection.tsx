@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders } from "@/lib/supabase/client";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
+import { CollaborationSectionSkeleton } from "@/components/ui/Skeleton";
 import type { ID } from "@/lib/renovation/types";
 
 type CollaborationState = {
@@ -22,20 +23,26 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [collabLoading, setCollabLoading] = useState(true);
 
   const load = useCallback(async () => {
     setError(null);
-    const headers = await getBearerAuthHeaders();
-    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/collaboration`, { headers });
-    if (!res.ok) {
-      setState(null);
-      return;
+    try {
+      const headers = await getBearerAuthHeaders();
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/collaboration`, { headers });
+      if (!res.ok) {
+        setState(null);
+        return;
+      }
+      const data = (await res.json()) as CollaborationState;
+      setState(data);
+    } finally {
+      setCollabLoading(false);
     }
-    const data = (await res.json()) as CollaborationState;
-    setState(data);
   }, [projectId]);
 
   useEffect(() => {
+    setCollabLoading(true);
     void load();
   }, [load]);
 
@@ -108,6 +115,10 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
     }
   }
 
+  if (collabLoading) {
+    return <CollaborationSectionSkeleton />;
+  }
+
   if (!state) {
     return null;
   }
@@ -148,7 +159,10 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
       {state.isOwner && !state.collaboratorUserId && !state.pendingInvite ? (
         <form className="mt-4 space-y-3" onSubmit={(e) => void sendInvite(e)}>
           <div>
-            <label htmlFor="collab-email" className="sr-only">
+            <label
+              htmlFor="collab-email"
+              className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+            >
               {t("projectDetail.collaborationInviteEmail")}
             </label>
             <input
@@ -157,7 +171,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("projectDetail.collaborationInviteEmail")}
+              placeholder={t("login.placeholderEmail")}
               className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             />
           </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { PlanningHubSkeleton } from "@/components/ui/Skeleton";
 import { RENOVATION_PHASE_ORDER } from "@/lib/renovation/phases";
 import { roomMapById, sortTasksForPlanning } from "@/lib/renovation/planningSort";
 import type { RenovationPhase, Task } from "@/lib/renovation/types";
@@ -11,7 +12,7 @@ import { formatDisplayDate } from "@/lib/format/dateDisplay";
 
 export default function PlanningHubPageClient() {
   const { t } = useI18n();
-  const { projects, rooms, tasks, teamRoster } = useRenovation();
+  const { projects, rooms, tasks, teamRoster, isRenovationDataReady } = useRenovation();
 
   const sortedProjects = useMemo(() => [...projects].sort((a, b) => a.name.localeCompare(b.name)), [projects]);
 
@@ -30,6 +31,10 @@ export default function PlanningHubPageClient() {
     }
     return map;
   }, [tasks]);
+
+  if (!isRenovationDataReady) {
+    return <PlanningHubSkeleton />;
+  }
 
   return (
     <div className="space-y-8">

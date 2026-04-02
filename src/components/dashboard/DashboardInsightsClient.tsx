@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
 import { computeMetrics, generateInsights } from "@/lib/dashboard/insights";
 import { getUpcomingTasks } from "@/lib/dashboard/upcomingTasks";
@@ -37,7 +38,7 @@ function MetricCard({
 
 export default function DashboardInsightsClient() {
   const { t } = useI18n();
-  const { projects, rooms, tasks, projectExpenses } = useRenovation();
+  const { projects, rooms, tasks, projectExpenses, isRenovationDataReady } = useRenovation();
 
   const metrics = useMemo(
     () => computeMetrics(projects, tasks, projectExpenses),
@@ -49,9 +50,11 @@ export default function DashboardInsightsClient() {
   );
   const upcoming = useMemo(() => getUpcomingTasks(projects, rooms, tasks, 10), [projects, rooms, tasks]);
 
-  const loading = projects.length === 0 && tasks.length === 0;
-
   const nextUp = upcoming[0];
+
+  if (!isRenovationDataReady) {
+    return <DashboardPageSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -163,9 +166,7 @@ export default function DashboardInsightsClient() {
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("dashboard.insightsTitle")}</h2>
         <p className="mt-1 text-xs text-renovation-concrete">{t("dashboard.insightsHint")}</p>
-        {loading ? (
-          <p className="mt-3 text-sm text-renovation-concrete">{t("dashboard.insightsEmptyLoading")}</p>
-        ) : insights.length === 0 ? (
+        {insights.length === 0 ? (
           <p className="mt-3 text-sm text-renovation-concrete">{t("dashboard.insightsEmpty")}</p>
         ) : (
           <ul className="mt-4 space-y-2">

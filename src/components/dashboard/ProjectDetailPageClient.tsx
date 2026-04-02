@@ -33,8 +33,11 @@ import {
   taskFormFieldsSchema,
 } from "@/lib/validation/schemas";
 import ProjectCollaborationSection from "@/components/dashboard/ProjectCollaborationSection";
+import { ProjectDetailPageSkeleton } from "@/components/ui/Skeleton";
 import { supabase } from "@/lib/supabase/client";
 import type { ZodError } from "zod";
+
+const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
 
 function taskFormZodMessage(t: TranslateFn, err: ZodError): string {
   const path = err.issues[0]?.path[0];
@@ -214,62 +217,103 @@ function TaskEditor({
 
       {open ? (
         <div className="mt-3 space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            >
-              <option value="todo">{t("task.status.todo")}</option>
-              <option value="doing">{t("task.status.doing")}</option>
-              <option value="done">{t("task.status.done")}</option>
-            </select>
-            <input
-              value={estimatedCost}
-              onChange={(e) => setEstimatedCost(e.target.value)}
-              placeholder={t("projectDetail.estimatedCost")}
-              inputMode="decimal"
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <input
-              value={actualCost}
-              onChange={(e) => setActualCost(e.target.value)}
-              placeholder={t("projectDetail.actualCost")}
-              inputMode="decimal"
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <input
-              value={durationDays}
-              onChange={(e) => setDurationDays(e.target.value)}
-              placeholder={t("projectDetail.durationDays")}
-              inputMode="numeric"
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as TaskPriority)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            >
-              <option value="low">{t("task.priority.low")}</option>
-              <option value="medium">{t("task.priority.medium")}</option>
-              <option value="high">{t("task.priority.high")}</option>
-            </select>
-            <label className="contents sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                {t("projectDetail.taskPhaseLabel")}
-              </span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor={`task-edit-${task.id}-title`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.labelTaskTitle")}
+              </label>
+              <input
+                id={`task-edit-${task.id}-title`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("projectDetail.taskTitlePlaceholder")}
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor={`task-edit-${task.id}-status`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.labelTaskStatus")}
+              </label>
               <select
+                id={`task-edit-${task.id}-status`}
+                value={status}
+                onChange={(e) => setStatus(e.target.value as TaskStatus)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <option value="todo">{t("task.status.todo")}</option>
+                <option value="doing">{t("task.status.doing")}</option>
+                <option value="done">{t("task.status.done")}</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor={`task-edit-${task.id}-est`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.estimatedCost")}
+              </label>
+              <input
+                id={`task-edit-${task.id}-est`}
+                value={estimatedCost}
+                onChange={(e) => setEstimatedCost(e.target.value)}
+                inputMode="decimal"
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor={`task-edit-${task.id}-act`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.actualCost")}
+              </label>
+              <input
+                id={`task-edit-${task.id}-act`}
+                value={actualCost}
+                onChange={(e) => setActualCost(e.target.value)}
+                inputMode="decimal"
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor={`task-edit-${task.id}-dur`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.durationDays")}
+              </label>
+              <input
+                id={`task-edit-${task.id}-dur`}
+                value={durationDays}
+                onChange={(e) => setDurationDays(e.target.value)}
+                inputMode="numeric"
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor={`task-edit-${task.id}-start`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.labelStartDate")}
+              </label>
+              <input
+                id={`task-edit-${task.id}-start`}
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              />
+            </div>
+            <div>
+              <label htmlFor={`task-edit-${task.id}-pri`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.labelPriority")}
+              </label>
+              <select
+                id={`task-edit-${task.id}-pri`}
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <option value="low">{t("task.priority.low")}</option>
+                <option value="medium">{t("task.priority.medium")}</option>
+                <option value="high">{t("task.priority.high")}</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor={`task-edit-${task.id}-phase`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.taskPhaseLabel")}
+              </label>
+              <select
+                id={`task-edit-${task.id}-phase`}
                 value={renovationPhase}
                 onChange={(e) => setRenovationPhase(e.target.value as RenovationPhase)}
                 className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
@@ -280,27 +324,39 @@ function TaskEditor({
                   </option>
                 ))}
               </select>
-            </label>
-            <select
-              value={assignedRosterId}
-              onChange={(e) => setAssignedRosterId(e.target.value)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:col-span-2"
-            >
-              <option value="">{t("projectDetail.assigneeNone")}</option>
-              {rosterOptions.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.displayName}
-                </option>
-              ))}
-            </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor={`task-edit-${task.id}-assign`} className={FORM_FIELD_LABEL_CLASS}>
+                {t("projectDetail.labelAssignee")}
+              </label>
+              <select
+                id={`task-edit-${task.id}-assign`}
+                value={assignedRosterId}
+                onChange={(e) => setAssignedRosterId(e.target.value)}
+                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <option value="">{t("projectDetail.assigneeNone")}</option>
+                {rosterOptions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("projectDetail.description")}
-            rows={2}
-            className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
+          <div>
+            <label htmlFor={`task-edit-${task.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.description")}
+            </label>
+            <textarea
+              id={`task-edit-${task.id}-desc`}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("projectDetail.descriptionOptional")}
+              rows={2}
+              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -507,41 +563,65 @@ function ProjectEditSection({
           });
         }}
       >
-        <input
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          placeholder={t("projectDetail.placeholderProjectName")}
-          className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
-        <input
-          value={editBudget}
-          onChange={(e) => setEditBudget(e.target.value)}
-          placeholder={t("projectDetail.placeholderTotalBudget")}
-          inputMode="decimal"
-          className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
-        <input
-          value={editAddress}
-          onChange={(e) => setEditAddress(e.target.value)}
-          placeholder={t("projectDetail.placeholderAddress")}
-          className="sm:col-span-2 rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
         <div>
-          <label className="text-xs text-zinc-500">{t("projectDetail.labelExpectedKey")}</label>
+          <label htmlFor={`project-edit-${project.id}-name`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.labelProjectName")}
+          </label>
           <input
-            type="date"
-            value={editKeyDate}
-            onChange={(e) => setEditKeyDate(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            id={`project-edit-${project.id}-name`}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder={t("projectDetail.placeholderProjectName")}
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div>
+          <label htmlFor={`project-edit-${project.id}-budget`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.labelTotalBudget")}
+          </label>
+          <input
+            id={`project-edit-${project.id}-budget`}
+            value={editBudget}
+            onChange={(e) => setEditBudget(e.target.value)}
+            placeholder={t("projectDetail.placeholderTotalBudget")}
+            inputMode="decimal"
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="text-xs text-zinc-500">{t("projectDetail.labelNotes")}</label>
+          <label htmlFor={`project-edit-${project.id}-address`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.labelProjectAddress")}
+          </label>
+          <input
+            id={`project-edit-${project.id}-address`}
+            value={editAddress}
+            onChange={(e) => setEditAddress(e.target.value)}
+            placeholder={t("projectDetail.placeholderAddress")}
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div>
+          <label htmlFor={`project-edit-${project.id}-key`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.labelExpectedKey")}
+          </label>
+          <input
+            id={`project-edit-${project.id}-key`}
+            type="date"
+            value={editKeyDate}
+            onChange={(e) => setEditKeyDate(e.target.value)}
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor={`project-edit-${project.id}-notes`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.labelNotes")}
+          </label>
           <textarea
+            id={`project-edit-${project.id}-notes`}
             value={editNotes}
             onChange={(e) => setEditNotes(e.target.value)}
             rows={3}
-            className="mt-1 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
         </div>
         <Button type="submit" className="sm:col-span-2 w-fit">
@@ -583,33 +663,55 @@ function ExpenseLine({
   if (editing) {
     return (
       <li className="space-y-2 rounded-md border border-zinc-100 p-3 dark:border-zinc-800">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t("projectDetail.expenseTitlePlaceholder")}
-            className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:col-span-2"
-          />
-          <input
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder={t("projectDetail.expenseAmount")}
-            inputMode="decimal"
-            className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-          <input
-            type="date"
-            value={spentOn}
-            onChange={(e) => setSpentOn(e.target.value)}
-            className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t("projectDetail.expenseNotes")}
-            rows={2}
-            className="sm:col-span-2 w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label htmlFor={`expense-edit-${expense.id}-title`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelExpenseTitle")}
+            </label>
+            <input
+              id={`expense-edit-${expense.id}-title`}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("projectDetail.expenseTitlePlaceholder")}
+              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`expense-edit-${expense.id}-amount`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.expenseAmount")}
+            </label>
+            <input
+              id={`expense-edit-${expense.id}-amount`}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              inputMode="decimal"
+              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`expense-edit-${expense.id}-date`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.expenseDate")}
+            </label>
+            <input
+              id={`expense-edit-${expense.id}-date`}
+              type="date"
+              value={spentOn}
+              onChange={(e) => setSpentOn(e.target.value)}
+              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor={`expense-edit-${expense.id}-notes`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.expenseNotes")}
+            </label>
+            <textarea
+              id={`expense-edit-${expense.id}-notes`}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -736,7 +838,7 @@ function ProjectLooseExpensesSection({
       <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projectDetail.expensesHint")}</p>
 
       <form
-        className="mt-4 grid gap-2 sm:grid-cols-2"
+        className="mt-4 grid gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
           const parsed = expenseLineFormSchema.safeParse({ title, amount, spentOn, notes });
@@ -759,32 +861,54 @@ function ProjectLooseExpensesSection({
           setError(null);
         }}
       >
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("projectDetail.expenseTitlePlaceholder")}
-          className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:col-span-2"
-        />
-        <input
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder={t("projectDetail.expenseAmount")}
-          inputMode="decimal"
-          className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
-        <input
-          type="date"
-          value={spentOn}
-          onChange={(e) => setSpentOn(e.target.value)}
-          className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder={t("projectDetail.expenseNotes")}
-          rows={2}
-          className="sm:col-span-2 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
+        <div className="sm:col-span-2">
+          <label htmlFor={`expense-new-${projectId}-title`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.labelExpenseTitle")}
+          </label>
+          <input
+            id={`expense-new-${projectId}-title`}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t("projectDetail.expenseTitlePlaceholder")}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div>
+          <label htmlFor={`expense-new-${projectId}-amount`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.expenseAmount")}
+          </label>
+          <input
+            id={`expense-new-${projectId}-amount`}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            inputMode="decimal"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div>
+          <label htmlFor={`expense-new-${projectId}-date`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.expenseDate")}
+          </label>
+          <input
+            id={`expense-new-${projectId}-date`}
+            type="date"
+            value={spentOn}
+            onChange={(e) => setSpentOn(e.target.value)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor={`expense-new-${projectId}-notes`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.expenseNotes")}
+          </label>
+          <textarea
+            id={`expense-new-${projectId}-notes`}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
         <Button type="submit" className="w-fit sm:col-span-2">
           {t("projectDetail.expenseAdd")}
         </Button>
@@ -996,99 +1120,157 @@ function RoomCard({
           setError(null);
         }}
       >
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t("projectDetail.taskTitlePlaceholder")}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-          />
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as TaskStatus)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
-          >
-            <option value="todo">{t("task.status.todo")}</option>
-            <option value="doing">{t("task.status.doing")}</option>
-            <option value="done">{t("task.status.done")}</option>
-          </select>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor={`new-task-${room.id}-title`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelTaskTitle")}
+            </label>
+            <input
+              id={`new-task-${room.id}-title`}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("projectDetail.taskTitlePlaceholder")}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`new-task-${room.id}-status`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelTaskStatus")}
+            </label>
+            <select
+              id={`new-task-${room.id}-status`}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <option value="todo">{t("task.status.todo")}</option>
+              <option value="doing">{t("task.status.doing")}</option>
+              <option value="done">{t("task.status.done")}</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            value={estimatedCost}
-            onChange={(e) => setEstimatedCost(e.target.value)}
-            placeholder={t("projectDetail.estimatedCost")}
-            inputMode="decimal"
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
-          />
-          <input
-            value={actualCost}
-            onChange={(e) => setActualCost(e.target.value)}
-            placeholder={t("projectDetail.actualCost")}
-            inputMode="decimal"
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
-          />
-          <input
-            value={durationDays}
-            onChange={(e) => setDurationDays(e.target.value)}
-            placeholder={t("projectDetail.durationDays")}
-            inputMode="numeric"
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-64"
-          />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-44"
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label htmlFor={`new-task-${room.id}-est`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.estimatedCost")}
+            </label>
+            <input
+              id={`new-task-${room.id}-est`}
+              value={estimatedCost}
+              onChange={(e) => setEstimatedCost(e.target.value)}
+              inputMode="decimal"
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`new-task-${room.id}-act`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.actualCost")}
+            </label>
+            <input
+              id={`new-task-${room.id}-act`}
+              value={actualCost}
+              onChange={(e) => setActualCost(e.target.value)}
+              inputMode="decimal"
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`new-task-${room.id}-dur`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.durationDays")}
+            </label>
+            <input
+              id={`new-task-${room.id}-dur`}
+              value={durationDays}
+              onChange={(e) => setDurationDays(e.target.value)}
+              inputMode="numeric"
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`new-task-${room.id}-start`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelStartDate")}
+            </label>
+            <input
+              id={`new-task-${room.id}-start`}
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor={`new-task-${room.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("projectDetail.description")}
+          </label>
+          <textarea
+            id={`new-task-${room.id}-desc`}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t("projectDetail.descriptionOptional")}
+            rows={2}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
         </div>
 
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder={t("projectDetail.descriptionOptional")}
-          rows={2}
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-        />
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as TaskPriority)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-40"
-          >
-            <option value="low">{t("task.priority.low")}</option>
-            <option value="medium">{t("task.priority.medium")}</option>
-            <option value="high">{t("task.priority.high")}</option>
-          </select>
-          <select
-            value={newTaskPhase}
-            onChange={(e) => setNewTaskPhase(e.target.value as RenovationPhase)}
-            className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-52"
-            aria-label={t("projectDetail.taskPhaseLabel")}
-          >
-            {RENOVATION_PHASE_ORDER.map((ph) => (
-              <option key={ph} value={ph}>
-                {t(`renovationPhase.${ph}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            value={newTaskAssignee}
-            onChange={(e) => setNewTaskAssignee(e.target.value)}
-            className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950 sm:w-56"
-          >
-            <option value="">{t("projectDetail.assigneeNone")}</option>
-            {rosterForProject.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.displayName}
-              </option>
-            ))}
-          </select>
-          <Button type="submit" className="w-full sm:w-auto">
-            {t("projectDetail.addTask")}
-          </Button>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label htmlFor={`new-task-${room.id}-pri`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelPriority")}
+            </label>
+            <select
+              id={`new-task-${room.id}-pri`}
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <option value="low">{t("task.priority.low")}</option>
+              <option value="medium">{t("task.priority.medium")}</option>
+              <option value="high">{t("task.priority.high")}</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor={`new-task-${room.id}-phase`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.taskPhaseLabel")}
+            </label>
+            <select
+              id={`new-task-${room.id}-phase`}
+              value={newTaskPhase}
+              onChange={(e) => setNewTaskPhase(e.target.value as RenovationPhase)}
+              className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              {RENOVATION_PHASE_ORDER.map((ph) => (
+                <option key={ph} value={ph}>
+                  {t(`renovationPhase.${ph}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor={`new-task-${room.id}-assign`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelAssignee")}
+            </label>
+            <select
+              id={`new-task-${room.id}-assign`}
+              value={newTaskAssignee}
+              onChange={(e) => setNewTaskAssignee(e.target.value)}
+              className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <option value="">{t("projectDetail.assigneeNone")}</option>
+              {rosterForProject.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" className="w-full">
+              {t("projectDetail.addTask")}
+            </Button>
+          </div>
         </div>
 
         {error ? <div className="text-xs text-red-600 dark:text-red-400">{error}</div> : null}
@@ -1125,6 +1307,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     deleteChecklistItem,
     addTeamRosterEntry,
     deleteTeamRosterEntry,
+    isRenovationDataReady,
   } = useRenovation();
 
   const { t } = useI18n();
@@ -1175,6 +1358,10 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   const [rosterEmail, setRosterEmail] = useState("");
   const [rosterRole, setRosterRole] = useState("");
   const [rosterError, setRosterError] = useState<string | null>(null);
+
+  if (!isRenovationDataReady) {
+    return <ProjectDetailPageSkeleton />;
+  }
 
   if (!project) {
     return (
@@ -1262,7 +1449,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-base font-semibold">{t("projectDetail.checklistTitle")}</h2>
         <form
-          className="mt-3 flex flex-col gap-2 sm:flex-row"
+          className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(e) => {
             e.preventDefault();
             const parsed = checklistItemTitleSchema.safeParse({ title: checkTitle });
@@ -1275,15 +1462,21 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
             setCheckTitle("");
           }}
         >
-          <input
-            value={checkTitle}
-            onChange={(e) => {
-              setCheckTitle(e.target.value);
-              setCheckError(null);
-            }}
-            placeholder={t("projectDetail.checklistPlaceholder")}
-            className="flex-1 rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
+          <div className="min-w-0 flex-1">
+            <label htmlFor={`checklist-${projectId}`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelChecklistItem")}
+            </label>
+            <input
+              id={`checklist-${projectId}`}
+              value={checkTitle}
+              onChange={(e) => {
+                setCheckTitle(e.target.value);
+                setCheckError(null);
+              }}
+              placeholder={t("projectDetail.checklistPlaceholder")}
+              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
           <Button type="submit">{t("projectDetail.checklistAdd")}</Button>
         </form>
         {checkError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{checkError}</div> : null}
@@ -1313,7 +1506,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         <h2 className="text-base font-semibold">{t("projectDetail.rosterTitle")}</h2>
         <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projectDetail.rosterHint")}</p>
         <form
-          className="mt-3 grid gap-2 sm:grid-cols-3"
+          className="mt-3 grid gap-3 sm:grid-cols-3"
           onSubmit={(e) => {
             e.preventDefault();
             const parsed = rosterEntryFormSchema.safeParse({
@@ -1340,33 +1533,51 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
             setRosterRole("");
           }}
         >
-          <input
-            value={rosterName}
-            onChange={(e) => {
-              setRosterName(e.target.value);
-              setRosterError(null);
-            }}
-            placeholder={t("projectDetail.rosterName")}
-            className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-          <input
-            value={rosterEmail}
-            onChange={(e) => {
-              setRosterEmail(e.target.value);
-              setRosterError(null);
-            }}
-            placeholder={t("projectDetail.rosterEmail")}
-            className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-          <input
-            value={rosterRole}
-            onChange={(e) => {
-              setRosterRole(e.target.value);
-              setRosterError(null);
-            }}
-            placeholder={t("projectDetail.rosterRole")}
-            className="rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
+          <div>
+            <label htmlFor={`roster-${projectId}-name`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelRosterName")}
+            </label>
+            <input
+              id={`roster-${projectId}-name`}
+              value={rosterName}
+              onChange={(e) => {
+                setRosterName(e.target.value);
+                setRosterError(null);
+              }}
+              placeholder={t("projectDetail.rosterNamePlaceholder")}
+              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`roster-${projectId}-email`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelRosterEmail")}
+            </label>
+            <input
+              id={`roster-${projectId}-email`}
+              value={rosterEmail}
+              onChange={(e) => {
+                setRosterEmail(e.target.value);
+                setRosterError(null);
+              }}
+              placeholder={t("projectDetail.rosterEmailPlaceholder")}
+              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
+          <div>
+            <label htmlFor={`roster-${projectId}-role`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelRosterRole")}
+            </label>
+            <input
+              id={`roster-${projectId}-role`}
+              value={rosterRole}
+              onChange={(e) => {
+                setRosterRole(e.target.value);
+                setRosterError(null);
+              }}
+              placeholder={t("projectDetail.rosterRolePlaceholder")}
+              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            />
+          </div>
           <Button type="submit" className="sm:col-span-3 w-fit">
             {t("projectDetail.rosterAddPerson")}
           </Button>
@@ -1403,7 +1614,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         </div>
 
         <form
-          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(e) => {
             e.preventDefault();
             const parsed = roomNameFormSchema.safeParse({ name: roomName });
@@ -1416,8 +1627,12 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
             setRoomError(null);
           }}
         >
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
+            <label htmlFor={`room-add-${projectId}`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("projectDetail.labelRoomName")}
+            </label>
             <input
+              id={`room-add-${projectId}`}
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder={t("projectDetail.roomPlaceholder")}

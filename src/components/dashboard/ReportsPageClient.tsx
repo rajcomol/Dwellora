@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { ReportsPageSkeleton } from "@/components/ui/Skeleton";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
@@ -10,7 +11,7 @@ import { aggregateSpendByRoom, projectBudgetSummary } from "@/lib/dashboard/repo
 
 export default function ReportsPageClient() {
   const { t } = useI18n();
-  const { projects, rooms, tasks, projectExpenses } = useRenovation();
+  const { projects, rooms, tasks, projectExpenses, isRenovationDataReady } = useRenovation();
   const [projectFilter, setProjectFilter] = useState<string>("all");
 
   const projectNameById = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects]);
@@ -59,6 +60,10 @@ export default function ReportsPageClient() {
         : projects.find((p) => p.id === projectFilter)?.totalBudget ?? 0;
     return { est, act, actTasks, actLoose, budget, gap: budget - est, estVsAct: est - act };
   }, [filteredTasks, filteredExpenses, projects, projectFilter]);
+
+  if (!isRenovationDataReady) {
+    return <ReportsPageSkeleton />;
+  }
 
   return (
     <div className="min-w-0 space-y-6">

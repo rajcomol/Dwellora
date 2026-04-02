@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { PlanningPageSkeleton } from "@/components/ui/Skeleton";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/i18n/provider";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
@@ -17,7 +18,7 @@ function swapSortOrder(taskA: Task, taskB: Task, updateTask: (input: { id: ID; s
 
 export default function PlanningPageClient({ projectId }: { projectId: string }) {
   const { t } = useI18n();
-  const { projects, rooms, tasks, teamRoster, updateTask } = useRenovation();
+  const { projects, rooms, tasks, teamRoster, updateTask, isRenovationDataReady } = useRenovation();
 
   const project = useMemo(() => projects.find((p) => p.id === projectId), [projects, projectId]);
   const roomsForProject = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
@@ -33,6 +34,10 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
   const { rows, totalDays, remainingDays } = useMemo(() => buildPlanningRows(projectTasks), [projectTasks]);
 
   const showIndicativeDates = Boolean(timelineTasks[0]?.startDate);
+
+  if (!isRenovationDataReady) {
+    return <PlanningPageSkeleton />;
+  }
 
   if (!project) {
     return (
@@ -141,20 +146,25 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="sr-only" htmlFor={`status-${task.id}`}>
-                      {t("planning.statusLabel", { title: task.title })}
-                    </label>
-                    <select
-                      id={`status-${task.id}`}
-                      value={task.status}
-                      onChange={(e) => updateTask({ id: task.id, status: e.target.value as TaskStatus })}
-                      className="min-w-[7rem] rounded-lg border border-renovation-border bg-white px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-zinc-950"
-                    >
-                      <option value="todo">{t("task.status.todo")}</option>
-                      <option value="doing">{t("task.status.doing")}</option>
-                      <option value="done">{t("task.status.done")}</option>
-                    </select>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <label
+                        htmlFor={`status-${task.id}`}
+                        className="text-xs font-medium text-renovation-concrete"
+                      >
+                        {t("planning.statusShort")}
+                      </label>
+                      <select
+                        id={`status-${task.id}`}
+                        value={task.status}
+                        onChange={(e) => updateTask({ id: task.id, status: e.target.value as TaskStatus })}
+                        className="min-w-[7rem] rounded-lg border border-renovation-border bg-white px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-zinc-950"
+                      >
+                        <option value="todo">{t("task.status.todo")}</option>
+                        <option value="doing">{t("task.status.doing")}</option>
+                        <option value="done">{t("task.status.done")}</option>
+                      </select>
+                    </div>
                     <div className="flex gap-1">
                       <Button
                         type="button"

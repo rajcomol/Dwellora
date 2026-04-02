@@ -26,7 +26,7 @@ function KluscoachFabIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-7 w-7"
+      className="h-6 w-6 shrink-0"
       aria-hidden
     >
       <path
@@ -153,13 +153,16 @@ export default function GlobalChatLauncher() {
           ref={fabRef}
           type="button"
           title={t("chat.launcherTitle")}
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex h-14 w-14 items-center justify-center rounded-full border border-renovation-border bg-renovation-elevated text-renovation-steel shadow-lg transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-renovation-accent dark:border-renovation-border dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 inline-flex max-w-[min(calc(100vw-2rem),18rem)] min-h-11 items-center gap-2 rounded-full border border-renovation-border bg-renovation-elevated px-3.5 py-2.5 text-renovation-steel shadow-renovation-card transition hover:brightness-[0.97] hover:shadow-lg motion-safe:active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-renovation-accent dark:border-renovation-border dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:brightness-100 sm:px-4"
           aria-label={t("chat.launcherAriaLabel")}
           aria-expanded={false}
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
           <KluscoachFabIcon />
+          <span className="min-w-0 truncate text-sm font-semibold text-renovation-steel dark:text-zinc-100">
+            {t("chat.launcherLabel")}
+          </span>
         </button>
       ) : null}
     </>

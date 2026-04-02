@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { DocumentsListSkeleton, DocumentsPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
 import type { DocumentRecord } from "@/lib/documents/types";
@@ -38,7 +39,7 @@ function mapDocument(row: DocumentRow): DocumentRecord {
 
 export default function DocumentsPageClient() {
   const { t } = useI18n();
-  const { projects } = useRenovation();
+  const { projects, isRenovationDataReady } = useRenovation();
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
@@ -50,6 +51,7 @@ export default function DocumentsPageClient() {
   const [comparisonText, setComparisonText] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [documentsListLoading, setDocumentsListLoading] = useState(true);
 
   const projectNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -83,35 +85,40 @@ export default function DocumentsPageClient() {
 
   useEffect(() => {
     async function loadDocuments() {
-      const { data: authData } = await supabase.auth.getSession();
-      if (!authData.session) {
-        setDocuments([]);
-        return;
-      }
+      setDocumentsListLoading(true);
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        if (!authData.session) {
+          setDocuments([]);
+          return;
+        }
 
-      if (accessibleProjectIds.length === 0) {
-        setDocuments([]);
-        return;
-      }
+        if (accessibleProjectIds.length === 0) {
+          setDocuments([]);
+          return;
+        }
 
-      const res = await supabase
-        .from("documents")
-        .select("id,project_id,file_name,file_path,created_at,ai_summary")
-        .in("project_id", accessibleProjectIds)
-        .order("created_at", { ascending: false });
+        const res = await supabase
+          .from("documents")
+          .select("id,project_id,file_name,file_path,created_at,ai_summary")
+          .in("project_id", accessibleProjectIds)
+          .order("created_at", { ascending: false });
 
-      if (res.error) {
-        setError(t("documents.errorLoadList", { message: res.error.message }));
-        return;
-      }
+        if (res.error) {
+          setError(t("documents.errorLoadList", { message: res.error.message }));
+          return;
+        }
 
-      const mapped = (res.data ?? []).map((row) => mapDocument(row as DocumentRow));
-      setDocuments(mapped);
-      const summaries: Record<string, string> = {};
-      for (const d of mapped) {
-        if (d.aiSummary && d.aiSummary.trim()) summaries[d.id] = d.aiSummary;
+        const mapped = (res.data ?? []).map((row) => mapDocument(row as DocumentRow));
+        setDocuments(mapped);
+        const summaries: Record<string, string> = {};
+        for (const d of mapped) {
+          if (d.aiSummary && d.aiSummary.trim()) summaries[d.id] = d.aiSummary;
+        }
+        setSummaryByDocumentId((prev) => ({ ...summaries, ...prev }));
+      } finally {
+        setDocumentsListLoading(false);
       }
-      setSummaryByDocumentId((prev) => ({ ...summaries, ...prev }));
     }
 
     void loadDocuments();
@@ -294,6 +301,10 @@ export default function DocumentsPageClient() {
     }
   }
 
+  if (!isRenovationDataReady) {
+    return <DocumentsPageSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -402,9 +413,11 @@ export default function DocumentsPageClient() {
         ) : null}
       </Card>
 
-      <section className="space-y-3">
+      <section className="space-y-3" aria-busy={documentsListLoading}>
         <h2 className="text-base font-semibold">{t("documents.uploadedTitle")}</h2>
-        {documents.length === 0 ? (
+        {documentsListLoading ? (
+          <DocumentsListSkeleton />
+        ) : documents.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
             {t("documents.uploadedEmpty")}
           </div>

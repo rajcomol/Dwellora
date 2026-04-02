@@ -56,7 +56,7 @@ export default function ForgotPasswordForm() {
 
       <form className="mt-8 space-y-6" onSubmit={(e) => void handleSubmit(e)} noValidate>
         <div>
-          <label htmlFor="forgot-email" className="sr-only">
+          <label htmlFor="forgot-email" className="mb-2 block text-xs font-medium text-zinc-400">
             {t("login.email")}
           </label>
           <div className={underlineWrap}>

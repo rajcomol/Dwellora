@@ -123,7 +123,11 @@ type RenovationActions = {
   deleteProjectExpense: (id: ID) => void;
 };
 
-type RenovationContextValue = RenovationState & RenovationActions;
+type RenovationContextValue = RenovationState &
+  RenovationActions & {
+    /** `false` tot de eerste Supabase-load na bekende sessie is afgerond (toon skeleton i.p.v. lege data). */
+    isRenovationDataReady: boolean;
+  };
 
 const RenovationContext = createContext<RenovationContextValue | undefined>(undefined);
 
@@ -300,10 +304,13 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     teamRoster: [],
   });
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [sessionResolved, setSessionResolved] = useState(false);
+  const [isRenovationDataReady, setIsRenovationDataReady] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
       setSessionUserId(data.session?.user.id ?? null);
+      setSessionResolved(true);
     });
 
     const {
@@ -316,6 +323,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!sessionResolved) return;
     let cancelled = false;
 
     async function loadAll() {
@@ -330,9 +338,12 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           checklistItems: [],
           teamRoster: [],
         });
+        if (!cancelled) setIsRenovationDataReady(true);
         return;
       }
 
+      setIsRenovationDataReady(false);
+      try {
       const projectsRes = await supabase
         .from("projects")
         .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
@@ -497,13 +508,16 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           ? []
           : (rosterRes.data ?? []).map((r) => mapRoster(r as Parameters<typeof mapRoster>[0])),
       });
+      } finally {
+        if (!cancelled) setIsRenovationDataReady(true);
+      }
     }
 
     void loadAll();
     return () => {
       cancelled = true;
     };
-  }, [sessionUserId]);
+  }, [sessionUserId, sessionResolved]);
 
   const createProject = (input: CreateProjectInput) => {
     const trimmed = input.name.trim();
@@ -1081,6 +1095,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
   const value: RenovationContextValue = {
     ...state,
+    isRenovationDataReady,
     createProject,
     updateProject,
     createRoom,
