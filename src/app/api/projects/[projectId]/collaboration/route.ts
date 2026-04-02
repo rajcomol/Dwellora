@@ -1,3 +1,4 @@
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { isUuid } from "@/lib/supabase/project-access";
 
@@ -7,6 +8,15 @@ export async function GET(
   req: Request,
   context: { params: Promise<{ projectId: string }> }
 ) {
+  const ip = clientIpFromRequest(req);
+  const rl = rateLimitResponse(
+    `collaboration:get:${ip}`,
+    RATE_LIMIT.collaborationGet.limit,
+    RATE_LIMIT.collaborationGet.windowMs,
+    { scope: "collaboration:get", clientIp: ip }
+  );
+  if (rl) return rl;
+
   const auth = await createUserSupabaseFromRequest(req);
   if (!auth) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });

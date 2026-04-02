@@ -5,7 +5,7 @@ import {
   getProjectContextMaxChars,
   truncateTextForModel,
 } from "@/lib/ai/limits";
-import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { isUuid } from "@/lib/supabase/project-access";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
@@ -31,7 +31,11 @@ const RENOVATION_COACH_SYSTEM_PROMPT = [
 ].join("\n");
 
 export async function GET(req: Request) {
-  const rl = rateLimitResponse(`chat:get:${clientIpFromRequest(req)}`, 120, 60_000);
+  const ip = clientIpFromRequest(req);
+  const rl = rateLimitResponse(`chat:get:${ip}`, RATE_LIMIT.chatGet.limit, RATE_LIMIT.chatGet.windowMs, {
+    scope: "chat:get",
+    clientIp: ip,
+  });
   if (rl) return rl;
 
   const auth = await createUserSupabaseFromRequest(req);
@@ -208,7 +212,16 @@ async function buildProjectContext(
 }
 
 export async function POST(req: Request) {
-  const rl = rateLimitResponse(`chat:post:${clientIpFromRequest(req)}`, 60, 60_000);
+  const ip = clientIpFromRequest(req);
+  const authEarly = await createUserSupabaseFromRequest(req);
+  const postPreset = authEarly ? RATE_LIMIT.chatPostAuthenticated : RATE_LIMIT.chatPostAnonymous;
+  const rlKey = authEarly
+    ? `chat:post:user:${authEarly.userId}`
+    : `chat:post:anon:${ip}`;
+  const rl = rateLimitResponse(rlKey, postPreset.limit, postPreset.windowMs, {
+    scope: "chat:post",
+    clientIp: ip,
+  });
   if (rl) return rl;
 
   const rawBody = await readJsonUnknown(req);
@@ -219,7 +232,7 @@ export async function POST(req: Request) {
 
   const { message, projectId, threadId: threadIdIn } = parsedBody.data;
 
-  const auth = await createUserSupabaseFromRequest(req);
+  const auth = authEarly;
   const usePersistence = Boolean(auth);
 
   let projectContext = "";

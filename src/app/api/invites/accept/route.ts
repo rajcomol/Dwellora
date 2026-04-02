@@ -1,4 +1,4 @@
-import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
 import { acceptProjectInviteBodySchema } from "@/lib/validation/schemas";
@@ -6,7 +6,11 @@ import { acceptProjectInviteBodySchema } from "@/lib/validation/schemas";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const rl = rateLimitResponse(`invites:accept:${clientIpFromRequest(req)}`, 30, 60_000);
+  const ip = clientIpFromRequest(req);
+  const rl = rateLimitResponse(`invites:accept:${ip}`, RATE_LIMIT.invitesAccept.limit, RATE_LIMIT.invitesAccept.windowMs, {
+    scope: "invites:accept",
+    clientIp: ip,
+  });
   if (rl) return rl;
 
   const auth = await createUserSupabaseFromRequest(req);

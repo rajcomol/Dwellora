@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { getPublicSiteUrlServer } from "@/lib/site-url";
 import { isUuid } from "@/lib/supabase/project-access";
@@ -15,7 +15,11 @@ export async function POST(
   req: Request,
   context: { params: Promise<{ projectId: string }> }
 ) {
-  const rl = rateLimitResponse(`invites:post:${clientIpFromRequest(req)}`, 20, 60_000);
+  const ip = clientIpFromRequest(req);
+  const rl = rateLimitResponse(`invites:post:${ip}`, RATE_LIMIT.invitesPost.limit, RATE_LIMIT.invitesPost.windowMs, {
+    scope: "invites:post",
+    clientIp: ip,
+  });
   if (rl) return rl;
 
   const auth = await createUserSupabaseFromRequest(req);

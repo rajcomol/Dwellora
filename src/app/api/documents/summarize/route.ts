@@ -1,6 +1,6 @@
 import { completeChat } from "@/lib/ai/completeChat";
 import { getComparePdfMaxCharsPerDoc, truncateTextForModel } from "@/lib/ai/limits";
-import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
 import { requireAccessibleProject } from "@/lib/supabase/project-access";
@@ -29,7 +29,11 @@ function mockSummary(fileName: string) {
 }
 
 export async function POST(req: Request) {
-  const rl = rateLimitResponse(`docs:summarize:${clientIpFromRequest(req)}`, 24, 60_000);
+  const ip = clientIpFromRequest(req);
+  const rl = rateLimitResponse(`docs:summarize:${ip}`, RATE_LIMIT.documentsSummarize.limit, RATE_LIMIT.documentsSummarize.windowMs, {
+    scope: "docs:summarize",
+    clientIp: ip,
+  });
   if (rl) return rl;
 
   const rawBody = await readJsonUnknown(req);

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
@@ -7,6 +8,15 @@ function safeNextPath(raw: string | null): string {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = clientIpFromRequest(request);
+  const rl = rateLimitResponse(
+    `auth:confirm:${ip}`,
+    RATE_LIMIT.authConfirm.limit,
+    RATE_LIMIT.authConfirm.windowMs,
+    { scope: "auth:confirm", clientIp: ip }
+  );
+  if (rl) return rl;
+
   const url = request.nextUrl.clone();
   const code = url.searchParams.get("code");
   const next = safeNextPath(url.searchParams.get("next"));

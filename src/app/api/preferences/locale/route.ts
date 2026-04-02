@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { isLocale, LOCALE_COOKIE_NAME } from "@/i18n/config";
 
 /**
@@ -6,6 +7,15 @@ import { isLocale, LOCALE_COOKIE_NAME } from "@/i18n/config";
  * Na een wijziging: `router.refresh()` in de client om de server layout opnieuw te laden.
  */
 export async function POST(request: Request) {
+  const ip = clientIpFromRequest(request);
+  const rl = rateLimitResponse(
+    `preferences:locale:${ip}`,
+    RATE_LIMIT.preferencesLocale.limit,
+    RATE_LIMIT.preferencesLocale.windowMs,
+    { scope: "preferences:locale", clientIp: ip }
+  );
+  if (rl) return rl;
+
   let body: unknown;
   try {
     body = await request.json();

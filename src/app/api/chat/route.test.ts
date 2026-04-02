@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/chat/route";
 
 describe("POST /api/chat", () => {
@@ -6,10 +6,17 @@ describe("POST /api/chat", () => {
     vi.unstubAllEnvs();
   });
 
+  beforeEach(() => {
+    vi.stubEnv("RATE_LIMIT_TRUST_FORWARDED", "1");
+  });
+
   it("returns 400 when message missing", async () => {
     const req = new Request("http://localhost/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": "127.0.0.1",
+      },
       body: JSON.stringify({}),
     });
     const res = await POST(req);
@@ -20,7 +27,10 @@ describe("POST /api/chat", () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     const req = new Request("http://localhost/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": "127.0.0.1",
+      },
       body: JSON.stringify({ message: "Hello" }),
     });
     const res = await POST(req);

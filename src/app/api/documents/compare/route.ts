@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { clientIpFromRequest, rateLimitResponse } from "@/lib/api/rateLimit";
+import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { getCompareMaxOutputTokens, getComparePdfMaxCharsPerDoc, truncateTextForModel } from "@/lib/ai/limits";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
@@ -58,7 +58,11 @@ const COMPARISON_SYSTEM_PROMPT = [
 ].join("\n");
 
 export async function POST(req: Request) {
-  const rl = rateLimitResponse(`docs:compare:${clientIpFromRequest(req)}`, 16, 60_000);
+  const ip = clientIpFromRequest(req);
+  const rl = rateLimitResponse(`docs:compare:${ip}`, RATE_LIMIT.documentsCompare.limit, RATE_LIMIT.documentsCompare.windowMs, {
+    scope: "docs:compare",
+    clientIp: ip,
+  });
   if (rl) return rl;
 
   const rawBody = await readJsonUnknown(req);
