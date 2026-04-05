@@ -58,7 +58,10 @@ export default function DashboardInsightsClient() {
 
   return (
     <div className="space-y-6">
-      <section className="motion-safe-fade-in relative overflow-hidden rounded-2xl border border-renovation-border bg-renovation-elevated p-6 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated sm:p-8">
+      <section
+        data-tour="dashboard-hero"
+        className="motion-safe-fade-in relative overflow-hidden rounded-2xl border border-renovation-border bg-renovation-elevated p-6 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated sm:p-8"
+      >
         <div
           className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-renovation-accent/15 blur-3xl dark:bg-renovation-accent/10"
           aria-hidden
@@ -207,7 +210,7 @@ export default function DashboardInsightsClient() {
               {t("nav.projects")}
             </Link>
             <Link
-              href="/dashboard/documents"
+              href="/dashboard/quotes"
               className="rounded-xl border border-renovation-border bg-transparent px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
             >
               {t("nav.documents")}

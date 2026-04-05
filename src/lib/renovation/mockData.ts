@@ -73,6 +73,7 @@ export const initialRenovationState: RenovationState = {
     },
   ],
   projectExpenses: [],
+  expenseDocuments: [],
   taskDependencies: [],
   taskAttachments: [],
   checklistItems: [],

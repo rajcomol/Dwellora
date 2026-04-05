@@ -4,6 +4,7 @@ import BrandLogoPill from "@/components/brand/BrandLogoPill";
 import AuthHeader from "@/components/dashboard/AuthHeader";
 import DashboardMobileNav from "@/components/dashboard/DashboardMobileNav";
 import DashboardShellNav from "@/components/dashboard/DashboardShellNav";
+import HelpMenu from "@/components/help/HelpMenu";
 import nl from "@/i18n/locales/nl.json";
 
 export default function DashboardShell({
@@ -20,6 +21,9 @@ export default function DashboardShell({
             <div className="mt-auto flex flex-col gap-2 pt-6 text-xs text-renovation-concrete">
               <Link href="/privacy" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
                 {nl.shell.privacyLink}
+              </Link>
+              <Link href="/dashboard/help" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
+                {nl.help.sidebarLink}
               </Link>
               <Link href="/login" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
                 {nl.nav.account}
@@ -40,17 +44,21 @@ export default function DashboardShell({
               <Link
                 href="/dashboard"
                 aria-label={nl.brand.name}
+                data-tour="brand-home"
                 className="min-w-0 shrink transition-opacity hover:opacity-90"
               >
                 <BrandLogoPill size="compact" />
               </Link>
             </div>
-            <div className="flex justify-end justify-self-end text-sm">
+            <div className="flex items-center justify-end justify-self-end gap-2 text-sm">
+              <HelpMenu />
               <AuthHeader />
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 bg-renovation-app px-4 py-6 sm:px-6">{children}</main>
+          <main data-tour="dashboard-main" className="min-w-0 flex-1 bg-renovation-app px-4 py-6 sm:px-6">
+            {children}
+          </main>
         </div>
       </div>
     </div>

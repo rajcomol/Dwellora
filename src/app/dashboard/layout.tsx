@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import GlobalChatLauncher from "@/components/dashboard/GlobalChatLauncher";
 import { RenovationProvider } from "@/components/dashboard/RenovationProvider";
+import { HelpProvider } from "@/components/help/HelpProvider";
+import OnboardingTourClient from "@/components/help/OnboardingTourClient";
 import nl from "@/i18n/locales/nl.json";
 import { createSupabaseServerClient } from "@/lib/supabase/server-user";
 
@@ -25,12 +27,15 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardShell>
-      <RenovationProvider>
-        {children}
-        <GlobalChatLauncher />
-      </RenovationProvider>
-    </DashboardShell>
+    <HelpProvider>
+      <DashboardShell>
+        <RenovationProvider>
+          {children}
+          <GlobalChatLauncher />
+          <OnboardingTourClient />
+        </RenovationProvider>
+      </DashboardShell>
+    </HelpProvider>
   );
 }
 

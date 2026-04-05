@@ -36,7 +36,7 @@ describe("POST /api/chat", () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
     const data = (await res.json()) as { response?: string; threadId?: string | null };
-    expect(data.response ?? "").toContain("Mock response");
+    expect(data.response ?? "").toContain("Mock-antwoord");
     expect(data.threadId ?? null).toBeNull();
   });
 });

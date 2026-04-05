@@ -30,7 +30,7 @@ export default function DashboardMobileNav() {
   }, [open]);
 
   return (
-    <div className="lg:hidden">
+    <div className="lg:hidden" data-tour="nav-main">
       <button
         type="button"
         className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-renovation-border bg-renovation-muted/40 px-3 text-sm font-medium text-renovation-steel dark:border-renovation-border dark:bg-zinc-900/40 dark:text-zinc-100"
@@ -85,6 +85,9 @@ export default function DashboardMobileNav() {
             >
               <Link href="/privacy" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-zinc-300" onClick={close}>
                 {t("shell.privacyLink")}
+              </Link>
+              <Link href="/dashboard/help" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-zinc-300" onClick={close}>
+                {t("help.sidebarLink")}
               </Link>
               <Link href="/login" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-zinc-300" onClick={close}>
                 {t("nav.account")}

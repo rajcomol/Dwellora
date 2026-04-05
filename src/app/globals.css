@@ -74,6 +74,11 @@ body {
   font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 }
 
+/** react-joyride: tooltip staat in #react-joyride-portal onder body; zonder dit erven titel/tekst de lichte body-kleur op witte achtergrond. */
+#react-joyride-portal {
+  color: #0f172a;
+}
+
 /** Login / auth: fallback toon terwijl hero-image laadt. */
 .login-auth-page {
   background-color: rgb(15 23 42);

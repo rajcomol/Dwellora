@@ -42,7 +42,26 @@ export interface Task {
   assignedRosterId: ID | null;
 }
 
-/** Losse uitgaven op projectniveau (bouwmarkt, materiaal, enz.), los van taken. */
+export type ExpenseDocumentType = "receipt" | "invoice" | "other";
+
+/** Bewijsstuk (bon/factuur) gekoppeld aan een uitgave; niet voor offerte-PDF’s. */
+export interface ExpenseDocument {
+  id: ID;
+  expenseId: ID;
+  projectId: ID;
+  documentType: ExpenseDocumentType;
+  fileName: string;
+  filePath: string;
+  mimeType: string;
+  fileSizeBytes: number | null;
+  uploadedBy: ID | null;
+  uploadedAt: string;
+  retentionUntil: string | null;
+  /** OCR/AI metadata (vendor, total_amount, …) — uitbreidbaar zonder migratie. */
+  extractedMetadata: Record<string, unknown>;
+}
+
+/** Losse uitgaven op projectniveau (bouwmarkt, materiaal, enz.); optioneel gekoppeld aan een taak. */
 export interface ProjectExpense {
   id: ID;
   projectId: ID;
@@ -52,6 +71,8 @@ export interface ProjectExpense {
   spentOn: string | null;
   notes: string;
   createdAt: string;
+  /** Taak waar deze kosten bij horen, indien van toepassing */
+  taskId: ID | null;
 }
 
 export interface TaskDependency {
@@ -90,6 +111,7 @@ export interface RenovationState {
   rooms: Room[];
   tasks: Task[];
   projectExpenses: ProjectExpense[];
+  expenseDocuments: ExpenseDocument[];
   taskDependencies: TaskDependency[];
   taskAttachments: TaskAttachment[];
   checklistItems: KeyHandoverChecklistItem[];

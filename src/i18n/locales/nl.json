@@ -20,10 +20,41 @@
     "dashboard": "Dashboard",
     "projects": "Projecten",
     "planning": "Planning",
-    "documents": "Documenten",
+    "documents": "Offertes",
     "settings": "Instellingen",
     "reports": "Rapporten",
     "account": "Account"
+  },
+  "projectSubnav": {
+    "ariaLabel": "Projectsecties",
+    "overview": "Overzicht",
+    "finances": "Financiën",
+    "planning": "Planning"
+  },
+  "finances": {
+    "title": "Financiën",
+    "subtitle": "Uitgaven, bonnetjes en facturen voor dit project.",
+    "totalRecorded": "Totaal geregistreerd",
+    "expenseCount": "{{count}} uitgaven",
+    "documentCount": "{{count}} bewijsstukken",
+    "newExpense": "Nieuwe uitgave",
+    "expenseListTitle": "Uitgaven en bewijsstukken",
+    "labelTaskOptional": "Taak (optioneel)",
+    "noTask": "Geen taak",
+    "linkedTask": "Taak",
+    "documentTypeReceipt": "Bon",
+    "documentTypeInvoice": "Factuur",
+    "documentTypeOther": "Overig",
+    "uploadLabel": "Bon of factuur toevoegen",
+    "uploadTypeLabel": "Soort document",
+    "uploadHint": "PDF of afbeelding, max. 10 MB.",
+    "attachmentsHeading": "Bewijsstukken",
+    "noAttachmentsYet": "Nog geen bestanden.",
+    "confirmRemoveDocument": "Dit bewijsstuk verwijderen?",
+    "confirmDeleteExpense": "Deze uitgave en alle bewijsstukken verwijderen?",
+    "summaryCardTitle": "Financiën",
+    "summaryCardBody": "Beheer uitgaven en upload bonnetjes en facturen.",
+    "goToFinances": "Naar financiën"
   },
   "shell": {
     "headerTitle": "Dashboard",
@@ -272,6 +303,8 @@
     "selectPredecessor": "Kies voorgaande taak…",
     "noDependencies": "Geen afhankelijkheden.",
     "attachments": "Bijlagen",
+    "linkedExpensesTitle": "Gekoppelde uitgaven",
+    "linkedExpensesFinancesLink": "Openen in Financiën",
     "noFilesYet": "Nog geen bestanden.",
     "estShort": "geschat",
     "actualShort": "werkelijk",
@@ -346,7 +379,7 @@
     "down": "Omlaag"
   },
   "documents": {
-    "title": "Documenten",
+    "title": "Offertes",
     "subtitle": "Upload offerte-PDF’s per project. Bestanden zijn alleen zichtbaar voor jou en eventueel je uitgenodigde medewerker op dat project (niet voor andere gebruikers).",
     "uploadTitle": "Document uploaden",
     "noProjectsOption": "Geen projecten beschikbaar",
@@ -382,10 +415,10 @@
   },
   "chat": {
     "title": "Kluscoach",
-    "subtitle": "Praktische verbouwingshulp met je projectgegevens als je hieronder een project kiest.",
+    "subtitle": "Praktische verbouwingshulp met je projectgegevens als je hieronder een project kiest. Je mag ook vragen stellen over hoe RenoTasker werkt.",
     "panelTitle": "Kluscoach",
-    "panelSubtitle": "Stel je vraag over planning, budget en keuzes. We gebruiken je project als je die hier kiest of op een projectpagina zit.",
-    "launcherAriaLabel": "Kluscoach openen — AI-hulp bij je verbouwing",
+    "panelSubtitle": "Stel je vraag over planning, budget en keuzes, of over de app (navigatie, schermen, functies) als je iets even niet meer weet. We gebruiken je project als je die hier kiest of op een projectpagina zit.",
+    "launcherAriaLabel": "Kluscoach openen — AI-hulp bij je verbouwing en bij vragen over de app",
     "launcherLabel": "Kluscoach",
     "launcherTitle": "Klik voor hulp van de Kluscoach",
     "disclaimerStrong": "Let op:",
@@ -496,6 +529,117 @@
     "title": "Pagina niet gevonden",
     "description": "Deze pagina bestaat niet (meer). Ga terug naar je RenoTasker-dashboard.",
     "dashboard": "Naar dashboard"
+  },
+  "help": {
+    "pageTitle": "Kennisbank",
+    "pageSubtitle": "Uitleg over alle functies van RenoTasker. Alles wat je nodig hebt naast de rondleiding.",
+    "searchPlaceholder": "Zoek in artikelen…",
+    "searchNoResults": "Geen artikelen gevonden. Pas je zoekterm aan.",
+    "openArticle": "Artikel",
+    "categoryLabel": "Categorie",
+    "backToList": "Terug naar overzicht",
+    "menuTitle": "Help & uitleg",
+    "menuOpenHelp": "Help openen",
+    "menuStartTour": "Start de rondleiding",
+    "menuRestartTour": "Rondleiding opnieuw bekijken",
+    "menuKnowledgeBase": "Naar de kennisbank",
+    "menuFaq": "Veelgestelde vragen",
+    "menuContextHelp": "Hulp bij dit scherm",
+    "menuContextNone": "Geen specifieke uitleg voor dit scherm",
+    "menuKluscoachHint": "Open de Kluscoach rechtsonder voor AI-hulp bij je verbouwing en voor vragen over hoe de app werkt.",
+    "buttonAria": "Help en uitleg",
+    "sidebarLink": "Help & uitleg",
+    "topicQueryHint": "Onderwerp: {{topic}}",
+    "category": {
+      "gettingStarted": "Aan de slag",
+      "projectsRooms": "Projecten & kamers",
+      "tasksPlanning": "Taken & planning",
+      "quotesDocuments": "Offertes & documenten",
+      "financesBudget": "Financiën & budget",
+      "aiCoach": "Kluscoach (AI)",
+      "reports": "Rapporten",
+      "settingsAccount": "Instellingen & account"
+    },
+    "article": {
+      "welcome-overview": {
+        "title": "Welkom bij RenoTasker",
+        "summary": "Wat het dashboard doet en waar je begint.",
+        "body": "Het dashboard geeft een overzicht van je renovatie: budgetten, taken en inzichten over al je projecten.\n\nGebruik de zijbalk om naar Projecten, Planning, Offertes, Instellingen en Rapporten te gaan. Vanuit Projecten open je een concreet verbouwproject met ruimtes, taken en financiën.\n\nTip: begin met een project aan te maken en voeg daarna ruimtes en taken toe — dan vullen de grafieken en lijsten vanzelf."
+      },
+      "navigation-sidebar": {
+        "title": "Navigatie en menu",
+        "summary": "Hoe je door de app beweegt.",
+        "body": "Op desktop zie je links het menu met de belangrijkste onderdelen. Op mobiel open je hetzelfde menu via de knop linksboven.\n\nRechtsboven vind je je account (uitloggen). Rechtsonder staat de Kluscoach-knop voor AI-hulp — die context gebruikt het project als je op een projectpagina bent.\n\nJe kunt deze kennisbank altijd terugvinden via Help in de kop of onderaan het zijmenu."
+      },
+      "projects-create": {
+        "title": "Projecten aanmaken",
+        "summary": "Nieuw project, budget en basisgegevens.",
+        "body": "Onder Projecten maak je een renovatieproject met een naam en een totaalbudget. Je kunt optioneel adres, notities en een verwachte sleuteldatum invullen.\n\nElk project heeft eigen ruimtes, taken, uitgaven en documenten. Het totaalbudget helpt bij vergelijking met geschatte en werkelijke kosten in het dashboard en bij Rapporten."
+      },
+      "rooms-tasks": {
+        "title": "Kamers en taken",
+        "summary": "Ruimtes structureren je werk; taken plannen je uitvoering.",
+        "body": "Binnen een project voeg je ruimtes toe (bijv. keuken, badkamer). Per ruimte maak je taken met status, prioriteit, geschatte en werkelijke kosten en een duur in dagen.\n\nJe kunt afhankelijkheden tussen taken leggen en bijlagen uploaden. Losse uitgaven op projectniveau vang je apart op — die tellen ook mee in je kostenoverzicht."
+      },
+      "planning-timeline": {
+        "title": "Planning en tijdlijn",
+        "summary": "Volgorde, doorlooptijd en projectplanning.",
+        "body": "Op de planningspagina en binnen een project zie je taken in volgorde en kunt je ze ordenen. De tijdlijn helpt om te zien hoe lang het geplande werk duurt en wat eerst moet.\n\nGebruik de project-tab Planning voor een breder beeld; het overzicht op de projectpagina geeft een compacte tijdlijn."
+      },
+      "quotes-offertes": {
+        "title": "Offertes en documenten",
+        "summary": "PDF’s uploaden, samenvatten en vergelijken.",
+        "body": "Onder Offertes kun je PDF-documenten per project beheren. Je kunt een samenvatting laten maken en twee documenten vergelijken — handig bij offertes van aannemers.\n\nDocumenten staan veilig in opslag per project; alleen jij en een geaccepteerde medewerker op hetzelfde project hebben toegang via de app."
+      },
+      "finances-expenses": {
+        "title": "Financiën en uitgaven",
+        "summary": "Bonnetjes, facturen en koppeling aan taken.",
+        "body": "Op de tab Financiën van een project registreer je uitgaven en upload je bonnen of facturen als bewijsstuk. Je kunt een uitgave koppelen aan een taak of los laten.\n\nZo blijft je werkelijke besteding inzichtelijk naast de schattingen op taken en het projectbudget."
+      },
+      "kluscoach-ai": {
+        "title": "Kluscoach (AI)",
+        "summary": "Vragen over je verbouwing én over hoe RenoTasker werkt.",
+        "body": "De Kluscoach is een AI-assistent in de app. Open hem via de ronde knop rechtsonder. Je kunt vragen stellen over planning, budget en keuzes rond je klus, én over de app zelf — bijvoorbeeld waar je iets vindt of hoe een functie werkt — als je het even niet meer weet. Kies een project in het paneel voor betere antwoorden op basis van jouw gegevens.\n\nLet op: antwoorden zijn indicatief en kunnen fouten bevatten. Controleer altijd belangrijke beslissingen bij vakmensen en contracten."
+      },
+      "reports-insights": {
+        "title": "Rapporten",
+        "summary": "Totalen en vergelijkingen over budget en kosten.",
+        "body": "Rapporten tonen totalen en vergelijkingen: budget versus schattingen, werkelijke kosten op taken, losse uitgaven en overzichten per ruimte. Je kunt filteren op alle projecten of één project.\n\nGebruik dit om je financiële stand van zaken te controleren tijdens de verbouwing."
+      },
+      "settings-security": {
+        "title": "Instellingen en account",
+        "summary": "Thema, e-mail en wachtwoord.",
+        "body": "Onder Instellingen pas je het thema (licht, donker, systeem) aan en zie je het e-mailadres van je account. Je kunt je wachtwoord wijzigen en een resetlink aanvragen als je bent vergeten.\n\nPrivacy-informatie staat ook gelinkt vanaf deze pagina."
+      },
+      "collaboration-invites": {
+        "title": "Samenwerken en uitnodigen",
+        "summary": "Project delen met een medebewoner.",
+        "body": "Als projecteigenaar kun je één persoon uitnodigen om mee te werken aan hetzelfde project. Na acceptatie ziet die persoon dezelfde projectdata.\n\nUitnodigingen verlopen na een beperkte tijd; je kunt een openstaande uitnodiging intrekken. Gebruik het e-mailadres waarmee de ander een RenoTasker-account heeft of gaat maken."
+      }
+    }
+  },
+  "onboarding": {
+    "stepWelcomeTitle": "Welkom bij RenoTasker",
+    "stepWelcomeBody": "Dit is je overzichtskaart op het dashboard. In een paar stappen laten we zien waar je verder alles vindt. Je kunt de rondleiding altijd opnieuw starten via Help.",
+    "stepNavTitle": "Hoofdnavigatie",
+    "stepNavBody": "Hier schakel je tussen dashboard, projecten, planning, offertes, instellingen en rapporten.",
+    "stepLogoTitle": "Terug naar het dashboard",
+    "stepLogoBody": "Tik op het logo om snel naar je overzicht te gaan.",
+    "stepChatTitle": "Kluscoach",
+    "stepChatBody": "Open hier de Kluscoach voor hulp bij je verbouwing (planning, budget, keuzes) en voor vragen over de app als je iets even niet meer weet. Kies een project in het paneel voor betere antwoorden.",
+    "stepProjectsTitle": "Projecten",
+    "stepProjectsBody": "Maak verbouwprojecten aan en open ze om ruimtes, taken en financiën te beheren.",
+    "stepPlanningTitle": "Planning",
+    "stepPlanningBody": "Hier zie je alle projecten met planning: open een project om de tijdlijn en fasen per ruimte te bekijken en taken te ordenen.",
+    "stepQuotesTitle": "Offertes",
+    "stepQuotesBody": "Upload en beheer offertes en PDF’s per project, bekijk samenvattingen en vergelijk documenten.",
+    "stepProjectDetailTitle": "Projectoverzicht",
+    "stepProjectDetailBody": "Hier beheer je ruimtes, taken en tabs voor financiën en planning.",
+    "joyrideBack": "Terug",
+    "joyrideClose": "Sluiten",
+    "joyrideLast": "Klaar",
+    "joyrideNext": "Volgende",
+    "joyrideSkip": "Overslaan"
   },
   "privacy": {
     "title": "Privacy",

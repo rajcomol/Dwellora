@@ -1,6 +1,5 @@
 import DocumentsPageDynamic from "@/components/dashboard/DocumentsPageDynamic";
 
-export default function DocumentsPage() {
+export default function QuotesPage() {
   return <DocumentsPageDynamic />;
 }
-

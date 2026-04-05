@@ -8,6 +8,7 @@ const DEFAULT_COMPARE_MAX_OUTPUT_TOKENS = 2800;
 const DEFAULT_PROJECT_CONTEXT_MAX_CHARS = 32_000;
 /** Per PDF fragment passed to compare (each document). */
 const DEFAULT_COMPARE_PDF_MAX_CHARS_PER_DOC = 24_000;
+const DEFAULT_HELP_KB_MAX_CHARS = 14_000;
 
 /** Max tasks listed per room in chat project context (avoids huge dumps). */
 export const CHAT_CONTEXT_MAX_TASKS_PER_ROOM = 20;
@@ -37,6 +38,11 @@ export function getProjectContextMaxChars(): number {
 /** Truncate each offerte’s text before compare API. Env: `OPENAI_COMPARE_PDF_MAX_CHARS_PER_DOC`. */
 export function getComparePdfMaxCharsPerDoc(): number {
   return parsePositiveIntEnv("OPENAI_COMPARE_PDF_MAX_CHARS_PER_DOC", DEFAULT_COMPARE_PDF_MAX_CHARS_PER_DOC);
+}
+
+/** Max length of serialized help KB for `/api/chat`. Env: `OPENAI_HELP_KB_MAX_CHARS`. */
+export function getHelpKbMaxChars(): number {
+  return parsePositiveIntEnv("OPENAI_HELP_KB_MAX_CHARS", DEFAULT_HELP_KB_MAX_CHARS);
 }
 
 export type TruncateResult = { text: string; truncated: boolean };

@@ -137,6 +137,7 @@ export const expenseLineFormSchema = z.object({
     .pipe(z.number().finite().min(0)),
   spentOn: z.string(),
   notes: z.string(),
+  taskId: z.union([z.literal(""), z.string().uuid()]),
 });
 
 export const taskFormFieldsSchema = z.object({

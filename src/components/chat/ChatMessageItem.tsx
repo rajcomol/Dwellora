@@ -1,5 +1,7 @@
 "use client";
 
+import ChatMarkdown from "@/components/chat/ChatMarkdown";
+
 export type ChatRole = "user" | "assistant";
 
 export interface ChatMessage {
@@ -21,7 +23,11 @@ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
             : "bg-white text-zinc-900 ring-zinc-200 dark:bg-zinc-950 dark:text-zinc-50 dark:ring-zinc-800",
         ].join(" ")}
       >
-        <div className="whitespace-pre-wrap">{message.content}</div>
+        {isUser ? (
+          <div className="whitespace-pre-wrap">{message.content}</div>
+        ) : (
+          <ChatMarkdown content={message.content} />
+        )}
       </div>
     </li>
   );

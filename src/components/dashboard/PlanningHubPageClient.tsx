@@ -38,7 +38,8 @@ export default function PlanningHubPageClient() {
 
   return (
     <div className="space-y-8">
-      <div>
+      {/* Tour-target alleen op de kop — volledige hub als target breekt joyride bij veel taken. */}
+      <div data-tour="planning-hub">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{t("planning.hubTitle")}</h1>
         <p className="mt-1 text-sm text-renovation-concrete">{t("planning.hubSubtitle")}</p>
       </div>

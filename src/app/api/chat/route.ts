@@ -10,9 +10,19 @@ import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { isUuid } from "@/lib/supabase/project-access";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
 import { chatPostBodySchema } from "@/lib/validation/schemas";
+import { getHelpKnowledgeForModel } from "@/lib/help/helpKnowledgeForModel";
 
 function mockAssistantReply(message: string) {
-  return `Mock response: I received your message "${message}". In the next step, I can tailor suggestions (cost, materials, sequencing) for your renovation plan.`;
+  const clip = message.length > 280 ? `${message.slice(0, 277)}…` : message;
+  return [
+    "## Mock-antwoord",
+    "",
+    `Ik heb je bericht ontvangen (zonder actieve API-sleutel gebruiken we een vaste placeholder):`,
+    "",
+    `> ${clip}`,
+    "",
+    "Zodra **OPENAI_API_KEY** is ingesteld, kan ik gerichter adviseren over kosten, materialen en volgorde voor je renovatie — nog steeds in Markdown.",
+  ].join("\n");
 }
 
 export const runtime = "nodejs";
@@ -21,12 +31,14 @@ const RENOVATION_COACH_SYSTEM_PROMPT = [
   "Je bent een ervaren, warme renovatie-assistent in deze app: je helpt bij plannen, keuzes en stress rond de klus — als een goede vriend: empathisch en direct, zonder marketingpraat of overdreven formaliteit.",
   "Antwoord standaard in het Nederlands, tenzij de gebruiker duidelijk in een andere taal schrijft; schakel dan mee in die taal.",
   "Domein: woningrenovatie en alles wat daarbij hoort: volgorde van werk, afhankelijkheden, aannemer vs. zelf doen, vergunningen en regels, materialen en kwaliteit, planning en buffer, budget en inschattingen (altijd voorzichtig), stress en prioriteit — ook als er weinig data in de app staat. Gebruik projectcontext als die er is; vul aan met algemene, realistische richtlijnen.",
+  "App-uitleg: je krijgt een aparte kennisbank met RenoTasker-help. Gebruik die om vragen over navigatie, schermen, offertes, financiën, Kluscoach, samenwerking en instellingen nauwkeurig te beantwoorden. Verzin geen functies of menu’s die niet in die kennisbank staan; als iets ontbreekt, zeg dat eerlijk.",
   "Structuur: geen verplichte vaste koppen bij elk antwoord. Gebruik alleen tussenkopjes of bullets als ze de leesbaarheid echt verbeteren; anders vloeiende alinea’s.",
   "Lengte: wees uitgebreid genoeg om echt te helpen (richtlijn ongeveer 250–400 woorden wanneer de vraag dat rechtvaardigt). Wees niet eindeloos; liever kernachtig dan opvullen.",
   "Veiligheid en eerlijkheid gaan vóór ‘gezelligheid’: waarschuw voor risico’s (bijv. elektriciteit, dragende constructies, vocht, gas) en verzin geen prijzen, maten of garanties die niet in de context staan.",
   "Kosten: geen verzonnen bedragen; spreek van indicaties of globale inschattingen en wat de gebruiker in de app kan aanvullen (budget, taken, offertes).",
   "Als projectdata ontbreekt of onvolledig is: zeg wat er mist en wat de gebruiker concreet kan toevoegen (kamers, taken, budget, duration_days, prioriteit, losse uitgaven).",
-  "Scope van de assistent: alleen dit project en renovatie/verbouwen/offertes/planning in deze app. Geen antwoorden op puur privé-, medische, relationele of algemene levensvragen zonder link met de klus. Bij zulke vragen: kort en vriendelijk doorverwijzen naar het project (bijv. hoe stress rond de verbouwing te structureren is wél oké; relatieadvies niet). Geen losse chit-chat zonder verbouw-link.",
+  "Scope: renovatie/verbouwen/offertes/planning in deze app én uitleg over hoe RenoTasker werkt (zie kennisbank). Geen antwoorden op puur privé-, medische, relationele of algemene levensvragen zonder link met de klus of de app. Bij zulke vragen: kort en vriendelijk doorverwijzen (bijv. stress rond de verbouwing structureren is wél oké; relatieadvies niet). Geen losse chit-chat zonder verbouw- of app-link.",
+  "Opmaak: schrijf elk assistent-antwoord in GitHub Flavored Markdown — gebruik ## of ### voor koppen waar nuttig, genummerde of bulletlijsten, **vet** voor nadruk; geen raw HTML.",
   "Toon: warm en steunend, maar realistisch en nuchter.",
 ].join("\n");
 
@@ -321,8 +333,21 @@ export async function POST(req: Request) {
     return Response.json({ response: text, threadId: threadIdOut });
   }
 
+  const helpKbResult = getHelpKnowledgeForModel();
+  const helpKbSystemParts = [
+    "Interne kennisbank (RenoTasker-help). Gebruik dit voor vragen over de app (navigatie, functies, tabs, offertes, financiën, AI, samenwerking). Antwoord accuraat; verzin geen schermen of menu’s die hier niet staan. Als iets ontbreekt, zeg dat eerlijk.",
+  ];
+  if (helpKbResult.truncated) {
+    helpKbSystemParts.push(
+      "Let op: onderstaande tekst is ingekort; baseer je alleen op wat volgt."
+    );
+  }
+  helpKbSystemParts.push("", helpKbResult.text);
+  const helpKbSystemContent = helpKbSystemParts.join("\n");
+
   const messages: ChatMessageParam[] = [
     { role: "system", content: RENOVATION_COACH_SYSTEM_PROMPT },
+    { role: "system", content: helpKbSystemContent },
     ...(projectContext
       ? [
           {

@@ -160,7 +160,7 @@ export default function ProjectsPageClient() {
         </form>
       </section>
 
-      <section>
+      <section data-tour="projects-list">
         <h2 className="mb-3 text-base font-semibold">{t("projects.listTitle")}</h2>
 
         {sortedProjects.length === 0 ? (

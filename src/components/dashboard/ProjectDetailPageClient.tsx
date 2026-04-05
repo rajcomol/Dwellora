@@ -9,7 +9,6 @@ import { DEFAULT_RENOVATION_PHASE, RENOVATION_PHASE_ORDER } from "@/lib/renovati
 import type {
   ID,
   Project,
-  ProjectExpense,
   RenovationPhase,
   Room,
   Task,
@@ -26,7 +25,6 @@ import { useI18n } from "@/i18n/provider";
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
 import {
   checklistItemTitleSchema,
-  expenseLineFormSchema,
   projectUpdateFormSchema,
   rosterEntryFormSchema,
   roomNameFormSchema,
@@ -47,13 +45,6 @@ function taskFormZodMessage(t: TranslateFn, err: ZodError): string {
   return t("validation.generic");
 }
 
-function expenseFormZodMessage(t: TranslateFn, err: ZodError): string {
-  const path = err.issues[0]?.path[0];
-  if (path === "title") return t("projectDetail.expenseTitleRequired");
-  if (path === "amount") return t("projectDetail.expenseAmountInvalid");
-  return t("validation.generic");
-}
-
 function statusBadge(status: TaskStatus) {
   switch (status) {
     case "todo":
@@ -67,6 +58,7 @@ function statusBadge(status: TaskStatus) {
 
 function TaskEditor({
   task,
+  projectId,
   roomName,
   projectTaskOptions,
   rosterOptions,
@@ -80,6 +72,7 @@ function TaskEditor({
   onRemoveAttachment,
 }: {
   task: Task;
+  projectId: ID;
   roomName: string;
   projectTaskOptions: Task[];
   rosterOptions: TeamRosterEntry[];
@@ -105,6 +98,11 @@ function TaskEditor({
   onRemoveAttachment: (id: ID) => void;
 }) {
   const { t } = useI18n();
+  const { projectExpenses } = useRenovation();
+  const linkedExpenses = useMemo(
+    () => projectExpenses.filter((e) => e.taskId === task.id),
+    [projectExpenses, task.id]
+  );
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -505,6 +503,28 @@ function TaskEditor({
               {attachments.length === 0 ? <li className="text-zinc-500">{t("projectDetail.noFilesYet")}</li> : null}
             </ul>
           </div>
+
+          {linkedExpenses.length > 0 ? (
+            <div className="rounded-md border border-zinc-100 p-2 dark:border-zinc-800">
+              <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                {t("projectDetail.linkedExpensesTitle")}
+              </div>
+              <ul className="mt-2 space-y-1 text-xs">
+                {linkedExpenses.map((ex) => (
+                  <li key={ex.id} className="flex justify-between gap-2 text-zinc-700 dark:text-zinc-300">
+                    <span className="min-w-0 truncate">{ex.title}</span>
+                    <span className="shrink-0 tabular-nums">{formatCost(ex.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={`/dashboard/projects/${projectId}/finances`}
+                className="mt-2 inline-block text-xs font-medium text-renovation-steel underline dark:text-renovation-accent"
+              >
+                {t("projectDetail.linkedExpensesFinancesLink")}
+              </Link>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -637,302 +657,36 @@ function ProjectEditSection({
   );
 }
 
-function ExpenseLine({
-  expense,
-  onUpdate,
-  onDelete,
-}: {
-  expense: ProjectExpense;
-  onUpdate: (input: {
-    id: ID;
-    title?: string;
-    amount?: number;
-    spentOn?: string | null;
-    notes?: string;
-  }) => void;
-  onDelete: () => void;
-}) {
-  const { t } = useI18n();
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(expense.title);
-  const [amount, setAmount] = useState(String(expense.amount));
-  const [spentOn, setSpentOn] = useState(expense.spentOn ?? "");
-  const [notes, setNotes] = useState(expense.notes);
-  const [editError, setEditError] = useState<string | null>(null);
-
-  if (editing) {
-    return (
-      <li className="space-y-2 rounded-md border border-zinc-100 p-3 dark:border-zinc-800">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label htmlFor={`expense-edit-${expense.id}-title`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.labelExpenseTitle")}
-            </label>
-            <input
-              id={`expense-edit-${expense.id}-title`}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("projectDetail.expenseTitlePlaceholder")}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-          </div>
-          <div>
-            <label htmlFor={`expense-edit-${expense.id}-amount`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.expenseAmount")}
-            </label>
-            <input
-              id={`expense-edit-${expense.id}-amount`}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="decimal"
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-          </div>
-          <div>
-            <label htmlFor={`expense-edit-${expense.id}-date`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.expenseDate")}
-            </label>
-            <input
-              id={`expense-edit-${expense.id}-date`}
-              type="date"
-              value={spentOn}
-              onChange={(e) => setSpentOn(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor={`expense-edit-${expense.id}-notes`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.expenseNotes")}
-            </label>
-            <textarea
-              id={`expense-edit-${expense.id}-notes`}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-            />
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            className="text-xs"
-            onClick={() => {
-              const parsed = expenseLineFormSchema.safeParse({ title, amount, spentOn, notes });
-              if (!parsed.success) {
-                setEditError(expenseFormZodMessage(t, parsed.error));
-                return;
-              }
-              setEditError(null);
-              const d = parsed.data;
-              onUpdate({
-                id: expense.id,
-                title: d.title,
-                amount: d.amount,
-                spentOn: d.spentOn.trim() || null,
-                notes: d.notes.trim(),
-              });
-              setEditing(false);
-            }}
-          >
-            {t("projectDetail.expenseSave")}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="text-xs"
-            onClick={() => {
-              setTitle(expense.title);
-              setAmount(String(expense.amount));
-              setSpentOn(expense.spentOn ?? "");
-              setNotes(expense.notes);
-              setEditError(null);
-              setEditing(false);
-            }}
-          >
-            {t("common.close")}
-          </Button>
-        </div>
-        {editError ? (
-          <p className="text-xs text-red-600 dark:text-red-400" role="alert">
-            {editError}
-          </p>
-        ) : null}
-      </li>
-    );
-  }
-
-  return (
-    <li className="flex flex-col gap-2 rounded-md border border-zinc-100 p-3 sm:flex-row sm:items-start sm:justify-between dark:border-zinc-800">
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-zinc-900 dark:text-zinc-50">{expense.title}</div>
-        <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-          {formatCost(expense.amount)}
-          {expense.spentOn ? ` • ${formatDisplayDate(expense.spentOn)}` : ""}
-        </div>
-        {expense.notes ? <div className="mt-1 text-xs text-zinc-500">{expense.notes}</div> : null}
-      </div>
-      <div className="flex shrink-0 gap-2">
-        <button
-          type="button"
-          className="text-xs font-medium text-zinc-700 underline dark:text-zinc-300"
-          onClick={() => {
-            setTitle(expense.title);
-            setAmount(String(expense.amount));
-            setSpentOn(expense.spentOn ?? "");
-            setNotes(expense.notes);
-            setEditError(null);
-            setEditing(true);
-          }}
-        >
-          {t("common.edit")}
-        </button>
-        <button type="button" className="text-xs font-medium text-red-600 dark:text-red-400" onClick={onDelete}>
-          {t("common.delete")}
-        </button>
-      </div>
-    </li>
-  );
-}
-
-function ProjectLooseExpensesSection({
+function ProjectFinancesSummarySection({
   projectId,
-  expenses,
-  createProjectExpense,
-  updateProjectExpense,
-  deleteProjectExpense,
+  expenseTotal,
+  expenseCount,
+  documentCount,
 }: {
   projectId: string;
-  expenses: ProjectExpense[];
-  createProjectExpense: (input: {
-    projectId: ID;
-    title: string;
-    amount: number;
-    spentOn?: string | null;
-    notes?: string;
-  }) => void;
-  updateProjectExpense: (input: {
-    id: ID;
-    title?: string;
-    amount?: number;
-    spentOn?: string | null;
-    notes?: string;
-  }) => void;
-  deleteProjectExpense: (id: ID) => void;
+  expenseTotal: number;
+  expenseCount: number;
+  documentCount: number;
 }) {
   const { t } = useI18n();
-  const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [spentOn, setSpentOn] = useState("");
-  const [notes, setNotes] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const sorted = useMemo(
-    () => [...expenses].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [expenses]
-  );
-
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-      <h2 className="text-base font-semibold">{t("projectDetail.expensesTitle")}</h2>
-      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projectDetail.expensesHint")}</p>
-
-      <form
-        className="mt-4 grid gap-3 sm:grid-cols-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const parsed = expenseLineFormSchema.safeParse({ title, amount, spentOn, notes });
-          if (!parsed.success) {
-            setError(expenseFormZodMessage(t, parsed.error));
-            return;
-          }
-          const d = parsed.data;
-          createProjectExpense({
-            projectId,
-            title: d.title,
-            amount: d.amount,
-            spentOn: d.spentOn.trim() || null,
-            notes: d.notes.trim(),
-          });
-          setTitle("");
-          setAmount("");
-          setSpentOn("");
-          setNotes("");
-          setError(null);
-        }}
-      >
-        <div className="sm:col-span-2">
-          <label htmlFor={`expense-new-${projectId}-title`} className={FORM_FIELD_LABEL_CLASS}>
-            {t("projectDetail.labelExpenseTitle")}
-          </label>
-          <input
-            id={`expense-new-${projectId}-title`}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t("projectDetail.expenseTitlePlaceholder")}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <label htmlFor={`expense-new-${projectId}-amount`} className={FORM_FIELD_LABEL_CLASS}>
-            {t("projectDetail.expenseAmount")}
-          </label>
-          <input
-            id={`expense-new-${projectId}-amount`}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            inputMode="decimal"
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
+          <h2 className="text-base font-semibold">{t("finances.summaryCardTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("finances.summaryCardBody")}</p>
+          <p className="mt-2 text-sm tabular-nums text-zinc-800 dark:text-zinc-200">
+            {formatCost(expenseTotal)} · {t("finances.expenseCount", { count: expenseCount })} ·{" "}
+            {t("finances.documentCount", { count: documentCount })}
+          </p>
         </div>
-        <div>
-          <label htmlFor={`expense-new-${projectId}-date`} className={FORM_FIELD_LABEL_CLASS}>
-            {t("projectDetail.expenseDate")}
-          </label>
-          <input
-            id={`expense-new-${projectId}-date`}
-            type="date"
-            value={spentOn}
-            onChange={(e) => setSpentOn(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label htmlFor={`expense-new-${projectId}-notes`} className={FORM_FIELD_LABEL_CLASS}>
-            {t("projectDetail.expenseNotes")}
-          </label>
-          <textarea
-            id={`expense-new-${projectId}-notes`}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
-          />
-        </div>
-        <Button type="submit" className="w-fit sm:col-span-2">
-          {t("projectDetail.expenseAdd")}
-        </Button>
-      </form>
-      {error ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</div> : null}
-
-      {sorted.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">{t("projectDetail.expenseEmpty")}</p>
-      ) : (
-        <ul className="mt-4 space-y-2">
-          {sorted.map((ex) => (
-            <ExpenseLine
-              key={ex.id}
-              expense={ex}
-              onUpdate={updateProjectExpense}
-              onDelete={() => {
-                if (typeof window !== "undefined" && window.confirm(t("common.delete") + "?")) {
-                  deleteProjectExpense(ex.id);
-                }
-              }}
-            />
-          ))}
-        </ul>
-      )}
+        <Link
+          href={`/dashboard/projects/${projectId}/finances`}
+          className="inline-flex shrink-0 rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+        >
+          {t("finances.goToFinances")}
+        </Link>
+      </div>
     </section>
   );
 }
@@ -1053,6 +807,7 @@ function RoomCard({
               <TaskEditor
                 key={task.id}
                 task={task}
+                projectId={room.projectId}
                 roomName={room.name}
                 projectTaskOptions={projectTasks}
                 rosterOptions={rosterForProject}
@@ -1285,6 +1040,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     rooms,
     tasks,
     projectExpenses,
+    expenseDocuments,
     taskDependencies,
     taskAttachments,
     checklistItems,
@@ -1295,9 +1051,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     updateTask,
     deleteTask,
     updateProject,
-    createProjectExpense,
-    updateProjectExpense,
-    deleteProjectExpense,
     addTaskDependency,
     removeTaskDependency,
     uploadTaskAttachment,
@@ -1349,6 +1102,16 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     [projectExpenses, projectId]
   );
 
+  const financeExpenseTotal = useMemo(
+    () => expensesForProject.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0),
+    [expensesForProject]
+  );
+
+  const financeDocumentCount = useMemo(
+    () => expenseDocuments.filter((d) => d.projectId === projectId).length,
+    [expenseDocuments, projectId]
+  );
+
   const [roomName, setRoomName] = useState("");
   const [roomError, setRoomError] = useState<string | null>(null);
 
@@ -1379,7 +1142,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   }
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-6" data-tour="project-overview">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
@@ -1417,12 +1180,11 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
 
       <ProjectCollaborationSection projectId={projectId} />
 
-      <ProjectLooseExpensesSection
+      <ProjectFinancesSummarySection
         projectId={projectId}
-        expenses={expensesForProject}
-        createProjectExpense={createProjectExpense}
-        updateProjectExpense={updateProjectExpense}
-        deleteProjectExpense={deleteProjectExpense}
+        expenseTotal={financeExpenseTotal}
+        expenseCount={expensesForProject.length}
+        documentCount={financeDocumentCount}
       />
 
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">

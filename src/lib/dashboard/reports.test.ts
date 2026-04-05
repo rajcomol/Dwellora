@@ -63,6 +63,7 @@ describe("projectBudgetSummary", () => {
         spentOn: null,
         notes: "",
         createdAt: "",
+        taskId: null,
       },
     ];
     const s = projectBudgetSummary(sampleProject, [task({ actualCost: 50 })], expenses);

@@ -2,6 +2,8 @@
 
 import { DEFAULT_RENOVATION_PHASE, parseRenovationPhase } from "@/lib/renovation/phases";
 import type {
+  ExpenseDocument,
+  ExpenseDocumentType,
   ID,
   KeyHandoverChecklistItem,
   Project,
@@ -21,6 +23,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 const DOCUMENTS_BUCKET = "documents";
+const EXPENSE_DOCUMENTS_BUCKET = "expense_documents";
+const MAX_EXPENSE_DOC_BYTES = 10 * 1024 * 1024;
 
 /** Ensures roster row belongs to the same project as the task's room. */
 async function resolveAssignedRosterIdForTaskRoom(roomId: ID, rosterId: ID | null | undefined): Promise<ID | null> {
@@ -32,6 +36,21 @@ async function resolveAssignedRosterIdForTaskRoom(roomId: ID, rosterId: ID | nul
   if (rs.error || !rs.data) return null;
   if (String(rs.data.project_id) !== projectId) return null;
   return rosterId;
+}
+
+/** Ensures task belongs to project (via room); returns null if invalid. */
+async function resolveTaskIdForProjectExpense(projectId: ID, taskId: ID | null | undefined): Promise<ID | null> {
+  if (taskId == null || taskId === "") return null;
+  const taskRes = await supabase.from("tasks").select("id, room_id").eq("id", taskId).maybeSingle();
+  if (taskRes.error || !taskRes.data) return null;
+  const roomRes = await supabase
+    .from("rooms")
+    .select("project_id")
+    .eq("id", String(taskRes.data.room_id))
+    .maybeSingle();
+  if (roomRes.error || !roomRes.data) return null;
+  if (String(roomRes.data.project_id) !== projectId) return null;
+  return taskId;
 }
 
 type CreateProjectInput = {
@@ -112,6 +131,7 @@ type RenovationActions = {
     amount: number;
     spentOn?: string | null;
     notes?: string;
+    taskId?: ID | null;
   }) => void;
   updateProjectExpense: (input: {
     id: ID;
@@ -119,8 +139,15 @@ type RenovationActions = {
     amount?: number;
     spentOn?: string | null;
     notes?: string;
+    taskId?: ID | null;
   }) => void;
   deleteProjectExpense: (id: ID) => void;
+  uploadExpenseDocument: (
+    expenseId: ID,
+    file: File,
+    documentType: ExpenseDocumentType
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  removeExpenseDocument: (id: ID) => void;
 };
 
 type RenovationContextValue = RenovationState &
@@ -220,8 +247,10 @@ function mapExpense(row: {
   spent_on?: unknown;
   notes?: unknown;
   created_at?: unknown;
+  task_id?: unknown;
 }): ProjectExpense {
   const so = row.spent_on;
+  const tid = row.task_id;
   return {
     id: String(row.id),
     projectId: String(row.project_id),
@@ -231,6 +260,47 @@ function mapExpense(row: {
     spentOn: so == null || so === "" ? null : String(so),
     notes: String(row.notes ?? ""),
     createdAt: String(row.created_at ?? ""),
+    taskId: tid == null || tid === "" ? null : String(tid),
+  };
+}
+
+function mapExpenseDocument(row: {
+  id: unknown;
+  expense_id: unknown;
+  project_id: unknown;
+  document_type: unknown;
+  file_name: unknown;
+  file_path: unknown;
+  mime_type: unknown;
+  file_size_bytes?: unknown;
+  uploaded_by?: unknown;
+  uploaded_at?: unknown;
+  retention_until?: unknown;
+  extracted_metadata?: unknown;
+}): ExpenseDocument {
+  const dt = row.document_type;
+  const documentType: ExpenseDocumentType =
+    dt === "receipt" || dt === "invoice" || dt === "other" ? dt : "other";
+  const fs = row.file_size_bytes;
+  const meta = row.extracted_metadata;
+  return {
+    id: String(row.id),
+    expenseId: String(row.expense_id),
+    projectId: String(row.project_id),
+    documentType,
+    fileName: String(row.file_name ?? ""),
+    filePath: String(row.file_path ?? ""),
+    mimeType: String(row.mime_type ?? ""),
+    fileSizeBytes:
+      typeof fs === "number" ? fs : fs != null ? Number.parseInt(String(fs), 10) || null : null,
+    uploadedBy: row.uploaded_by == null || row.uploaded_by === "" ? null : String(row.uploaded_by),
+    uploadedAt: String(row.uploaded_at ?? ""),
+    retentionUntil:
+      row.retention_until == null || row.retention_until === "" ? null : String(row.retention_until),
+    extractedMetadata:
+      meta != null && typeof meta === "object" && !Array.isArray(meta)
+        ? (meta as Record<string, unknown>)
+        : {},
   };
 }
 
@@ -298,6 +368,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     rooms: [],
     tasks: [],
     projectExpenses: [],
+    expenseDocuments: [],
     taskDependencies: [],
     taskAttachments: [],
     checklistItems: [],
@@ -333,6 +404,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           rooms: [],
           tasks: [],
           projectExpenses: [],
+          expenseDocuments: [],
           taskDependencies: [],
           taskAttachments: [],
           checklistItems: [],
@@ -359,6 +431,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           rooms: [],
           tasks: [],
           projectExpenses: [],
+          expenseDocuments: [],
           taskDependencies: [],
           taskAttachments: [],
           checklistItems: [],
@@ -417,6 +490,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           rooms: [],
           tasks: [],
           projectExpenses: [],
+          expenseDocuments: [],
           taskDependencies: [],
           taskAttachments: [],
           checklistItems: [],
@@ -450,7 +524,16 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const taskIds = (tasksRes.data ?? []).map((t) => String(t.id));
 
       const ext = await Promise.all([
-        supabase.from("project_expenses").select("id,project_id,title,amount,spent_on,notes,created_at").in("project_id", projectIds),
+        supabase
+          .from("project_expenses")
+          .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
+          .in("project_id", projectIds),
+        supabase
+          .from("expense_documents")
+          .select(
+            "id,expense_id,project_id,document_type,file_name,file_path,mime_type,file_size_bytes,uploaded_by,uploaded_at,retention_until,extracted_metadata"
+          )
+          .in("project_id", projectIds),
         taskIds.length > 0
           ? supabase.from("task_dependencies").select("id,task_id,depends_on_task_id").in("task_id", taskIds)
           : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
@@ -474,11 +557,12 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [expensesRes, depsRes, attRes, checklistRes, rosterRes] = ext;
+      const [expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] = ext;
       const logExt = (label: string, err: { message: string } | null) => {
         if (err) console.warn(`Renovation extension load (${label}):`, err.message);
       };
       logExt("project_expenses", expensesRes.error);
+      logExt("expense_documents", expenseDocsRes.error);
       logExt("task_dependencies", depsRes.error);
       logExt("task_attachments", attRes.error);
       logExt("checklist", checklistRes.error);
@@ -493,6 +577,11 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         projectExpenses: expensesRes.error
           ? []
           : (expensesRes.data ?? []).map((r) => mapExpense(r as Parameters<typeof mapExpense>[0])),
+        expenseDocuments: expenseDocsRes.error
+          ? []
+          : (expenseDocsRes.data ?? []).map((r) =>
+              mapExpenseDocument(r as Parameters<typeof mapExpenseDocument>[0])
+            ),
         taskDependencies: depsRes.error
           ? []
           : (depsRes.data ?? []).map((r) =>
@@ -1016,6 +1105,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     amount: number;
     spentOn?: string | null;
     notes?: string;
+    taskId?: ID | null;
   }) => {
     const title = input.title.trim();
     if (!title) return;
@@ -1025,6 +1115,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
 
+      const taskId = await resolveTaskIdForProjectExpense(input.projectId, input.taskId ?? null);
+
       const res = await supabase
         .from("project_expenses")
         .insert({
@@ -1033,8 +1125,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           amount: input.amount,
           spent_on: input.spentOn?.trim() || null,
           notes: (input.notes ?? "").trim(),
+          task_id: taskId,
         })
-        .select("id,project_id,title,amount,spent_on,notes,created_at")
+        .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
         .single();
 
       if (res.error || !res.data) return;
@@ -1051,6 +1144,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     amount?: number;
     spentOn?: string | null;
     notes?: string;
+    taskId?: ID | null;
   }) => {
     void (async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -1061,13 +1155,18 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (input.amount !== undefined) patch.amount = input.amount;
       if (input.spentOn !== undefined) patch.spent_on = input.spentOn?.trim() || null;
       if (input.notes !== undefined) patch.notes = input.notes.trim();
+      if (input.taskId !== undefined) {
+        const expRow = await supabase.from("project_expenses").select("project_id").eq("id", input.id).maybeSingle();
+        const pid = expRow.data?.project_id != null ? String(expRow.data.project_id) : null;
+        patch.task_id = pid ? await resolveTaskIdForProjectExpense(pid, input.taskId) : null;
+      }
       if (Object.keys(patch).length === 0) return;
 
       const res = await supabase
         .from("project_expenses")
         .update(patch)
         .eq("id", input.id)
-        .select("id,project_id,title,amount,spent_on,notes,created_at")
+        .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
         .single();
 
       if (res.error || !res.data) return;
@@ -1084,11 +1183,108 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
 
+      const docsRes = await supabase.from("expense_documents").select("file_path").eq("expense_id", id);
+      if (!docsRes.error && docsRes.data?.length) {
+        const paths = docsRes.data
+          .map((r: { file_path?: unknown }) => (typeof r.file_path === "string" ? r.file_path : ""))
+          .filter(Boolean);
+        if (paths.length > 0) {
+          await supabase.storage.from(EXPENSE_DOCUMENTS_BUCKET).remove(paths);
+        }
+      }
+
       const res = await supabase.from("project_expenses").delete().eq("id", id);
       if (res.error) return;
       setState((prev) => ({
         ...prev,
         projectExpenses: prev.projectExpenses.filter((e) => e.id !== id),
+        expenseDocuments: prev.expenseDocuments.filter((d) => d.expenseId !== id),
+      }));
+    })();
+  };
+
+  const uploadExpenseDocument = async (
+    expenseId: ID,
+    file: File,
+    documentType: ExpenseDocumentType
+  ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return { ok: false, error: "Niet ingelogd." };
+
+    if (file.size > MAX_EXPENSE_DOC_BYTES) {
+      return { ok: false, error: "Bestand is te groot (max. 10 MB)." };
+    }
+
+    const allowed = new Set([
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/heic",
+      "image/heif",
+    ]);
+    if (!allowed.has(file.type)) {
+      return { ok: false, error: "Alleen PDF of afbeelding (JPEG, PNG, WebP, HEIC)." };
+    }
+
+    const expRes = await supabase.from("project_expenses").select("id,project_id").eq("id", expenseId).maybeSingle();
+    if (expRes.error || !expRes.data) return { ok: false, error: "Uitgave niet gevonden." };
+
+    const projectId = String(expRes.data.project_id);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+    const objectName = `${crypto.randomUUID()}_${safeName}`;
+    const path = `${projectId}/expenses/${expenseId}/${objectName}`;
+
+    const up = await supabase.storage.from(EXPENSE_DOCUMENTS_BUCKET).upload(path, file, {
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+    if (up.error) return { ok: false, error: up.error.message };
+
+    const ins = await supabase
+      .from("expense_documents")
+      .insert({
+        expense_id: expenseId,
+        project_id: projectId,
+        document_type: documentType,
+        file_name: file.name,
+        file_path: path,
+        mime_type: file.type || "application/octet-stream",
+        file_size_bytes: file.size,
+      })
+      .select(
+        "id,expense_id,project_id,document_type,file_name,file_path,mime_type,file_size_bytes,uploaded_by,uploaded_at,retention_until,extracted_metadata"
+      )
+      .single();
+
+    if (ins.error || !ins.data) {
+      await supabase.storage.from(EXPENSE_DOCUMENTS_BUCKET).remove([path]);
+      return { ok: false, error: ins.error?.message ?? "Kon document niet opslaan." };
+    }
+
+    setState((prev) => ({
+      ...prev,
+      expenseDocuments: [...prev.expenseDocuments, mapExpenseDocument(ins.data)],
+    }));
+    return { ok: true };
+  };
+
+  const removeExpenseDocument = (id: ID) => {
+    void (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) return;
+
+      const row = await supabase.from("expense_documents").select("file_path").eq("id", id).maybeSingle();
+      const fp = row.data?.file_path;
+      if (typeof fp === "string" && fp) {
+        await supabase.storage.from(EXPENSE_DOCUMENTS_BUCKET).remove([fp]);
+      }
+
+      const res = await supabase.from("expense_documents").delete().eq("id", id);
+      if (res.error) return;
+      setState((prev) => ({
+        ...prev,
+        expenseDocuments: prev.expenseDocuments.filter((d) => d.id !== id),
       }));
     })();
   };
@@ -1116,6 +1312,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     createProjectExpense,
     updateProjectExpense,
     deleteProjectExpense,
+    uploadExpenseDocument,
+    removeExpenseDocument,
   };
 
   return <RenovationContext.Provider value={value}>{children}</RenovationContext.Provider>;

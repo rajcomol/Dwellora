@@ -307,7 +307,8 @@ export default function DocumentsPageClient() {
 
   return (
     <div className="space-y-6">
-      <div>
+      {/* Tour-target alleen op de kop — volledige kolom als target breekt joyride bij lange inhoud. */}
+      <div data-tour="quotes-hub">
         <h1 className="text-2xl font-semibold">{t("documents.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("documents.subtitle")}</p>
       </div>

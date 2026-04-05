@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/dashboard/assistant", destination: "/dashboard", permanent: false },
       { source: "/dashboard/assistant/:path*", destination: "/dashboard", permanent: false },
+      { source: "/dashboard/documents", destination: "/dashboard/quotes", permanent: false },
+      { source: "/dashboard/documents/:path*", destination: "/dashboard/quotes/:path*", permanent: false },
     ];
   },
   async headers() {
