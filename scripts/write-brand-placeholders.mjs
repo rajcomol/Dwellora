@@ -70,5 +70,7 @@ const brandDir = path.join(root, "public", "brand");
 fs.mkdirSync(brandDir, { recursive: true });
 // Cream #F5F3ED — replace with wordmark/icon exports when available
 fs.writeFileSync(path.join(brandDir, "renotasker-logo-wordmark-v1.png"), createSolidPng(280, 72, 245, 243, 237));
+/** Placeholder; UI gebruikt `renotasker-logo-new.png` (zie `build-renotasker-logo-transparent.mjs`). */
+fs.writeFileSync(path.join(brandDir, "renotasker-logo.png"), createSolidPng(1536, 1024, 245, 243, 237));
 fs.writeFileSync(path.join(brandDir, "renotasker-icon.png"), createSolidPng(96, 96, 245, 243, 237));
 console.log("Wrote public/brand/*.png (placeholder cream tiles — swap for brand assets).");

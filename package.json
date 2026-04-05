@@ -13,7 +13,8 @@
     "supabase:db:push": "npx supabase db push",
     "supabase:link": "npx supabase link",
     "verify:supabase": "node scripts/verify-supabase-migration.mjs",
-    "sync:supabase-storage": "node scripts/sync-supabase-storage-documents.mjs"
+    "sync:supabase-storage": "node scripts/sync-supabase-storage-documents.mjs",
+    "brand:logo": "node scripts/build-renotasker-logo-transparent.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",

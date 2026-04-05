@@ -40,17 +40,16 @@ export default function ForgotPasswordForm() {
     setMessage({ type: "success", text: t("login.forgotSuccess") });
   }
 
-  const glass =
-    "rounded-[2rem] border border-cyan-400/15 bg-gradient-to-b from-slate-950/90 to-slate-950/95 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl sm:p-10";
+  const authCardShell = "login-auth-glass rounded-[2rem] p-8 sm:p-10";
   const underlineWrap =
-    "flex items-end gap-3 border-b border-cyan-200/20 pb-2 transition-colors focus-within:border-cyan-300/45";
+    "flex items-end gap-3 border-b border-amber-200/20 pb-2 transition-colors focus-within:border-amber-300/50";
   const inputClass =
     "min-h-[2.75rem] flex-1 border-0 bg-transparent text-sm text-zinc-50 outline-none ring-0 placeholder:text-zinc-500 focus:ring-0";
 
   return (
-    <div className={glass}>
-      <div className="border-b border-cyan-400/10 pb-5">
-        <h1 className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100/90">{t("login.forgotCardHeading")}</h1>
+    <div className={authCardShell}>
+      <div className="border-b border-amber-200/12 pb-5">
+        <h1 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/90">{t("login.forgotCardHeading")}</h1>
         <p className="mt-2 text-sm leading-relaxed text-zinc-400">{t("login.forgotDescription")}</p>
       </div>
 
@@ -76,7 +75,7 @@ export default function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={busy}
-          className="flex h-12 w-full items-center justify-center rounded-full bg-cyan-400 text-sm font-semibold uppercase tracking-wide text-slate-950 transition-opacity hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-12 w-full items-center justify-center rounded-full bg-amber-400 text-sm font-semibold uppercase tracking-wide text-stone-950 transition-opacity hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? t("login.pleaseWait") : t("login.forgotSubmit")}
         </button>

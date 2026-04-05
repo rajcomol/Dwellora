@@ -84,8 +84,7 @@
   "login": {
     "welcomeTitle": "Welkom terug",
     "welcomeSubtitle": "Log in om in RenoTasker projecten, taken en budgetten op één plek te beheren.",
-    "tagline": "Waar je project wél volgens planning loopt.",
-    "cardHeading": "Klantlogin",
+    "cardHeading": "Inloggen",
     "accountHeading": "Account",
     "accountIntro": "Dezelfde sessie voor het dashboard, documenten en de AI-assistent.",
     "rememberMe": "Onthoud mij",

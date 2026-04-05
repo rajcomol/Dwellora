@@ -142,7 +142,13 @@ function Fallback() {
 export default function InviteAcceptPage() {
   const { t } = useI18n();
   return (
-    <LoginScreenChrome belowLogo={<p className="text-sm text-white/90">{t("inviteAccept.title")}</p>}>
+    <LoginScreenChrome
+      belowLogo={
+        <p className="text-sm leading-relaxed tracking-wide text-white/90 drop-shadow-[0_2px_14px_rgb(8_6_4/0.55)]">
+          {t("inviteAccept.title")}
+        </p>
+      }
+    >
       <Suspense fallback={<Fallback />}>
         <InviteAcceptInner />
       </Suspense>

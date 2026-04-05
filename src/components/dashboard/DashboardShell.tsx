@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import BrandLogoPill from "@/components/brand/BrandLogoPill";
+import BrandLogo from "@/components/brand/BrandLogo";
 import AuthHeader from "@/components/dashboard/AuthHeader";
 import DashboardMobileNav from "@/components/dashboard/DashboardMobileNav";
 import DashboardShellNav from "@/components/dashboard/DashboardShellNav";
@@ -47,7 +47,7 @@ export default function DashboardShell({
                 data-tour="brand-home"
                 className="min-w-0 shrink transition-opacity hover:opacity-90"
               >
-                <BrandLogoPill size="compact" />
+                <BrandLogo size="compact" />
               </Link>
             </div>
             <div className="flex items-center justify-end justify-self-end gap-2 text-sm">
