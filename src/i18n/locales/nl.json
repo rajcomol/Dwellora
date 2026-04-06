@@ -60,7 +60,8 @@
     "headerTitle": "Dashboard",
     "sidebarSubtitle": "Dashboard",
     "privacyLink": "Privacy",
-    "menu": "Menu"
+    "menu": "Menu",
+    "openMenuAria": "Hoofdmenu openen"
   },
   "auth": {
     "signIn": "Inloggen",
@@ -568,7 +569,7 @@
       "navigation-sidebar": {
         "title": "Navigatie en menu",
         "summary": "Hoe je door de app beweegt.",
-        "body": "Op desktop zie je links het menu met de belangrijkste onderdelen. Op mobiel open je hetzelfde menu via de knop linksboven.\n\nRechtsboven vind je je account (uitloggen). Rechtsonder staat de Kluscoach-knop voor AI-hulp — die context gebruikt het project als je op een projectpagina bent.\n\nJe kunt deze kennisbank altijd terugvinden via Help in de kop of onderaan het zijmenu."
+        "body": "Op desktop zie je links het menu met de belangrijkste onderdelen. Op mobiel open je hetzelfde menu via het menu-icoon (hamburger) linksboven.\n\nRechtsboven vind je je account (uitloggen). Rechtsonder staat de Kluscoach-knop voor AI-hulp — die context gebruikt het project als je op een projectpagina bent.\n\nJe kunt deze kennisbank altijd terugvinden via Help in de kop of onderaan het zijmenu."
       },
       "projects-create": {
         "title": "Projecten aanmaken",

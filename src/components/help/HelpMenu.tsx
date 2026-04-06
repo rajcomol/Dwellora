@@ -3,10 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import type { CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { useHelp } from "@/components/help/HelpProvider";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { helpTopicForPath } from "@/lib/help/route-topic";
 import { useI18n } from "@/i18n/provider";
-import { useHelp } from "@/components/help/HelpProvider";
 
 function useClientMounted() {
   return useSyncExternalStore(
@@ -41,15 +51,77 @@ function HelpIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Anchored popover below/above the help trigger, clamped to the viewport.
+ * Falls back to a top-aligned full-width panel on very narrow or tight layouts.
+ */
+function computeHelpPanelStyle(rect: DOMRect): CSSProperties {
+  const gap = 8;
+  const margin = 8;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const panelWidth = Math.min(320, vw - 2 * margin);
+  const right = Math.max(margin, vw - rect.right);
+
+  const topBelow = rect.bottom + gap;
+  const spaceBelow = vh - topBelow - margin;
+  const spaceAbove = rect.top - margin;
+  const minComfort = 200;
+
+  // Very narrow + little room: top-aligned sheet (not bottom sheet)
+  if (vw < 380 && spaceBelow < 140) {
+    const top = margin;
+    return {
+      position: "fixed",
+      top,
+      left: margin,
+      right: margin,
+      width: "auto",
+      maxHeight: Math.min(vh * 0.88, vh - top - margin),
+    };
+  }
+
+  if (spaceBelow >= minComfort || spaceBelow >= spaceAbove) {
+    const maxHBelow = Math.min(vh * 0.7, spaceBelow);
+    if (maxHBelow < 160 && spaceAbove > spaceBelow + 48) {
+      return {
+        position: "fixed",
+        bottom: vh - rect.top + gap,
+        right,
+        width: panelWidth,
+        maxHeight: Math.min(vh * 0.7, Math.max(120, spaceAbove - gap)),
+      };
+    }
+    return {
+      position: "fixed",
+      top: topBelow,
+      right,
+      width: panelWidth,
+      maxHeight: Math.max(140, Math.min(vh * 0.7, spaceBelow)),
+    };
+  }
+
+  return {
+    position: "fixed",
+    bottom: vh - rect.top + gap,
+    right,
+    width: panelWidth,
+    maxHeight: Math.min(vh * 0.7, Math.max(120, spaceAbove - gap)),
+  };
+}
+
 export default function HelpMenu() {
   const { t } = useI18n();
   const { startTour } = useHelp();
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
+  const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
   const panelRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const mounted = useClientMounted();
+  const wasOpenedRef = useRef(false);
 
   const topic = helpTopicForPath(pathname);
   const contextHref = topic
@@ -57,6 +129,24 @@ export default function HelpMenu() {
     : "/dashboard/help";
 
   const close = useCallback(() => setOpen(false), []);
+
+  useBodyScrollLock(open);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    function updatePosition() {
+      const el = triggerRef.current;
+      if (!el) return;
+      setPanelStyle(computeHelpPanelStyle(el.getBoundingClientRect()));
+    }
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,23 +158,25 @@ export default function HelpMenu() {
   }, [open, close]);
 
   useEffect(() => {
-    if (open) closeBtnRef.current?.focus();
+    if (open) {
+      wasOpenedRef.current = true;
+      queueMicrotask(() => closeBtnRef.current?.focus());
+    }
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (open || !wasOpenedRef.current) return;
+    const id = requestAnimationFrame(() => triggerRef.current?.focus());
+    return () => cancelAnimationFrame(id);
   }, [open]);
 
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         data-tour="help-button"
-        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-renovation-border bg-renovation-muted/40 px-3 text-sm font-medium text-renovation-steel transition-colors hover:bg-renovation-muted dark:border-renovation-border dark:bg-zinc-900/40 dark:text-zinc-100"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-renovation-border/70 bg-renovation-muted/35 px-3 text-xs font-medium text-renovation-concrete transition-colors hover:border-renovation-border hover:bg-renovation-muted/60 hover:text-renovation-steel dark:border-renovation-border/80 dark:bg-zinc-900/35 dark:text-zinc-400 dark:hover:border-renovation-border dark:hover:bg-zinc-900/55 dark:hover:text-zinc-100"
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={open ? "help-menu-panel" : undefined}
@@ -104,18 +196,17 @@ export default function HelpMenu() {
                 aria-label={t("common.close")}
                 onClick={close}
               />
-              {/*
-                Desktop: niet `top: calc(100% + …)` t.o.v. de full-screen overlay — dat duwt het paneel onder de viewport.
-                Vaste `top` t.o.v. viewport + portal naar body (zelfde patroon als GlobalChatLauncher).
-              */}
               <div
                 ref={panelRef}
                 id="help-menu-panel"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="fixed inset-x-0 bottom-0 z-[10061] max-h-[min(85dvh,520px)] overflow-y-auto rounded-t-2xl border border-renovation-border bg-renovation-elevated shadow-2xl dark:border-renovation-border dark:bg-renovation-elevated sm:inset-x-auto sm:bottom-auto sm:left-auto sm:right-4 sm:top-14 sm:max-h-[min(70dvh,440px)] sm:w-[min(100vw-2rem,20rem)] sm:rounded-xl"
-                style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+                className="fixed z-[10061] overflow-y-auto rounded-xl border border-renovation-border bg-renovation-elevated shadow-2xl dark:border-renovation-border dark:bg-renovation-elevated"
+                style={{
+                  ...panelStyle,
+                  paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+                }}
               >
                 <div className="flex items-start justify-between gap-2 border-b border-renovation-border px-4 py-3 dark:border-renovation-border">
                   <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-50">

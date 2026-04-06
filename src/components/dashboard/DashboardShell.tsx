@@ -34,23 +34,27 @@ export default function DashboardShell({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header
-            className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-renovation-border bg-renovation-elevated px-4 py-3 dark:border-renovation-border dark:bg-renovation-elevated"
-            style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+            className="relative flex min-h-[3.25rem] items-center gap-3 border-b border-renovation-border bg-renovation-elevated px-4 py-3 dark:border-renovation-border dark:bg-renovation-elevated max-lg:sticky max-lg:top-0 max-lg:z-[45] max-lg:border-renovation-border/80 max-lg:bg-renovation-elevated/85 max-lg:backdrop-blur-md dark:max-lg:bg-renovation-elevated/80 lg:bg-renovation-elevated lg:backdrop-blur-none"
+            style={{
+              paddingTop: "max(0.75rem, env(safe-area-inset-top))",
+              paddingLeft: "max(1rem, env(safe-area-inset-left))",
+              paddingRight: "max(1rem, env(safe-area-inset-right))",
+            }}
           >
-            <div className="flex min-w-0 justify-self-start">
+            <div className="relative z-10 flex min-w-0 flex-1 items-center justify-start">
               <DashboardMobileNav />
             </div>
-            <div className="flex min-w-0 justify-center justify-self-center">
+            <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-center">
               <Link
                 href="/dashboard"
                 aria-label={nl.brand.name}
                 data-tour="brand-home"
-                className="min-w-0 shrink transition-opacity hover:opacity-90"
+                className="pointer-events-auto min-w-0 max-w-[min(100%,calc(100vw-7rem))] shrink transition-opacity hover:opacity-90 sm:max-w-[min(100%,calc(100vw-9rem))] lg:max-w-[min(100%,calc(100vw-14rem))]"
               >
-                <BrandLogo size="compact" />
+                <BrandLogo size="header" />
               </Link>
             </div>
-            <div className="flex items-center justify-end justify-self-end gap-2 text-sm">
+            <div className="relative z-10 flex min-w-0 flex-1 items-center justify-end gap-2 text-sm">
               <HelpMenu />
               <AuthHeader />
             </div>

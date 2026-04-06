@@ -31,8 +31,11 @@ export default function AuthHeader() {
 
   if (user) {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
-        <span className="max-w-[200px] truncate text-xs text-zinc-600 dark:text-zinc-400" title={user.email ?? ""}>
+      <div className="flex flex-wrap items-center justify-end gap-1.5 text-sm sm:gap-2">
+        <span
+          className="hidden max-w-[200px] truncate text-xs text-zinc-600 lg:inline dark:text-zinc-400"
+          title={user.email ?? ""}
+        >
           {user.email}
         </span>
         <button
