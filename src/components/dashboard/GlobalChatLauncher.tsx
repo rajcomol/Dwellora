@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import HeavyRouteFallback from "@/components/dashboard/HeavyRouteFallback";
 import { useProjectIdFromDashboardPath } from "@/components/dashboard/useProjectIdFromDashboardPath";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useI18n } from "@/i18n/provider";
 
 const ChatPanelContent = dynamic(() => import("@/components/chat/ChatPanelContent"), {
@@ -76,13 +77,7 @@ export default function GlobalChatLauncher() {
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const wasOpenedRef = useRef(false);
 
-  useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
