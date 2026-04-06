@@ -199,12 +199,22 @@ export default function HelpMenu() {
       if (!openRef.current) return;
       updatePosition();
     });
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
+    /**
+     * Narrow: panel style is fixed to the viewport; do not subscribe to window scroll or resize.
+     * Both can fire in bursts (fixed body, mobile URL bar / visualViewport) and cause repeated setPanelStyle.
+     * Desktop: keep resize + scroll so the popover tracks the trigger.
+     */
+    const narrow = typeof window !== "undefined" && window.innerWidth < 640;
+    if (!narrow) {
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+    }
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+      if (!narrow) {
+        window.removeEventListener("resize", updatePosition);
+        window.removeEventListener("scroll", updatePosition, true);
+      }
     };
   }, [open]);
 

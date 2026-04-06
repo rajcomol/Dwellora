@@ -43,7 +43,7 @@ export default function BrandLogo({ size = "default", className = "" }: Props) {
       height={LOGO_H}
       alt={name}
       sizes={sizes}
-      priority={size === "default"}
+      priority={size === "default" || size === "header" || size === "compact"}
       className={cls}
     />
   );

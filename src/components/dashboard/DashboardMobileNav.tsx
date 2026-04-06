@@ -95,6 +95,15 @@ export default function DashboardMobileNav() {
     return () => cancelAnimationFrame(id);
   }, [portalMounted]);
 
+  /** If transitionend never fires, still unmount portal so scroll-lock and overlay cannot stick. */
+  useEffect(() => {
+    if (drawerOpen || !portalMounted) return;
+    const id = window.setTimeout(() => {
+      setPortalMounted(false);
+    }, 320);
+    return () => window.clearTimeout(id);
+  }, [drawerOpen, portalMounted]);
+
   function handleOpenToggle() {
     if (portalMounted && drawerOpen) {
       close();
@@ -120,7 +129,7 @@ export default function DashboardMobileNav() {
         <button
           type="button"
           className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-200 ease-out dark:bg-black/50 ${
-            drawerOpen ? "opacity-100" : "opacity-0"
+            drawerOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
           aria-label={t("common.close")}
           onClick={close}
@@ -133,7 +142,7 @@ export default function DashboardMobileNav() {
           aria-labelledby={titleId}
           onTransitionEnd={handlePanelTransitionEnd}
           className={`absolute left-0 top-0 flex h-full w-[min(100%,20rem)] flex-col border-r border-renovation-border bg-renovation-elevated shadow-lg transition-transform duration-200 ease-out dark:border-renovation-border dark:bg-renovation-elevated ${
-            drawerOpen ? "translate-x-0" : "-translate-x-full"
+            drawerOpen ? "translate-x-0" : "pointer-events-none -translate-x-full"
           }`}
           style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
         >

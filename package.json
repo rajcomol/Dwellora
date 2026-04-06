@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "kill-port 3000 && next dev --webpack",
+    "dev:no-kill": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -44,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "jsdom": "^29.0.1",
+    "kill-port": "^2.0.1",
     "sharp": "^0.34.5",
     "typescript": "^5",
     "vitest": "^4.1.1"
