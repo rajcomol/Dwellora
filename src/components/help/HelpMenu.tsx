@@ -51,9 +51,45 @@ function HelpIcon({ className }: { className?: string }) {
   );
 }
 
+/** Full-width bottom sheet — avoids anchor math on narrow viewports (bad rects break `right:` popovers). */
+function getMobileHelpSheetStyle(): CSSProperties {
+  return {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: "auto",
+    width: "100%",
+    maxHeight: "min(85dvh, 520px)",
+    borderTopLeftRadius: "1rem",
+    borderTopRightRadius: "1rem",
+  };
+}
+
+/** Avoids a frame with `position:fixed` and no insets (browser pins to top-left). */
+function getFallbackPanelStyle(): CSSProperties {
+  if (typeof window === "undefined") return getMobileHelpSheetStyle();
+  return window.innerWidth < 640
+    ? getMobileHelpSheetStyle()
+    : {
+        position: "fixed",
+        top: "max(0.75rem, env(safe-area-inset-top))",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: Math.min(320, window.innerWidth - 16),
+        maxHeight: "min(70dvh, 560px)",
+      };
+}
+
+function clampPopoverRight(vw: number, margin: number, panelWidth: number, rect: DOMRect): number {
+  const raw = vw - rect.right;
+  const upper = vw - margin - panelWidth;
+  if (upper < margin) return margin;
+  return Math.max(margin, Math.min(raw, upper));
+}
+
 /**
- * Anchored popover below/above the help trigger, clamped to the viewport.
- * Falls back to a top-aligned full-width panel on very narrow or tight layouts.
+ * Anchored popover below/above the help trigger (sm+). Mobile: bottom sheet only.
  */
 function computeHelpPanelStyle(rect: DOMRect): CSSProperties {
   const gap = 8;
@@ -61,25 +97,28 @@ function computeHelpPanelStyle(rect: DOMRect): CSSProperties {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const panelWidth = Math.min(320, vw - 2 * margin);
-  const right = Math.max(margin, vw - rect.right);
+
+  if (vw < 640) {
+    return getMobileHelpSheetStyle();
+  }
+
+  const right = clampPopoverRight(vw, margin, panelWidth, rect);
+
+  if (rect.width < 2 || rect.height < 2 || !Number.isFinite(rect.top)) {
+    return {
+      position: "fixed",
+      top: "max(0.75rem, env(safe-area-inset-top))",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: panelWidth,
+      maxHeight: "min(70dvh, 560px)",
+    };
+  }
 
   const topBelow = rect.bottom + gap;
   const spaceBelow = vh - topBelow - margin;
   const spaceAbove = rect.top - margin;
   const minComfort = 200;
-
-  // Very narrow + little room: top-aligned sheet (not bottom sheet)
-  if (vw < 380 && spaceBelow < 140) {
-    const top = margin;
-    return {
-      position: "fixed",
-      top,
-      left: margin,
-      right: margin,
-      width: "auto",
-      maxHeight: Math.min(vh * 0.88, vh - top - margin),
-    };
-  }
 
   if (spaceBelow >= minComfort || spaceBelow >= spaceAbove) {
     const maxHBelow = Math.min(vh * 0.7, spaceBelow);
@@ -130,19 +169,31 @@ export default function HelpMenu() {
 
   const close = useCallback(() => setOpen(false), []);
 
+  const resolvedPanelStyle =
+    open && (panelStyle as { position?: string }).position === undefined
+      ? getFallbackPanelStyle()
+      : panelStyle;
+  const mobileSheetLayout =
+    mounted && open && typeof window !== "undefined" && window.innerWidth < 640;
+
   useBodyScrollLock(open);
 
   useLayoutEffect(() => {
     if (!open) return;
     function updatePosition() {
       const el = triggerRef.current;
-      if (!el) return;
+      if (!el) {
+        setPanelStyle(computeHelpPanelStyle(new DOMRect(0, 0, 0, 0)));
+        return;
+      }
       setPanelStyle(computeHelpPanelStyle(el.getBoundingClientRect()));
     }
     updatePosition();
+    const raf = requestAnimationFrame(updatePosition);
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
@@ -161,6 +212,8 @@ export default function HelpMenu() {
     if (open) {
       wasOpenedRef.current = true;
       queueMicrotask(() => closeBtnRef.current?.focus());
+    } else {
+      setPanelStyle({});
     }
   }, [open]);
 
@@ -202,9 +255,12 @@ export default function HelpMenu() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="fixed z-[10061] overflow-y-auto rounded-xl border border-renovation-border bg-renovation-elevated shadow-2xl dark:border-renovation-border dark:bg-renovation-elevated"
+                className={[
+                  "fixed z-[10061] overflow-y-auto overscroll-contain border border-renovation-border bg-renovation-elevated shadow-2xl dark:border-renovation-border dark:bg-renovation-elevated",
+                  mobileSheetLayout ? "rounded-b-none rounded-t-2xl" : "rounded-xl",
+                ].join(" ")}
                 style={{
-                  ...panelStyle,
+                  ...resolvedPanelStyle,
                   paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
                 }}
               >
