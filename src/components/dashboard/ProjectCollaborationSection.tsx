@@ -186,7 +186,9 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
         <div className="mt-4 space-y-3">
           {emailSent ? (
             <p className="text-sm text-emerald-700 dark:text-emerald-400">{t("projectDetail.collaborationEmailSent")}</p>
-          ) : null}
+          ) : (
+            <p className="text-sm text-amber-800 dark:text-amber-200/90">{t("projectDetail.collaborationEmailNotSent")}</p>
+          )}
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{t("projectDetail.collaborationInviteLink")}</p>
           <p className="mt-1 break-all font-mono text-xs text-zinc-800 dark:text-zinc-200">{inviteUrl}</p>

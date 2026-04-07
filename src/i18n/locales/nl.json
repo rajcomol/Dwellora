@@ -214,6 +214,7 @@
     "collaborationCancelInvite": "Uitnodiging intrekken",
     "collaborationInviteLink": "Uitnodigingslink (deel handmatig als nodig)",
     "collaborationEmailSent": "Er is ook een e-mail verstuurd naar dit adres met de uitnodigingslink.",
+    "collaborationEmailNotSent": "Automatische e-mail is niet verstuurd. Deel onderstaande link handmatig met de medebewoner. Komt dit vaker voor, controleer dan de Edge Function send-project-invite (Brevo-secrets en INVITE_EDGE_SECRET op Vercel).",
     "collaborationCopyLink": "Link kopiëren",
     "collaborationCopied": "Gekopieerd.",
     "collaborationError": "Uitnodiging mislukt. Probeer het opnieuw.",

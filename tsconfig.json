@@ -36,6 +36,7 @@
     "playwright.config.ts",
     "e2e",
     "**/*.test.ts",
-    "**/*.test.tsx"
+    "**/*.test.tsx",
+    "supabase/functions"
   ]
 }

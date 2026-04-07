@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "supabase:db:push": "npx supabase db push",
     "supabase:link": "npx supabase link",
+    "supabase:functions:deploy-invite": "npx supabase functions deploy send-project-invite",
     "verify:supabase": "node scripts/verify-supabase-migration.mjs",
     "sync:supabase-storage": "node scripts/sync-supabase-storage-documents.mjs",
     "brand:logo": "node scripts/build-renotasker-logo-transparent.mjs"

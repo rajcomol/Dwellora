@@ -11,94 +11,60 @@ export type SendProjectInviteEmailResult =
   | { ok: false; skipped?: false; error: string };
 
 /**
- * Sends a project collaboration invite via Resend (`RESEND_API_KEY`, `INVITE_EMAIL_FROM`).
- * If those env vars are missing, returns `{ ok: false, skipped: true }` without throwing.
+ * Sends a project collaboration invite via Supabase Edge Function `send-project-invite`,
+ * which calls the Brevo API. Requires `NEXT_PUBLIC_SUPABASE_URL` and `INVITE_EDGE_SECRET`
+ * (same value as the Edge secret). Brevo key and sender live only on Supabase (Edge secrets).
+ * If env is incomplete, returns `{ ok: false, skipped: true }` without throwing.
  */
 export async function sendProjectInviteEmail(
   params: SendProjectInviteEmailParams
 ): Promise<SendProjectInviteEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.INVITE_EMAIL_FROM?.trim();
-  if (!apiKey || !from) {
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, "");
+  const secret = process.env.INVITE_EDGE_SECRET?.trim();
+  if (!baseUrl || !secret) {
     return { ok: false, skipped: true };
   }
 
-  const projectLinePlain =
-    params.projectName && params.projectName.trim() !== ""
-      ? `Project: ${params.projectName.trim()}`
-      : "Je bent uitgenodigd om mee te werken aan een renovatieproject in RenoTasker.";
-
-  const projectLineHtml =
-    params.projectName && params.projectName.trim() !== ""
-      ? `Project: ${escapeHtml(params.projectName.trim())}`
-      : "Je bent uitgenodigd om mee te werken aan een renovatieproject in RenoTasker.";
-
-  const text = [
-    "Hallo,",
-    "",
-    projectLinePlain,
-    "",
-    "Open onderstaande link om de uitnodiging te accepteren (je moet inloggen of registreren met dit e-mailadres):",
-    params.inviteUrl,
-    "",
-    `Deze link verloopt rond ${params.expiresAtIso} (UTC).`,
-    "",
-    "Als de knop niet werkt, kopieer de link en plak die in je browser.",
-    "",
-    "Groet,",
-    "Het RenoTasker-team",
-  ].join("\n");
-
-  const html = `
-<!DOCTYPE html>
-<html lang="nl">
-<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1a1a1a;">
-  <p>Hallo,</p>
-  <p>${projectLineHtml}</p>
-  <p>Open de onderstaande knop om de uitnodiging te accepteren. Je moet inloggen of registreren met <strong>ditzelfde e-mailadres</strong>.</p>
-  <p><a href="${escapeHtmlAttr(params.inviteUrl)}" style="display: inline-block; padding: 12px 20px; background: #22d3ee; color: #0f172a; text-decoration: none; border-radius: 9999px; font-weight: 600;">Uitnodiging openen</a></p>
-  <p style="font-size: 14px; color: #555;">Of kopieer deze link in je browser:<br /><span style="word-break: break-all;">${escapeHtml(params.inviteUrl)}</span></p>
-  <p style="font-size: 13px; color: #666;">Deze link verloopt rond ${escapeHtml(params.expiresAtIso)} (UTC).</p>
-</body>
-</html>`.trim();
+  const url = `${baseUrl}/functions/v1/send-project-invite`;
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${secret}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from,
-        to: [params.to],
-        subject: "Uitnodiging voor RenoTasker — renovatieproject",
-        text,
-        html,
+        to: params.to,
+        inviteUrl: params.inviteUrl,
+        expiresAtIso: params.expiresAtIso,
+        projectName: params.projectName ?? null,
       }),
     });
 
+    const raw = (await res.text().catch(() => "")) || res.statusText;
     if (!res.ok) {
-      const errBody = (await res.text().catch(() => "")) || res.statusText;
-      console.error("Resend invite email failed", res.status, errBody);
-      return { ok: false, error: errBody.slice(0, 200) };
+      let err = raw.slice(0, 300);
+      try {
+        const j = JSON.parse(raw) as { error?: string };
+        if (typeof j.error === "string" && j.error.length > 0) err = j.error.slice(0, 300);
+      } catch {
+        /* keep err */
+      }
+      console.error("Invite edge function failed", res.status, err);
+      return { ok: false, error: err };
+    }
+
+    try {
+      const j = JSON.parse(raw) as { ok?: boolean };
+      if (j.ok === true) return { ok: true };
+    } catch {
+      /* fallthrough */
     }
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("Resend invite email exception", msg);
+    console.error("Invite edge function exception", msg);
     return { ok: false, error: msg };
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function escapeHtmlAttr(s: string): string {
-  return escapeHtml(s);
 }

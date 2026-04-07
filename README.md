@@ -50,7 +50,7 @@ Productie-deploy loopt via de **Vercel Git-integratie** met deze GitHub-repo: co
 
 Zonder deze variabele vallen de app terug op `VERCEL_URL` voor metadata; uitnodigingslinks en canonieke Open Graph-URL’s zijn dan betrouwbaarder met een expliciete waarde die overeenkomt met je domein (www vs apex).
 - Supabase Auth: **Site URL** en **Redirect URLs** moeten dezelfde HTTPS-host(s) bevatten (bijv. `https://www.renotasker.com/**` en `https://renotasker.com/**` als beide actief zijn), plus preview-URLs voor staging.
-- Resend (of vergelijkbaar): verifieer het domein **renotasker.com** voor uitgaande mail; gebruik een afzender zoals `uitnodigingen@renotasker.com` in `INVITE_EMAIL_FROM`.
+- Brevo: verifieer het afzenderdomein in het Brevo-dashboard voor uitgaande mail; gebruik een afzender zoals `uitnodigingen@renotasker.com` in de Edge secret `INVITE_EMAIL_FROM`.
 - Op **Vercel Production** stuurt deze app een **HSTS**-header (`Strict-Transport-Security`), zodat browsers na een eerste bezoek over HTTPS voorkeur geven aan HTTPS voor dit domein.
 
 ### "Niet beveiligd" in Chrome (Nederlands)
@@ -66,7 +66,21 @@ Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — stand
 
 ## Projectuitnodigingen en e-mail
 
-Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via **Resend**: `RESEND_API_KEY` en `INVITE_EMAIL_FROM` in Vercel / `.env.local`. Zonder die variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
+Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via een **Supabase Edge Function** (`send-project-invite`) die **[Brevo](https://www.brevo.com/)** aanroept. Op **Vercel** zet je `NEXT_PUBLIC_SUPABASE_URL` (al aanwezig) en `INVITE_EDGE_SECRET` (dezelfde waarde als in Supabase Edge secrets). De **Brevo API key** en het afzenderadres (`INVITE_EMAIL_FROM`) staan alleen als **secrets** bij de Edge Function, niet in Vercel. Zonder `INVITE_EDGE_SECRET` wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
+
+Deploy de functie na wijzigingen: `npx supabase functions deploy send-project-invite` (met gelinkt project). Zie `.env.example` voor de volledige checklist.
+
+De uitnodigingsmail gebruikt een **Brevo transactional template** (`BREVO_INVITE_TEMPLATE_ID`, standaard **7** als de secret ontbreekt). In Brevo moet die template het **New Template Language**-formaat gebruiken en placeholders voor deze API-`params`:
+
+| Param | Inhoud |
+|--------|--------|
+| `inviteUrl` | Volledige URL naar `/invite/accept?token=…` |
+| `expiresAtIso` | Vervaldatum/tijd (ISO-string, UTC) |
+| `projectName` | Projectnaam of lege string |
+
+In de template-editor bijvoorbeeld: `{{ params.inviteUrl }}`, `{{ params.expiresAtIso }}`, `{{ params.projectName }}`.
+
+De e-mailtemplates onder **Supabase → Authentication → Emails** (bijv. «Invite user») worden door deze app **niet** gebruikt voor projectuitnodigingen — alleen de Edge Function + Brevo.
 
 ## Documenten (Supabase Storage)
 
