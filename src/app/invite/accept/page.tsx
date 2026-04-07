@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import LoginScreenChrome from "@/components/auth/LoginScreenChrome";
 import { useI18n } from "@/i18n/provider";
-import { getBearerAuthHeaders, supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 function readInviteTokenFromBrowser(searchParams: ReturnType<typeof useSearchParams>): string | null {
   const fromParams = searchParams.get("token")?.trim() ?? "";
@@ -17,6 +17,8 @@ function readInviteTokenFromBrowser(searchParams: ReturnType<typeof useSearchPar
 }
 
 const INVITE_ERROR_I18N_KEYS: Record<string, string> = {
+  "Unauthorized.": "inviteAccept.errorUnauthorized",
+  not_authenticated: "inviteAccept.errorNotAuthenticated",
   email_mismatch: "inviteAccept.errorEmailMismatch",
   expired: "inviteAccept.errorExpired",
   invalid_or_expired: "inviteAccept.errorInvalidOrExpired",
@@ -32,7 +34,7 @@ function InviteAcceptInner() {
   const [status, setStatus] = useState<"idle" | "redirect_login" | "working" | "ok" | "err">("idle");
   const [projectId, setProjectId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [errHint, setErrHint] = useState<"needLogin" | "wrongAccount" | null>(null);
+  const [errHint, setErrHint] = useState<"needLogin" | "wrongAccount" | "openInBrowser" | null>(null);
   const ranForToken = useRef<string | null>(null);
 
   useEffect(() => {
@@ -44,9 +46,10 @@ function InviteAcceptInner() {
 
     async function run() {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) {
         setStatus("redirect_login");
         const next = `/invite/accept?token=${encodeURIComponent(tkn)}`;
         router.replace(`/login?next=${encodeURIComponent(next)}`);
@@ -54,13 +57,10 @@ function InviteAcceptInner() {
       }
 
       setStatus("working");
-      const headers = {
-        ...(await getBearerAuthHeaders()),
-        "Content-Type": "application/json",
-      };
+      /** Cookie-only: avoids sending a stale Bearer from getSession; server refreshes via middleware + cookies. */
       const res = await fetch("/api/invites/accept", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ token: tkn }),
       });
@@ -70,7 +70,13 @@ function InviteAcceptInner() {
         const code = typeof body.error === "string" ? body.error : "";
         const key = INVITE_ERROR_I18N_KEYS[code] ?? "inviteAccept.error";
         setMessage(t(key));
-        setErrHint(code === "email_mismatch" ? "wrongAccount" : null);
+        if (code === "email_mismatch") {
+          setErrHint("wrongAccount");
+        } else if (code === "Unauthorized." || code === "not_authenticated") {
+          setErrHint("openInBrowser");
+        } else {
+          setErrHint(null);
+        }
         return;
       }
       setProjectId(typeof body.projectId === "string" ? body.projectId : null);
@@ -107,6 +113,9 @@ function InviteAcceptInner() {
         ) : null}
         {errHint === "wrongAccount" ? (
           <p className="text-xs text-zinc-400">{t("inviteAccept.hintWrongAccount")}</p>
+        ) : null}
+        {errHint === "openInBrowser" ? (
+          <p className="text-xs text-zinc-400">{t("inviteAccept.hintOpenInBrowser")}</p>
         ) : null}
       </div>
     );

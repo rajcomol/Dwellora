@@ -40,6 +40,7 @@ export async function sendProjectInviteEmail(
       body: JSON.stringify({
         to: params.to,
         inviteUrl: params.inviteUrl,
+        inviteUrlPlain: params.inviteUrl,
         expiresAtIso: params.expiresAtIso,
         projectName: params.projectName ?? null,
       }),

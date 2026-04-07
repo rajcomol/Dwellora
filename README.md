@@ -66,7 +66,7 @@ Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — stand
 
 ## Projectuitnodigingen en e-mail
 
-Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via een **Supabase Edge Function** (`send-project-invite`) die **[Brevo](https://www.brevo.com/)** aanroept. Op **Vercel** heb je `NEXT_PUBLIC_SUPABASE_URL`, **`NEXT_PUBLIC_SUPABASE_ANON_KEY`** (voor de gateway) en **`INVITE_EDGE_SECRET`** (zelfde als in Supabase Edge secrets; wordt als `x-invite-secret` meegestuurd). De **Brevo API key** en het afzenderadres (`INVITE_EMAIL_FROM`) staan alleen als **secrets** bij de Edge Function, niet in Vercel. Zonder deze variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
+Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL. **Laat deze exact overeenkomen met de host waar gebruikers inloggen** (zelfde scheme + hostname, bijv. `https://www.…` als dat je primaire URL is). Anders raken uitnodigingslinks en sessiecookies op verschillende hosts en faalt accepteren met 401. Automatische uitnodigingsmail gaat via een **Supabase Edge Function** (`send-project-invite`) die **[Brevo](https://www.brevo.com/)** aanroept. Op **Vercel** heb je `NEXT_PUBLIC_SUPABASE_URL`, **`NEXT_PUBLIC_SUPABASE_ANON_KEY`** (voor de gateway) en **`INVITE_EDGE_SECRET`** (zelfde als in Supabase Edge secrets; wordt als `x-invite-secret` meegestuurd). De **Brevo API key** en het afzenderadres (`INVITE_EMAIL_FROM`) staan alleen als **secrets** bij de Edge Function, niet in Vercel. Zonder deze variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
 
 Deploy de functie na wijzigingen: `npx supabase functions deploy send-project-invite` (met gelinkt project). Zie `.env.example` voor de volledige checklist.
 
@@ -74,11 +74,12 @@ De uitnodigingsmail gebruikt een **Brevo transactional template** (`BREVO_INVITE
 
 | Param | Inhoud |
 |--------|--------|
-| `inviteUrl` | Volledige URL naar `/invite/accept?token=…` |
+| `inviteUrl` | Volledige URL naar `/invite/accept?token=…` (knop/link; Brevo kan click-tracking toevoegen) |
+| `inviteUrlPlain` | Zelfde URL als platte tekst — gebruik in de mail als **kopieerbare fallback** als tracking of een in-app browser problemen geeft |
 | `expiresAtIso` | Vervaldatum/tijd (ISO-string, UTC) |
 | `projectName` | Projectnaam of lege string |
 
-In de template-editor bijvoorbeeld: `{{ params.inviteUrl }}`, `{{ params.expiresAtIso }}`, `{{ params.projectName }}`.
+In de template-editor bijvoorbeeld: `{{ params.inviteUrl }}`, `{{ params.inviteUrlPlain }}`, `{{ params.expiresAtIso }}`, `{{ params.projectName }}`.
 
 De e-mailtemplates onder **Supabase → Authentication → Emails** (bijv. «Invite user») worden door deze app **niet** gebruikt voor projectuitnodigingen — alleen de Edge Function + Brevo.
 

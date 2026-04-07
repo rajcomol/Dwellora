@@ -5,6 +5,22 @@ import { acceptProjectInviteBodySchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 
+/** Set `INVITE_ACCEPT_AUTH_DEBUG=1` on Vercel temporarily to trace 401s (no cookie values or tokens logged). */
+function logInviteAcceptAuthDebug(req: Request, reason: string) {
+  if (process.env.INVITE_ACCEPT_AUTH_DEBUG !== "1") return;
+  const authz = req.headers.get("authorization");
+  const hasBearer = Boolean(authz?.startsWith("Bearer ") && authz.slice(7).trim().length > 0);
+  const cookie = req.headers.get("cookie");
+  const cookieLen = cookie?.length ?? 0;
+  const cookieLooksLikeSupabase = typeof cookie === "string" && /\bsb-[^=]+=/.test(cookie);
+  console.warn("[invites/accept auth debug]", reason, {
+    hasAuthorizationBearer: hasBearer,
+    cookieHeaderLength: cookieLen,
+    cookieLooksLikeSupabaseSession: cookieLooksLikeSupabase,
+    host: req.headers.get("host") ?? "",
+  });
+}
+
 export async function POST(req: Request) {
   const ip = clientIpFromRequest(req);
   const rl = rateLimitResponse(`invites:accept:${ip}`, RATE_LIMIT.invitesAccept.limit, RATE_LIMIT.invitesAccept.windowMs, {
@@ -15,6 +31,7 @@ export async function POST(req: Request) {
 
   const auth = await createUserSupabaseFromRequest(req);
   if (!auth) {
+    logInviteAcceptAuthDebug(req, "createUserSupabaseFromRequest_null");
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
@@ -48,6 +65,9 @@ export async function POST(req: Request) {
           : code === "already_has_member" || code === "owner_cannot_accept_own_invite"
             ? 409
             : 400;
+    if (code === "not_authenticated") {
+      logInviteAcceptAuthDebug(req, "rpc_not_authenticated");
+    }
     return Response.json({ error: code }, { status });
   }
 

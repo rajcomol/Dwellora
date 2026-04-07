@@ -3,6 +3,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 type Body = {
   to: string;
   inviteUrl: string;
+  /** Same destination as inviteUrl for copy-paste in mail when click tracking is unreliable. */
+  inviteUrlPlain?: string;
   expiresAtIso: string;
   projectName?: string | null;
 };
@@ -102,11 +104,17 @@ Deno.serve(async (req: Request) => {
       ? body.projectName.trim()
       : "";
 
+  const invitePlain =
+    typeof body.inviteUrlPlain === "string" && body.inviteUrlPlain.trim() !== ""
+      ? body.inviteUrlPlain.trim()
+      : body.inviteUrl;
+
   const brevoPayload: Record<string, unknown> = {
     templateId,
     to: [{ email: body.to.trim() }],
     params: {
       inviteUrl: body.inviteUrl,
+      inviteUrlPlain: invitePlain,
       expiresAtIso: body.expiresAtIso,
       projectName,
     },
