@@ -97,5 +97,7 @@ export const config = {
     "/dashboard/:path*",
     "/auth/:path*",
     "/invite/:path*",
+    /** Refresh Supabase session cookies on API calls (otherwise /api/* skipped → stale JWT → 401 on invite accept). */
+    "/api/:path*",
   ],
 };

@@ -61,6 +61,7 @@ function InviteAcceptInner() {
       const res = await fetch("/api/invites/accept", {
         method: "POST",
         headers,
+        credentials: "include",
         body: JSON.stringify({ token: tkn }),
       });
       const body = (await res.json().catch(() => ({}))) as { projectId?: string; error?: string };
