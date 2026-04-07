@@ -12,16 +12,17 @@ export type SendProjectInviteEmailResult =
 
 /**
  * Sends a project collaboration invite via Supabase Edge Function `send-project-invite`,
- * which calls the Brevo API. Requires `NEXT_PUBLIC_SUPABASE_URL` and `INVITE_EDGE_SECRET`
- * (same value as the Edge secret). Brevo key and sender live only on Supabase (Edge secrets).
- * If env is incomplete, returns `{ ok: false, skipped: true }` without throwing.
+ * which calls the Brevo API. Uses `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `Authorization`/`apikey`
+ * so the Supabase gateway accepts the request; `INVITE_EDGE_SECRET` is sent as `x-invite-secret`
+ * for app-level auth (same value as Edge secret). If env is incomplete, returns skipped.
  */
 export async function sendProjectInviteEmail(
   params: SendProjectInviteEmailParams
 ): Promise<SendProjectInviteEmailResult> {
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, "");
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   const secret = process.env.INVITE_EDGE_SECRET?.trim();
-  if (!baseUrl || !secret) {
+  if (!baseUrl || !anonKey || !secret) {
     return { ok: false, skipped: true };
   }
 
@@ -31,8 +32,10 @@ export async function sendProjectInviteEmail(
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${secret}`,
+        Authorization: `Bearer ${anonKey}`,
+        apikey: anonKey,
         "Content-Type": "application/json",
+        "x-invite-secret": secret,
       },
       body: JSON.stringify({
         to: params.to,

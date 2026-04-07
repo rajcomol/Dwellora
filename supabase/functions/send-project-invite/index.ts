@@ -63,9 +63,12 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  /** Gateway uses anon key in Authorization; app auth uses x-invite-secret (or legacy Bearer secret). */
+  const inviteHeader = req.headers.get("x-invite-secret")?.trim();
   const auth = req.headers.get("Authorization");
   const bearer = auth?.startsWith("Bearer ") ? auth.slice(7).trim() : null;
-  if (bearer !== secret) {
+  const authorized = inviteHeader === secret || bearer === secret;
+  if (!authorized) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

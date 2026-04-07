@@ -66,7 +66,7 @@ Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — stand
 
 ## Projectuitnodigingen en e-mail
 
-Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via een **Supabase Edge Function** (`send-project-invite`) die **[Brevo](https://www.brevo.com/)** aanroept. Op **Vercel** zet je `NEXT_PUBLIC_SUPABASE_URL` (al aanwezig) en `INVITE_EDGE_SECRET` (dezelfde waarde als in Supabase Edge secrets). De **Brevo API key** en het afzenderadres (`INVITE_EMAIL_FROM`) staan alleen als **secrets** bij de Edge Function, niet in Vercel. Zonder `INVITE_EDGE_SECRET` wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
+Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL; zet in productie een vaste canonieke site-URL. Automatische uitnodigingsmail gaat via een **Supabase Edge Function** (`send-project-invite`) die **[Brevo](https://www.brevo.com/)** aanroept. Op **Vercel** heb je `NEXT_PUBLIC_SUPABASE_URL`, **`NEXT_PUBLIC_SUPABASE_ANON_KEY`** (voor de gateway) en **`INVITE_EDGE_SECRET`** (zelfde als in Supabase Edge secrets; wordt als `x-invite-secret` meegestuurd). De **Brevo API key** en het afzenderadres (`INVITE_EMAIL_FROM`) staan alleen als **secrets** bij de Edge Function, niet in Vercel. Zonder deze variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
 
 Deploy de functie na wijzigingen: `npx supabase functions deploy send-project-invite` (met gelinkt project). Zie `.env.example` voor de volledige checklist.
 
