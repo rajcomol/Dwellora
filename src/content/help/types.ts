@@ -6,20 +6,26 @@ export type HelpCategoryId =
   | "finances-budget"
   | "ai-coach"
   | "reports"
-  | "settings-account";
+  | "settings-account"
+  | "troubleshooting";
 
 export type HelpArticleId =
   | "welcome-overview"
   | "navigation-sidebar"
+  | "dashboard-metrics"
   | "projects-create"
+  | "project-samenwerking"
   | "rooms-tasks"
   | "planning-timeline"
+  | "tasks-dependencies"
   | "quotes-offertes"
   | "finances-expenses"
   | "kluscoach-ai"
   | "reports-insights"
   | "settings-security"
-  | "collaboration-invites";
+  | "collaboration-invites"
+  | "privacy-data"
+  | "errors-session";
 
 export type HelpArticle = {
   id: HelpArticleId;

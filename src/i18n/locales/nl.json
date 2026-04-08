@@ -568,63 +568,89 @@
       "financesBudget": "Financiën & budget",
       "aiCoach": "Kluscoach (AI)",
       "reports": "Rapporten",
-      "settingsAccount": "Instellingen & account"
+      "settingsAccount": "Instellingen & account",
+      "troubleshooting": "Privacy & problemen"
     },
     "article": {
       "welcome-overview": {
         "title": "Welkom bij RenoTasker",
-        "summary": "Wat het dashboard doet en waar je begint.",
-        "body": "Het dashboard geeft een overzicht van je renovatie: budgetten, taken en inzichten over al je projecten.\n\nGebruik de zijbalk om naar Projecten, Planning, Offertes, Instellingen en Rapporten te gaan. Vanuit Projecten open je een concreet verbouwproject met ruimtes, taken en financiën.\n\nTip: begin met een project aan te maken en voeg daarna ruimtes en taken toe — dan vullen de grafieken en lijsten vanzelf."
+        "summary": "Het dashboard als startpunt: overzicht, vervolgstappen en snelle links.",
+        "body": "Het startscherm (Dashboard) toont je renovatie in één oogopslag: helder bovenaan wat RenoTasker is, daarna je belangrijkste vervolgstap (een “volgende stap” als er open taken zijn), daarna kerncijfers over budget en taken, een lijst “Komend werk”, automatische inzichten (waarschuwingen als iets afwijkt) en snelle acties naar Instellingen, Projecten, Offertes en Rapporten.\n\nVanaf hier ga je bijna altijd eerst naar Projecten om een verbouwproject aan te maken of te openen. Zonder projecten en taken blijven grafieken en inzichten leeg — dat is normaal tot je data toevoegt.\n\nTip: gebruik de rondleiding (via Help → rondleiding starten) als je de eerste keer door de schermen wilt lopen."
       },
       "navigation-sidebar": {
         "title": "Navigatie en menu",
-        "summary": "Hoe je door de app beweegt.",
-        "body": "Op desktop zie je links het menu met de belangrijkste onderdelen. Op mobiel open je hetzelfde menu via het menu-icoon (hamburger) linksboven.\n\nRechtsboven vind je je account (uitloggen). Rechtsonder staat de Kluscoach-knop voor AI-hulp — die context gebruikt het project als je op een projectpagina bent.\n\nJe kunt deze kennisbank altijd terugvinden via Help in de kop of onderaan het zijmenu."
+        "summary": "Zijbalk, mobiel menu, Help, account en Kluscoach.",
+        "body": "Op een groot scherm staat links het vaste menu: Dashboard, Projecten, Planning, Offertes, Rapporten, Instellingen en onderaan Help & uitleg. Op kleinere schermen open je hetzelfde menu via het hamburger-icoon linksboven.\n\nRechtsboven zit je account (o.a. uitloggen). Rechtsonder staat de zwevende knop “Kluscoach” voor de AI-assistent: op een projectpagina kun je daar desgewenst het actieve project aan koppelen voor betere antwoorden.\n\nDe kennisbank (deze pagina) bereik je via Help in de kop of via het zijmenu. In het Help-menu kun je ook “Hulp bij dit scherm” kiezen: dan opent de kennisbank met een voorstel-artikel dat bij je huidige route past (als er een koppeling is).\n\nHet logo/link “RenoTasker” bovenaan brengt je terug naar het dashboard."
+      },
+      "dashboard-metrics": {
+        "title": "Kerncijfers op het dashboard",
+        "summary": "Wat de kaarten betekenen: budget, schattingen, werkelijk, taken.",
+        "body": "Onder “Kerncijfers” zie je totalen over al je projecten tegelijk (tenzij je nog maar één project hebt). Gangbare regels:\n\n• Totaal projectbudget — som van de budgetvelden die je per project hebt ingevuld.\n• Totaal geschatte takosten — optelsom van de geschatte kosten op taken.\n• Budgetgat — verschil tussen totaal budget en die schattingen (ruimte tot je schatting het budget raakt).\n• Totaal geregistreerde uitgaven — werkelijke kosten: zowel wat je op taken hebt geboekt als losse uitgaven op projectniveau.\n• Losse uitgaven — uitgaven die je niet aan één taak hebt gekoppeld (bijv. bouwmarkt).\n• Werkelijk op taken — som van werkelijke kosten per taak.\n• Schatting vs werkelijk — verschil tussen geschatte takosten en alles wat je hebt geregistreerd.\n• Totaal / afgeronde / hoge-prioriteit taken — tellers om je werklast te zien.\n\nOnder “Komend werk” staan openstaande taken, gesorteerd op prioriteit. Onder “Inzichten” verschijnen regels zoals “schatting boven budget” of “taken zonder duur” — die helpen je data te verbeteren in de projecten zelf."
       },
       "projects-create": {
-        "title": "Projecten aanmaken",
-        "summary": "Nieuw project, budget en basisgegevens.",
-        "body": "Onder Projecten maak je een renovatieproject met een naam en een totaalbudget. Je kunt optioneel adres, notities en een verwachte sleuteldatum invullen.\n\nElk project heeft eigen ruimtes, taken, uitgaven en documenten. Het totaalbudget helpt bij vergelijking met geschatte en werkelijke kosten in het dashboard en bij Rapporten."
+        "title": "Projecten aanmaken en beheren",
+        "summary": "Naam, budget, adres, sleuteldatum, notities en openen van een project.",
+        "body": "Onder Projecten maak je een renovatieproject. Vul minimaal een naam en een totaalbudget in; optioneel adres, notities en een verwachte datum voor sleuteloverdracht. Dat budget is de referentie voor rapporten en het dashboard (samen met je schattingen en uitgaven).\n\nOpen een project om ruimtes, taken, een tijdlijn, losse uitgaven, team (alleen ter referentie), checklist voor oplevering en de sectie Samenwerken te gebruiken. Je kunt projectgegevens later nog wijzigen via het projectoverzicht.\n\nSamenwerken zit op projectniveau: alleen de eigenaar kan iemand uitnodigen; er is maximaal één medebewoner na acceptatie. Zie ook het artikel “Samenwerken op een project” en “Uitnodiging: link, e-mail en account”."
+      },
+      "project-samenwerking": {
+        "title": "Samenwerken op een project",
+        "summary": "Waar je het regelt, wat gedeeld wordt, en hoe het verschilt van je eigen account.",
+        "body": "Op de projectpagina staat de sectie “Samenwerken” (alleen zichtbaar in de juiste rol). Alleen de projecteigenaar kan een medebewoner uitnodigen via het e-mailadres waarmee die persoon een RenoTasker-account heeft of gaat krijgen. Per project is er maximaal één actieve medebewoner na acceptatie — dat is een bewuste keuze: jullie delen hetzelfde project, niet een heel teambeheer.\n\nNa acceptatie ziet de medebewoner dezelfde projectdata als de eigenaar: ruimtes, taken, planning, financiën, offertes/documenten voor dat project, enzovoort. Uitnodigingen hebben een geldigheidsduur; de eigenaar kan een openstaande uitnodiging intrekken. Als er nog geen medewerker is, zie je als eigenaar wanneer een uitnodiging verloopt en kun je desnoods opnieuw uitnodigen.\n\nLet op: het “Team”-blok op een project is alleen ter referentie (namen/rollen); het vervangt geen uitnodiging. Voor volledige uitleg over de uitnodigingslink, registreren en inloggen, zie het artikel “Uitnodiging: link, e-mail en account”."
       },
       "rooms-tasks": {
-        "title": "Kamers en taken",
-        "summary": "Ruimtes structureren je werk; taken plannen je uitvoering.",
-        "body": "Binnen een project voeg je ruimtes toe (bijv. keuken, badkamer). Per ruimte maak je taken met status, prioriteit, geschatte en werkelijke kosten en een duur in dagen.\n\nJe kunt afhankelijkheden tussen taken leggen en bijlagen uploaden. Losse uitgaven op projectniveau vang je apart op — die tellen ook mee in je kostenoverzicht."
+        "title": "Ruimtes, taken, bijlagen en uitgaven",
+        "summary": "Structuur per ruimte, taakvelden, afhankelijkheden, checklist en losse kosten.",
+        "body": "Binnen een project voeg je eerst ruimtes toe (bijv. Keuken, Badkamer). Per ruimte maak je taken met onder meer titel, status (te doen / bezig / afgerond), prioriteit, geschatte en werkelijke kosten, duur in dagen, optionele startdatum, beschrijving en optioneel een renovatiefase voor de planning.\n\nJe kunt bij een taak bestanden uploaden als bijlage. Onder het project (niet per se per taak) kun je ook losse uitgaven boeken — dat zijn vaak bouwmarkt- of materiaalkosten die niet netjes onder één taak vallen; ze tellen wél mee in je totale werkelijke kosten.\n\nTaken kunnen afhankelijkheden hebben: je geeft aan dat taak B pas mag starten als taak A klaar is (zie het aparte artikel over afhankelijkheden). Op het project staan ook een checklist voor sleuteloverdracht en een eenvoudig teamoverzicht voor wie er betrokken is — dat laatste is géén account-koppeling; voor echte samenwerking in de app gebruik je Samenwerken.\n\nGebruik de tabs bovenin het project om naar Financiën (uitgebreide uitgaven en bonnen) of Planning (volledige tijdlijn) te gaan."
       },
       "planning-timeline": {
         "title": "Planning en tijdlijn",
-        "summary": "Volgorde, doorlooptijd en projectplanning.",
-        "body": "Op de planningspagina en binnen een project zie je taken in volgorde en kunt je ze ordenen. De tijdlijn helpt om te zien hoe lang het geplande werk duurt en wat eerst moet.\n\nGebruik de project-tab Planning voor een breder beeld; het overzicht op de projectpagina geeft een compacte tijdlijn."
+        "summary": "Globale planningshub, projectplanning, fasen, volgorde en datums.",
+        "body": "Er zijn twee niveaus:\n\n1) Planning in het hoofdmenu — een overzicht van al je projecten; je kunt door naar de planning van één project of taken per renovatiefase zien (afhankelijk van je data).\n\n2) Planning binnen een project — alle taken van dat project in sorteervolgorde, met cumulatieve dagen en optioneel inschatting van datums als je startdatums en duren invult.\n\nOp de projectpagina zie je een compacte tijdlijn; voor details en herschikken gebruik je de volledige planningspagina van dat project. De teksten in de app leggen uit hoe dagentotalen worden opgebouwd (som van geplande duur langs de gekozen volgorde).\n\nTip: zet duur in dagen op taken als je realistische planning en inzichten wilt; taken zonder duur worden in inzichten soms apart genoemd."
+      },
+      "tasks-dependencies": {
+        "title": "Afhankelijkheden tussen taken",
+        "summary": "Wat eerst moet: voorgangers kiezen en weer verwijderen.",
+        "body": "Per taak kun je aangeven dat hij pas kan starten als een andere taak in hetzelfde project eerst afgerond moet zijn. In de interface kies je bij “Afhankelijk van” een voorgaande taak uit de lijst. Zo leg je eenvoudige voorrang vast (bijv. leidingen vóór afwerking).\n\nHet is bedoeld voor logische volgorde, niet voor volledige projectmanagementsoftware: houd ketens begrijpelijk en niet te lang. Je kunt een afhankelijkheid later weer verwijderen als de situatie verandert.\n\nAls er geen afhankelijkheden staan, zijn taken alleen geordend op handmatige volgorde, startdatum en planninginstellingen."
       },
       "quotes-offertes": {
-        "title": "Offertes en documenten",
-        "summary": "PDF’s uploaden, samenvatten en vergelijken.",
-        "body": "Onder Offertes kun je PDF-documenten per project beheren. Je kunt een samenvatting laten maken en twee documenten vergelijken — handig bij offertes van aannemers.\n\nDocumenten staan veilig in opslag per project; alleen jij en een geaccepteerde medewerker op hetzelfde project hebben toegang via de app."
+        "title": "Offertes en PDF-documenten",
+        "summary": "Uploaden per project, samenvatten met AI, twee documenten vergelijken.",
+        "body": "Onder Offertes (in het menu ook wel “Offertes” genoemd) werk je met PDF’s per project. Je kiest eerst een project, uploadt een PDF (er geldt een maximumgrootte in de app), en kunt daarna vanuit de lijst een document laten samenvatten. Zo krijg je snel kernpunten uit lange offertes.\n\nMet “Vergelijken” selecteer je twee documenten van hetzelfde project; de app stuurt de tekstinhoud naar de AI-dienst om een vergelijking te maken. Controleer altijd de uitkomst: AI kan inhoud missen of verkeerd interpreteren, vooral bij tabellen en kleine letter.\n\nBestanden worden per project opgeslagen; toegang heeft alleen jij en eventueel een geaccepteerde medewerker op datzelfde project (niet andere gebruikers van RenoTasker). Verwijder gevoelige PDF’s als je ze niet meer nodig hebt."
       },
       "finances-expenses": {
-        "title": "Financiën en uitgaven",
-        "summary": "Bonnetjes, facturen en koppeling aan taken.",
-        "body": "Op de tab Financiën van een project registreer je uitgaven en upload je bonnen of facturen als bewijsstuk. Je kunt een uitgave koppelen aan een taak of los laten.\n\nZo blijft je werkelijke besteding inzichtelijk naast de schattingen op taken en het projectbudget."
+        "title": "Financiën en uitgaven op een project",
+        "summary": "Tab Financiën: uitgaven, type bon/factuur, koppeling aan taak, bewijsstukken.",
+        "body": "Open een project en ga naar de tab Financiën voor het uitgebreide financiële beeld. Daar registreer je uitgaven met bedrag, datum en type (bon, factuur, overig), notities, en optioneel een koppeling aan een taak. Je kunt bonnen en facturen als bestand toevoegen als bewijsstuk.\n\nLosse uitgaven op het projectoverzicht zijn bedoeld voor snelle aankopen; de Financiën-tab is de plek voor structuur en bewijs. Gekoppelde uitgaven zijn terug te vinden vanuit een taak waar dat van toepassing is.\n\nZo blijft je werkelijke besteding vergelijkbaar met je geschatte takosten en je projectbudget — zie ook Rapporten voor totalen en doorrekening per ruimte."
       },
       "kluscoach-ai": {
-        "title": "Kluscoach (AI)",
-        "summary": "Vragen over je verbouwing én over hoe RenoTasker werkt.",
-        "body": "De Kluscoach is een AI-assistent in de app. Open hem via de ronde knop rechtsonder. Je kunt vragen stellen over planning, budget en keuzes rond je klus, én over de app zelf — bijvoorbeeld waar je iets vindt of hoe een functie werkt — als je het even niet meer weet. Kies een project in het paneel voor betere antwoorden op basis van jouw gegevens.\n\nLet op: antwoorden zijn indicatief en kunnen fouten bevatten. Controleer altijd belangrijke beslissingen bij vakmensen en contracten."
+        "title": "Kluscoach (AI-chat)",
+        "summary": "Verbouwingsvragen én app-uitleg; projectcontext en opgeslagen gesprekken.",
+        "body": "De Kluscoach is de AI-assistent. Open hem via de ronde knop rechtsonder. Je kunt vragen stellen over je verbouwing (planning, budget, keuzes, volgorde) én over RenoTasker zelf — bijvoorbeeld waar je iets vindt of wat een scherm betekent. De assistent gebruikt de kennisbank en mag geen functies verzinnen die niet bestaan.\n\nKies een project in het paneel (of gebruik “project van deze pagina” als je al op een project zit) om antwoorden te laten aansluiten op jouw gegevens. Je kunt nieuwe gesprekken starten en eerdere threads openen als je ingelogd bent en de database dat ondersteunt.\n\nBelangrijk: antwoorden zijn indicatief, geen bouwvoorschriften of juridisch advies. Controleer altijd kritieke zaken bij vakmensen, vergunningen en contracten. Zet geen wachtwoorden of geheimen in de chat."
       },
       "reports-insights": {
         "title": "Rapporten",
-        "summary": "Totalen en vergelijkingen over budget en kosten.",
-        "body": "Rapporten tonen totalen en vergelijkingen: budget versus schattingen, werkelijke kosten op taken, losse uitgaven en overzichten per ruimte. Je kunt filteren op alle projecten of één project.\n\nGebruik dit om je financiële stand van zaken te controleren tijdens de verbouwing."
+        "summary": "Bereik kiezen, totalen, per ruimte, losse uitgaven, vergelijkingen.",
+        "body": "Rapporten aggregeren je live gegevens uit de database. Bovenaan kies je het bereik: alle projecten of één specifiek project. Je ziet totalen voor budget, schattingen en werkelijke kosten, waaronder splitsing tussen kosten op taken en losse uitgaven.\n\nEr zijn vergelijkingen zoals budget t.o.v. geschatte kosten en geschat t.o.v. werkelijk. Onder “Per ruimte” zie je totalen per ruimte (op basis van taken). Tabelweergaven tonen losse uitgaven en kunnen details per project tonen.\n\nGebruik dit scherm om tijdens de verbouwing je financiële stand van zaken te controleren en te beslissen waar je nog bijstuurt."
       },
       "settings-security": {
-        "title": "Instellingen en account",
-        "summary": "Thema, e-mail en wachtwoord.",
-        "body": "Onder Instellingen pas je het thema (licht, donker, systeem) aan en zie je het e-mailadres van je account. Je kunt je wachtwoord wijzigen en een resetlink aanvragen als je bent vergeten.\n\nPrivacy-informatie staat ook gelinkt vanaf deze pagina."
+        "title": "Instellingen, weergave en account",
+        "summary": "Thema, taal, e-mail, wachtwoord, privacylink.",
+        "body": "Onder Instellingen stel je het thema in (licht, donker of systeem). Je ziet het e-mailadres van je account. Je kunt je wachtwoord wijzigen en een resetflow gebruiken als je je wachtwoord bent vergeten — ook vanaf deze pagina kan een link naar de wachtwoord-reset.\n\nEr is een sectie Taal (momenteel Nederlands; uitbreiding kan later komen) en een onderdeel over gegevens en privacy met een link naar de privacyverklaring. Lees die als je wilt weten hoe hosting (bijv. Vercel), database (bijv. Supabase) en AI-diensten in beeld zijn."
       },
       "collaboration-invites": {
-        "title": "Samenwerken en uitnodigen",
-        "summary": "Project delen met een medebewoner.",
-        "body": "Als projecteigenaar kun je één persoon uitnodigen om mee te werken aan hetzelfde project. Na acceptatie ziet die persoon dezelfde projectdata.\n\nUitnodigingen verlopen na een beperkte tijd; je kunt een openstaande uitnodiging intrekken. Gebruik het e-mailadres waarmee de ander een RenoTasker-account heeft of gaat maken."
+        "title": "Uitnodiging: link, e-mail en account",
+        "summary": "Hoe uitnodigen werkt, wat de genodigde moet doen, en veelvoorkomende problemen.",
+        "body": "Als eigenaar maak je een uitnodiging aan op het project; de genodigde krijgt een link (per mail als dat is geconfigureerd, anders de link uit de app delen). De genodigde moet een RenoTasker-account hebben of aanmaken met precies hetzelfde e-mailadres als waarmee je hebt uitgenodigd — anders kan de uitnodiging niet worden geaccepteerd.\n\nOp de acceptatiepagina wordt gecontroleerd of je bent ingelogd. Nog geen account? Dan ga je via inloggen/registreren verder; de app probeert het uitgenodigde adres voor in te vullen. Na een eventuele e-mailbevestiging van je account kom je terug om de uitnodiging te accepteren.\n\nUitnodigingen verlopen na een beperkte termijn. De eigenaar kan een openstaande uitnodiging intrekken. Als het project al een medebewoner heeft, kan er geen tweede worden toegevoegd.\n\nTip: open uitnodigingslinks bij voorkeur in een normale browser (Safari/Chrome) in plaats van alleen de ingebouwde browser van een e-mailapp, als inloggen niet lijkt te werken — sessies kunnen daar anders zijn. Bij foutmeldingen over autorisatie: opnieuw inloggen of de exacte productie-URL gebruiken die bij je account hoort."
+      },
+      "privacy-data": {
+        "title": "Privacy en je gegevens",
+        "summary": "Wat waar staat, documenten, AI en hosting op hoofdlijnen.",
+        "body": "RenoTasker gebruikt gegevens die je zelf invoert of uploadt, plus wat nodig is voor inloggen (via je identity provider, bijv. Supabase Auth). PDF’s en bijlagen staan in een privé storage-bucket: alleen jij en een geaccepteerde medewerker op hetzelfde project kunnen ze via de app benaderen dankzij row-level security. Zet een storage-bucket niet op “public” in het beheerdersdashboard.\n\nAls je de Kluscoach gebruikt, worden berichten naar de geconfigureerde AI-dienst gestuurd; gebruik geen gegevens die je niet wilt delen. Hosting (bijv. Vercel) en database (bijv. Supabase) hebben eigen verwerkers; zie ook de privacyverklaring in de app.\n\nLees de volledige privacytekst via Instellingen → Privacy of de gelinkte pagina in de app."
+      },
+      "errors-session": {
+        "title": "Problemen met inloggen of uitnodigingen",
+        "summary": "Sessie, verkeerde browser, verlopen link, wat je kunt proberen.",
+        "body": "Als iets “niet werkt” terwijl je denkt dat je bent ingelogd: ververs de pagina, log uit en opnieuw in, of open de site in je normale browser in plaats van een in-app browser van e-mail.\n\nBij uitnodigingen: controleer dat je met hetzelfde e-mailadres bent ingelogd als waarmee je bent uitgenodigd. Controleer dat je de productie-URL gebruikt die bij je organisatie hoort (bijv. www-variant consistent met waar je account is aangemaakt). Is de link verlopen? Vraag de projecteigenaar om een nieuwe uitnodiging.\n\nAlgemene foutpagina’s (“er ging iets mis”): probeer opnieuw en ga terug naar het dashboard. Blijft het mis? Noteer tijdstip en wat je deed en neem contact op met de beheerder van jouw RenoTasker-omgeving."
       }
     }
   },

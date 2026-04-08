@@ -9,11 +9,13 @@ const ROUTE_TOPIC_RULES: { test: RegExp; topic: HelpArticleId }[] = [
   { test: /^\/dashboard\/projects\/?$/, topic: "projects-create" },
   { test: /^\/dashboard\/projects\/[^/]+\/finances/, topic: "finances-expenses" },
   { test: /^\/dashboard\/projects\/[^/]+\/planning/, topic: "planning-timeline" },
-  { test: /^\/dashboard\/projects\/[^/]+/, topic: "rooms-tasks" },
+  /** Projectoverzicht (tabs Overzicht / ruimtes & taken): samenwerking + structuur */
+  { test: /^\/dashboard\/projects\/[^/]+/, topic: "project-samenwerking" },
   { test: /^\/dashboard\/planning/, topic: "planning-timeline" },
   { test: /^\/dashboard\/quotes/, topic: "quotes-offertes" },
   { test: /^\/dashboard\/reports/, topic: "reports-insights" },
   { test: /^\/dashboard\/settings/, topic: "settings-security" },
+  { test: /^\/dashboard\/help/, topic: "navigation-sidebar" },
 ];
 
 export function helpTopicForPath(pathname: string): HelpArticleId | null {

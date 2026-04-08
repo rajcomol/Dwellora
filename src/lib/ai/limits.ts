@@ -8,7 +8,8 @@ const DEFAULT_COMPARE_MAX_OUTPUT_TOKENS = 2800;
 const DEFAULT_PROJECT_CONTEXT_MAX_CHARS = 32_000;
 /** Per PDF fragment passed to compare (each document). */
 const DEFAULT_COMPARE_PDF_MAX_CHARS_PER_DOC = 24_000;
-const DEFAULT_HELP_KB_MAX_CHARS = 14_000;
+/** Raised default: expanded kennisbank; override with OPENAI_HELP_KB_MAX_CHARS if needed. */
+const DEFAULT_HELP_KB_MAX_CHARS = 28_000;
 
 /** Max tasks listed per room in chat project context (avoids huge dumps). */
 export const CHAT_CONTEXT_MAX_TASKS_PER_ROOM = 20;
