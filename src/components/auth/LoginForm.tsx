@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import RecoveryPasswordForm from "@/components/auth/RecoveryPasswordForm";
 import { LockIcon, MailIcon } from "@/components/auth/login-icons";
 import { useI18n } from "@/i18n/provider";
+import { parseTokenFromInviteNext } from "@/lib/invite/next-path";
 import { loginCredentialsZodMessage } from "@/lib/validation/loginZodMessage";
 import { loginCredentialsSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
@@ -22,14 +23,17 @@ export default function LoginForm() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
+  const inviteFlow = searchParams.get("invite") === "1";
   const forgotHref =
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
       ? `/login/forgot?next=${encodeURIComponent(nextParam)}`
       : "/login/forgot";
   const registerHref =
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? `/login/register?next=${encodeURIComponent(nextParam)}`
-      : "/login/register";
+      ? `/login/register?next=${encodeURIComponent(nextParam)}${inviteFlow ? "&invite=1" : ""}`
+      : inviteFlow
+        ? "/login/register?invite=1"
+        : "/login/register";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,6 +44,17 @@ export default function LoginForm() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (inviteFlow) {
+      const token = parseTokenFromInviteNext(nextParam);
+      if (token) {
+        void fetch(`/api/invites/preview?token=${encodeURIComponent(token)}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((body: { email?: string } | null) => {
+            if (body?.email) setEmail(body.email);
+          });
+        return;
+      }
+    }
     try {
       const saved = localStorage.getItem(REMEMBER_EMAIL_KEY);
       if (saved) {
@@ -48,7 +63,9 @@ export default function LoginForm() {
     } catch {
       /* ignore */
     }
+  }, [inviteFlow, nextParam]);
 
+  useEffect(() => {
     void supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
@@ -125,6 +142,18 @@ export default function LoginForm() {
     <div className={authCardShell}>
       <h2 className="mb-8 text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/90">{t("login.cardHeading")}</h2>
 
+      {inviteFlow && !user ? (
+        <div className="mb-6 rounded-xl border border-cyan-400/25 bg-cyan-950/35 px-4 py-3 text-sm leading-relaxed text-cyan-50/95">
+          <p>{t("login.inviteBanner")}</p>
+          <Link
+            href={registerHref}
+            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-cyan-300/35 bg-cyan-500/20 text-sm font-semibold text-cyan-50 transition-colors hover:bg-cyan-500/30 sm:w-auto sm:min-w-[12rem] sm:px-6"
+          >
+            {t("login.inviteCreateAccountCta")}
+          </Link>
+        </div>
+      ) : null}
+
       {user ? (
         <div className="space-y-6">
           <p className="text-sm text-zinc-300">
@@ -140,12 +169,21 @@ export default function LoginForm() {
             >
               {t("login.signOutButton")}
             </button>
-            <Link
-              href="/dashboard"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950 transition-opacity hover:bg-amber-300"
-            >
-              {t("login.goToDashboard")}
-            </Link>
+            {nextParam?.includes("/invite/accept") ? (
+              <Link
+                href={nextParam}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950 transition-opacity hover:bg-amber-300"
+              >
+                {t("login.continueToInvite")}
+              </Link>
+            ) : (
+              <Link
+                href="/dashboard"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950 transition-opacity hover:bg-amber-300"
+              >
+                {t("login.goToDashboard")}
+              </Link>
+            )}
           </div>
         </div>
       ) : (

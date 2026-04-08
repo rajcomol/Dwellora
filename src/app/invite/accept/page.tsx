@@ -52,7 +52,7 @@ function InviteAcceptInner() {
       if (userError || !user) {
         setStatus("redirect_login");
         const next = `/invite/accept?token=${encodeURIComponent(tkn)}`;
-        router.replace(`/login?next=${encodeURIComponent(next)}`);
+        router.replace(`/login?next=${encodeURIComponent(next)}&invite=1`);
         return;
       }
 

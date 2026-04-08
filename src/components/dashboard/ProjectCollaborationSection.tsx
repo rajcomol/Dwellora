@@ -148,6 +148,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
               expires: formatDisplayDate(state.pendingInvite.expiresAt),
             })}
           </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("projectDetail.collaborationPendingFooter")}</p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" disabled={busy} onClick={() => void cancelInvite()}>
               {t("projectDetail.collaborationCancelInvite")}

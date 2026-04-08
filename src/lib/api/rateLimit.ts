@@ -22,6 +22,8 @@ export const RATE_LIMIT = {
   documentsCompare: { limit: 16, windowMs: 60_000 },
   invitesAccept: { limit: 30, windowMs: 60_000 },
   invitesPost: { limit: 20, windowMs: 60_000 },
+  /** Public token lookup for invite UX (service role); keep strict. */
+  invitesPreview: { limit: 20, windowMs: 60_000 },
 } as const;
 
 export type RateLimitLogContext = {

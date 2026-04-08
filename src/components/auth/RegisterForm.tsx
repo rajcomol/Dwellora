@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LockIcon, MailIcon } from "@/components/auth/login-icons";
 import { useI18n } from "@/i18n/provider";
+import { parseTokenFromInviteNext } from "@/lib/invite/next-path";
 import { signUpFormZodMessage } from "@/lib/validation/loginZodMessage";
 import { signUpFormSchema } from "@/lib/validation/schemas";
 import { supabase } from "@/lib/supabase/client";
@@ -21,16 +22,39 @@ export default function RegisterForm() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
+  const inviteFlow = searchParams.get("invite") === "1";
   const loginHref =
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? `/login?next=${encodeURIComponent(nextParam)}`
-      : "/login";
+      ? `/login?next=${encodeURIComponent(nextParam)}${inviteFlow ? "&invite=1" : ""}`
+      : inviteFlow
+        ? "/login?invite=1"
+        : "/login";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    if (inviteFlow) {
+      const token = parseTokenFromInviteNext(nextParam);
+      if (token) {
+        void fetch(`/api/invites/preview?token=${encodeURIComponent(token)}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((body: { email?: string } | null) => {
+            if (body?.email) setEmail(body.email);
+          });
+        return;
+      }
+    }
+    try {
+      const saved = localStorage.getItem(REMEMBER_EMAIL_KEY);
+      if (saved) queueMicrotask(() => setEmail(saved));
+    } catch {
+      /* ignore */
+    }
+  }, [inviteFlow, nextParam]);
 
   function persistEmailAfterSignUp(value: string) {
     try {
@@ -69,7 +93,7 @@ export default function RegisterForm() {
     if (data.user && !data.session) {
       setMessage({
         type: "success",
-        text: t("login.signUpCheckEmail"),
+        text: inviteFlow ? t("login.signUpCheckEmailInvite") : t("login.signUpCheckEmail"),
       });
       return;
     }
@@ -89,6 +113,12 @@ export default function RegisterForm() {
         <h1 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/90">{t("login.signUpCardHeading")}</h1>
         <p className="mt-2 text-sm leading-relaxed text-zinc-400">{t("login.signUpDescription")}</p>
       </div>
+
+      {inviteFlow ? (
+        <div className="mt-4 rounded-xl border border-amber-200/20 bg-amber-950/25 px-4 py-3 text-sm leading-relaxed text-amber-50/90">
+          {t("login.inviteBannerRegister")}
+        </div>
+      ) : null}
 
       <form className="mt-8 space-y-6" onSubmit={(e) => void handleSubmit(e)} noValidate>
         <div>

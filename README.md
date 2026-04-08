@@ -70,6 +70,8 @@ Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als ba
 
 Deploy de functie na wijzigingen: `npx supabase functions deploy send-project-invite` (met gelinkt project). Zie `.env.example` voor de volledige checklist.
 
+Voor het **voorinvullen van het uitgenodigde e-mailadres** op inlog/registratie gebruikt de app `GET /api/invites/preview` (alleen met geldige token). Die route vereist **`SUPABASE_SERVICE_ROLE_KEY`** op Vercel (server-only; staat vaak al voor andere serverroutes).
+
 De uitnodigingsmail gebruikt een **Brevo transactional template** (`BREVO_INVITE_TEMPLATE_ID`, standaard **7** als de secret ontbreekt). In Brevo moet die template het **New Template Language**-formaat gebruiken en placeholders voor deze API-`params`:
 
 | Param | Inhoud |

@@ -120,7 +120,12 @@
     "recoveryCardHeading": "Nieuw wachtwoord",
     "recoveryDescription": "Kies een nieuw wachtwoord voor je account.",
     "recoverySubmit": "Wachtwoord opslaan",
-    "recoverySuccess": "Je wachtwoord is bijgewerkt. Je wordt doorgestuurd."
+    "recoverySuccess": "Je wachtwoord is bijgewerkt. Je wordt doorgestuurd.",
+    "inviteBanner": "Je volgt een projectuitnodiging. Heb je nog geen RenoTasker-account? Maak er eerst een aan met hetzelfde e-mailadres als waarmee je bent uitgenodigd. Heb je al een account? Log dan hieronder in.",
+    "inviteCreateAccountCta": "Account aanmaken (uitnodiging)",
+    "inviteBannerRegister": "Kies een wachtwoord voor het adres waarop je de uitnodiging ontving. Na bevestiging van je e-mail (als je provider dat vraagt) word je teruggestuurd om de uitnodiging te accepteren.",
+    "continueToInvite": "Doorgaan naar uitnodiging",
+    "signUpCheckEmailInvite": "Open de bevestigingslink in je e-mail. Daarna word je doorgestuurd om de uitnodiging te accepteren."
   },
   "inviteAccept": {
     "title": "Uitnodiging accepteren",
@@ -214,6 +219,7 @@
     "collaborationInviteEmail": "E-mailadres medebewoner",
     "collaborationSendInvite": "Uitnodiging aanmaken",
     "collaborationPending": "Openstaande uitnodiging naar {{email}}. Geldig tot {{expires}}.",
+    "collaborationPendingFooter": "Zodra deze persoon de link heeft gebruikt, een account heeft (of is ingelogd) en de uitnodiging heeft geaccepteerd, verdwijnt deze melding en zie je hem of haar hier als medebewoner.",
     "collaborationCancelInvite": "Uitnodiging intrekken",
     "collaborationInviteLink": "Uitnodigingslink (deel handmatig als nodig)",
     "collaborationEmailSent": "Er is ook een e-mail verstuurd naar dit adres met de uitnodigingslink.",
