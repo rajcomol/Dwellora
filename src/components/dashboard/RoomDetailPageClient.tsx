@@ -159,7 +159,7 @@ export default function RoomDetailPageClient({ roomId }: Props) {
 
       <div className="flex flex-wrap gap-3">
         <Link
-          href={appendProjectQuery(`/dashboard/projects/${room.projectId}/overview`, room.projectId)}
+          href={appendProjectQuery(`/dashboard/rooms?tab=overzicht`, room.projectId)}
           className="text-sm font-medium text-renovation-steel underline dark:text-renovation-accent"
         >
           {t("rooms.fullProjectView")}

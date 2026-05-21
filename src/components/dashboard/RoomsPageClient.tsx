@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import ProjectDetailPageClient from "@/components/dashboard/ProjectDetailPageClient";
 import RoomOverviewCard, { previewTasksForRoom } from "@/components/dashboard/RoomOverviewCard";
+import RoomsSubtabNav, { type RoomsTab } from "@/components/dashboard/RoomsSubtabNav";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
-import { appendProjectQuery } from "@/components/layout/tab-nav-config";
 import Button from "@/components/ui/Button";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
@@ -13,8 +14,19 @@ import type { RoomTaskSummaryRow } from "@/lib/dashboard/roomOverview";
 import { supabase } from "@/lib/supabase/client";
 import { roomNameFormSchema } from "@/lib/validation/schemas";
 
-export default function RoomsPageClient() {
+function parseTab(value: string | null | undefined): RoomsTab {
+  return value === "overzicht" ? "overzicht" : "rooms";
+}
+
+type Props = {
+  initialTab?: string | null;
+};
+
+export default function RoomsPageClient({ initialTab }: Props) {
   const { t } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { selectedProjectId, selectedProject } = useSelectedProject();
   const { rooms, tasks, createRoom, isRenovationDataReady } = useRenovation();
   const [summaries, setSummaries] = useState<RoomTaskSummaryRow[]>([]);
@@ -22,6 +34,28 @@ export default function RoomsPageClient() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const tabFromUrl = parseTab(searchParams.get("tab") ?? initialTab ?? null);
+  const [activeTab, setActiveTab] = useState<RoomsTab>(() => tabFromUrl);
+
+  useEffect(() => {
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
+
+  const setTab = useCallback(
+    (tab: RoomsTab) => {
+      setActiveTab(tab);
+      const params = new URLSearchParams(searchParams.toString());
+      if (tab === "overzicht") {
+        params.set("tab", "overzicht");
+      } else {
+        params.delete("tab");
+      }
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   const projectRooms = useMemo(
     () =>
@@ -40,8 +74,7 @@ export default function RoomsPageClient() {
   }, [summaries]);
 
   useEffect(() => {
-    if (!selectedProjectId) {
-      setSummaries([]);
+    if (!selectedProjectId || activeTab !== "rooms") {
       return;
     }
     let cancelled = false;
@@ -63,7 +96,7 @@ export default function RoomsPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId, rooms.length, tasks.length]);
+  }, [selectedProjectId, rooms.length, tasks.length, activeTab]);
 
   if (!isRenovationDataReady) {
     return <DashboardPageSkeleton />;
@@ -80,15 +113,19 @@ export default function RoomsPageClient() {
               : t("layout.topBar.chooseProject")}
           </p>
         </div>
-        {selectedProjectId ? (
+        {selectedProjectId && activeTab === "rooms" ? (
           <Button type="button" onClick={() => setShowAddForm((v) => !v)}>
             {t("rooms.newRoom")}
           </Button>
         ) : null}
       </div>
 
+      {selectedProjectId ? <RoomsSubtabNav activeTab={activeTab} onTabChange={setTab} /> : null}
+
       {!selectedProjectId ? (
         <p className="text-sm text-renovation-concrete">{t("layout.topBar.chooseProject")}</p>
+      ) : activeTab === "overzicht" ? (
+        <ProjectDetailPageClient projectId={selectedProjectId} />
       ) : (
         <>
           {showAddForm ? (
@@ -154,17 +191,6 @@ export default function RoomsPageClient() {
               })}
             </div>
           )}
-
-          {selectedProjectId ? (
-            <p className="text-center text-xs">
-              <Link
-                href={appendProjectQuery(`/dashboard/projects/${selectedProjectId}/overview`, selectedProjectId)}
-                className="text-renovation-steel underline decoration-renovation-accent/40 underline-offset-2 dark:text-renovation-accent"
-              >
-                {t("rooms.fullProjectView")}
-              </Link>
-            </p>
-          ) : null}
         </>
       )}
     </div>

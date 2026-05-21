@@ -76,6 +76,9 @@
   },
   "rooms": {
     "subtitleProject": "Ruimtes in {{name}}",
+    "tabRooms": "Ruimtes",
+    "tabOverview": "Projectoverzicht",
+    "subnavAria": "Ruimtes secties",
     "empty": "Nog geen ruimtes.",
     "addLabel": "Nieuwe ruimte",
     "newRoom": "Nieuwe ruimte",
