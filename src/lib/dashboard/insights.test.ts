@@ -14,8 +14,10 @@ const sampleProject: Project = {
 
 const sampleTask = (overrides: Partial<Task> = {}): Task => ({
   id: "t1",
+  projectId: "p1",
   title: "A",
-  roomId: "r1",
+  roomIds: ["r1"],
+  constructionDepotId: null,
   status: "todo",
   estimatedCost: 100,
   actualCost: 40,

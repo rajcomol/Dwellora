@@ -6,8 +6,9 @@ import type { Project, ProjectExpense, Room, Task } from "@/lib/renovation/types
 function task(partial: Partial<Task>): Task {
   return {
     id: "t",
+    projectId: "p1",
     title: "t",
-    roomId: "r",
+    roomIds: ["r"],
     status: "todo",
     estimatedCost: 0,
     actualCost: 0,
@@ -17,6 +18,7 @@ function task(partial: Partial<Task>): Task {
     sortOrder: 0,
     startDate: null,
     assignedRosterId: null,
+    constructionDepotId: null,
     renovationPhase: DEFAULT_RENOVATION_PHASE,
     ...partial,
   };
@@ -39,9 +41,9 @@ describe("aggregateSpendByRoom", () => {
     ];
     const rows = aggregateSpendByRoom(
       [
-        task({ roomId: "r1", estimatedCost: 100, actualCost: 80 }),
-        task({ roomId: "r1", estimatedCost: 50, actualCost: 40 }),
-        task({ roomId: "r2", estimatedCost: 30, actualCost: 10 }),
+        task({ roomIds: ["r1"], estimatedCost: 100, actualCost: 80 }),
+        task({ roomIds: ["r1"], estimatedCost: 50, actualCost: 40 }),
+        task({ roomIds: ["r2"], estimatedCost: 30, actualCost: 10 }),
       ],
       rooms
     );

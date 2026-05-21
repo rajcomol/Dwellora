@@ -3,8 +3,10 @@ import { DEFAULT_RENOVATION_PHASE } from "@/lib/renovation/phases";
 import { compareTasksTimeline, sortTasksByTimeline } from "@/lib/renovation/timelineSort";
 import type { Task } from "@/lib/renovation/types";
 
-function task(partial: Partial<Task> & Pick<Task, "id" | "title" | "roomId">): Task {
+function task(partial: Partial<Task> & Pick<Task, "id" | "title">): Task {
   return {
+    projectId: "p1",
+    roomIds: ["r"],
     status: "todo",
     estimatedCost: 0,
     actualCost: 0,
@@ -14,6 +16,7 @@ function task(partial: Partial<Task> & Pick<Task, "id" | "title" | "roomId">): T
     sortOrder: 0,
     startDate: null,
     assignedRosterId: null,
+    constructionDepotId: null,
     renovationPhase: DEFAULT_RENOVATION_PHASE,
     ...partial,
   };
@@ -21,15 +24,15 @@ function task(partial: Partial<Task> & Pick<Task, "id" | "title" | "roomId">): T
 
 describe("sortTasksByTimeline", () => {
   it("orders by sortOrder, then startDate, then title", () => {
-    const a = task({ id: "a", title: "B", roomId: "r", sortOrder: 1, startDate: "2025-01-02" });
-    const b = task({ id: "b", title: "A", roomId: "r", sortOrder: 1, startDate: "2025-01-01" });
-    const c = task({ id: "c", title: "Z", roomId: "r", sortOrder: 0 });
+    const a = task({ id: "a", title: "B", roomIds: ["r"], sortOrder: 1, startDate: "2025-01-02" });
+    const b = task({ id: "b", title: "A", roomIds: ["r"], sortOrder: 1, startDate: "2025-01-01" });
+    const c = task({ id: "c", title: "Z", roomIds: ["r"], sortOrder: 0 });
     expect(sortTasksByTimeline([a, b, c]).map((t) => t.id)).toEqual(["c", "b", "a"]);
   });
 
   it("compareTasksTimeline is stable for equal keys", () => {
-    const x = task({ id: "x", title: "same", roomId: "r", sortOrder: 0, startDate: null });
-    const y = task({ id: "y", title: "same", roomId: "r", sortOrder: 0, startDate: null });
+    const x = task({ id: "x", title: "same", roomIds: ["r"], sortOrder: 0, startDate: null });
+    const y = task({ id: "y", title: "same", roomIds: ["r"], sortOrder: 0, startDate: null });
     expect(compareTasksTimeline(x, y)).toBe(0);
   });
 });

@@ -1,4 +1,5 @@
-import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import { sumEstimatedCostsUnique, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
+import type { ConstructionDepotBalance, Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 export type DashboardMetrics = {
   totalProjectBudget: number;
@@ -26,10 +27,7 @@ export function computeMetrics(
   projectExpenses: ProjectExpense[] = []
 ): DashboardMetrics {
   const totalProjectBudget = projects.reduce((sum, p) => sum + (Number.isFinite(p.totalBudget) ? p.totalBudget : 0), 0);
-  const totalEstimatedTaskCosts = tasks.reduce(
-    (sum, t) => sum + (Number.isFinite(t.estimatedCost) ? t.estimatedCost : 0),
-    0
-  );
+  const totalEstimatedTaskCosts = sumEstimatedCostsUnique(tasks);
   const totalActualFromTasks = tasks.reduce(
     (sum, t) => sum + (Number.isFinite(t.actualCost) ? t.actualCost : 0),
     0
@@ -67,16 +65,27 @@ export type InsightItem = {
 export function generateInsights(
   projects: Project[],
   tasks: Task[],
-  projectExpenses: ProjectExpense[] = []
+  projectExpenses: ProjectExpense[] = [],
+  depotBalances: ConstructionDepotBalance[] = []
 ): InsightItem[] {
   const insights: InsightItem[] = [];
 
   const totalBudget = projects.reduce((s, p) => s + p.totalBudget, 0);
   const hasAnyProjectWithoutBudget = projects.some((p) => p.totalBudget <= 0);
-  const totalEstimated = tasks.reduce((s, t) => s + t.estimatedCost, 0);
+  const totalEstimated = sumEstimatedCostsUnique(tasks);
   const totalActualTasks = tasks.reduce((s, t) => s + (Number.isFinite(t.actualCost) ? t.actualCost : 0), 0);
   const totalLoose = sumExpenseAmounts(projectExpenses);
   const totalActualAll = totalActualTasks + totalLoose;
+
+  for (const d of depotBalances) {
+    if (d.remainingEstimated < 0) {
+      insights.push({
+        severity: "warning",
+        messageKey: "insights.depotOverBudget",
+        messageParams: { name: d.name },
+      });
+    }
+  }
 
   if (tasks.length > 0 && totalActualAll > totalEstimated) {
     insights.push({

@@ -23,7 +23,10 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
   const project = useMemo(() => projects.find((p) => p.id === projectId), [projects, projectId]);
   const roomsForProject = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
   const roomIds = useMemo(() => new Set(roomsForProject.map((r) => r.id)), [roomsForProject]);
-  const projectTasks = useMemo(() => tasks.filter((tk) => roomIds.has(tk.roomId)), [tasks, roomIds]);
+  const projectTasks = useMemo(
+    () => tasks.filter((tk) => tk.roomIds.some((rid) => roomIds.has(rid))),
+    [tasks, roomIds]
+  );
   const roomNameById = useMemo(() => new Map(rooms.map((r) => [r.id, r.name])), [rooms]);
   const rosterNameById = useMemo(
     () => new Map(teamRoster.filter((r) => r.projectId === projectId).map((r) => [r.id, r.displayName])),
@@ -123,7 +126,11 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                     <div className="flex flex-wrap items-baseline gap-2">
                       <span className="font-medium text-zinc-900 dark:text-zinc-100">{task.title}</span>
                       <span className="text-xs text-renovation-concrete">
-                        {roomNameById.get(task.roomId) ?? t("projectDetail.roomFallback")} •{" "}
+                        {task.roomIds
+                          .map((rid) => roomNameById.get(rid))
+                          .filter(Boolean)
+                          .join(", ") || t("projectDetail.roomFallback")}{" "}
+                        •{" "}
                         {t(phaseKey)} • {t("projectDetail.plannedDays", { days: task.durationDays })}
                       </span>
                     </div>

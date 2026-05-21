@@ -35,7 +35,7 @@ function taskLabelForExpense(expense: ProjectExpense, tasks: Task[], rooms: { id
   if (!expense.taskId) return null;
   const task = tasks.find((tk) => tk.id === expense.taskId);
   if (!task) return null;
-  const room = rooms.find((r) => r.id === task.roomId);
+  const room = rooms.find((r) => task.roomIds.includes(r.id));
   return room ? `${task.title} (${room.name})` : task.title;
 }
 
@@ -108,7 +108,10 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
   const project = projects.find((p) => p.id === projectId);
   const projectRooms = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
   const roomIdSet = useMemo(() => new Set(projectRooms.map((r) => r.id)), [projectRooms]);
-  const projectTasks = useMemo(() => tasks.filter((tk) => roomIdSet.has(tk.roomId)), [tasks, roomIdSet]);
+  const projectTasks = useMemo(
+    () => tasks.filter((tk) => tk.projectId === projectId && (tk.roomIds.length === 0 || tk.roomIds.some((rid) => roomIdSet.has(rid)))),
+    [tasks, roomIdSet]
+  );
 
   const expenses = useMemo(
     () => projectExpenses.filter((e) => e.projectId === projectId),
@@ -248,7 +251,7 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
             >
               <option value="">{t("finances.noTask")}</option>
               {projectTasks.map((tk) => {
-                const room = projectRooms.find((r) => r.id === tk.roomId);
+                const room = projectRooms.find((r) => tk.roomIds.includes(r.id));
                 return (
                   <option key={tk.id} value={tk.id}>
                     {tk.title}
@@ -390,7 +393,7 @@ function ExpenseRow({
             >
               <option value="">{t("finances.noTask")}</option>
               {projectTasks.map((tk) => {
-                const room = projectRooms.find((r) => r.id === tk.roomId);
+                const room = projectRooms.find((r) => tk.roomIds.includes(r.id));
                 return (
                   <option key={tk.id} value={tk.id}>
                     {tk.title}

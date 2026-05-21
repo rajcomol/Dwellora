@@ -2,51 +2,24 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import BouwdepotDashboardCard from "@/components/dashboard/BouwdepotDashboardCard";
+import BudgetBreakdownCard from "@/components/dashboard/BudgetBreakdownCard";
+import DashboardStatGrid from "@/components/dashboard/DashboardStatGrid";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
-import { computeMetrics, generateInsights } from "@/lib/dashboard/insights";
+import { generateInsights } from "@/lib/dashboard/insights";
 import { getUpcomingTasks } from "@/lib/dashboard/upcomingTasks";
-import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
-
-function MetricCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-      <div className="flex items-start gap-3">
-        <span
-          className="mt-0.5 h-9 w-1 shrink-0 rounded-full bg-renovation-accent"
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1">
-          <div className="text-xs font-medium text-renovation-concrete">{label}</div>
-          <div className="mt-2 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">{value}</div>
-          {hint ? <div className="mt-1 text-xs text-renovation-concrete">{hint}</div> : null}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardInsightsClient() {
   const { t } = useI18n();
-  const { projects, rooms, tasks, projectExpenses, isRenovationDataReady } = useRenovation();
+  const { projects, rooms, tasks, projectExpenses, constructionDepotBalances, isRenovationDataReady } =
+    useRenovation();
 
-  const metrics = useMemo(
-    () => computeMetrics(projects, tasks, projectExpenses),
-    [projects, tasks, projectExpenses]
-  );
   const insights = useMemo(
-    () => generateInsights(projects, tasks, projectExpenses),
-    [projects, tasks, projectExpenses]
+    () => generateInsights(projects, tasks, projectExpenses, constructionDepotBalances),
+    [projects, tasks, projectExpenses, constructionDepotBalances]
   );
   const upcoming = useMemo(() => getUpcomingTasks(projects, rooms, tasks, 10), [projects, rooms, tasks]);
 
@@ -89,50 +62,17 @@ export default function DashboardInsightsClient() {
         </div>
       </section>
 
-      <section>
+      <section data-tour="dashboard-stats">
         <h2 className="text-sm font-semibold text-renovation-steel dark:text-zinc-200">{t("dashboard.keyMetrics")}</h2>
-        <p className="mt-1 text-xs text-renovation-concrete">{t("dashboard.keyMetricsHint")}</p>
-        <div className="motion-safe-stagger mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            label={t("dashboard.metricTotalProjectBudget")}
-            value={formatCurrency(metrics.totalProjectBudget)}
-            hint={t("dashboard.metricTotalProjectBudgetHint")}
-          />
-          <MetricCard
-            label={t("dashboard.metricTotalEstimatedTaskCosts")}
-            value={formatCurrency(metrics.totalEstimatedTaskCosts)}
-            hint={t("dashboard.metricTotalEstimatedTaskCostsHint")}
-          />
-          <MetricCard
-            label={t("dashboard.metricBudgetGap")}
-            value={formatCurrency(metrics.budgetGap)}
-            hint={t("dashboard.metricBudgetGapHint")}
-          />
-          <MetricCard
-            label={t("dashboard.metricTotalRecordedSpend")}
-            value={formatCurrency(metrics.totalActualRecordedSpend)}
-            hint={t("dashboard.metricTotalRecordedSpendHint")}
-          />
-          <MetricCard
-            label={t("dashboard.metricLooseExpenses")}
-            value={formatCurrency(metrics.totalLooseExpenses)}
-            hint={t("dashboard.metricLooseExpensesHint")}
-          />
-          <MetricCard
-            label={t("dashboard.metricActualFromTasks")}
-            value={formatCurrency(metrics.totalActualFromTasks)}
-            hint={t("dashboard.metricActualFromTasksHint")}
-          />
-          <MetricCard
-            label={t("dashboard.metricEstimateVsActual")}
-            value={formatCurrency(metrics.estimateVsActualGap)}
-            hint={t("dashboard.metricEstimateVsActualHint")}
-          />
-          <MetricCard label={t("dashboard.metricTotalTasks")} value={String(metrics.totalTasks)} />
-          <MetricCard label={t("dashboard.metricCompletedTasks")} value={String(metrics.completedTasks)} />
-          <MetricCard label={t("dashboard.metricHighPriority")} value={String(metrics.highPriorityTasks)} />
+        <div className="mt-4">
+          <DashboardStatGrid />
         </div>
       </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <BudgetBreakdownCard />
+        <BouwdepotDashboardCard />
+      </div>
 
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("dashboard.upcomingTitle")}</h2>
@@ -158,10 +98,10 @@ export default function DashboardInsightsClient() {
         )}
         <div className="mt-4">
           <Link
-            href="/dashboard/projects"
+            href="/dashboard/planning"
             className="text-sm font-medium text-renovation-steel underline decoration-renovation-accent/50 underline-offset-2 hover:decoration-renovation-accent dark:text-renovation-accent"
           >
-            {t("dashboard.openProjects")}
+            {t("nav.tabs.planning")}
           </Link>
         </div>
       </section>
@@ -188,41 +128,6 @@ export default function DashboardInsightsClient() {
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("dashboard.quickActionsTitle")}</h2>
-            <p className="mt-1 text-sm text-renovation-concrete">{t("dashboard.quickActionsHint")}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/dashboard/settings"
-              className="rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
-            >
-              {t("nav.settings")}
-            </Link>
-            <Link
-              href="/dashboard/projects"
-              className="rounded-xl border border-renovation-border bg-transparent px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
-            >
-              {t("nav.projects")}
-            </Link>
-            <Link
-              href="/dashboard/quotes"
-              className="rounded-xl border border-renovation-border bg-transparent px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
-            >
-              {t("nav.documents")}
-            </Link>
-            <Link
-              href="/dashboard/reports"
-              className="rounded-xl border border-renovation-border bg-transparent px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
-            >
-              {t("nav.reports")}
-            </Link>
-          </div>
-        </div>
       </section>
     </div>
   );

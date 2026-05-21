@@ -23,7 +23,84 @@
     "documents": "Offertes",
     "settings": "Instellingen",
     "reports": "Rapporten",
-    "account": "Account"
+    "account": "Account",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "planning": "Planning",
+      "quotes": "Offertes",
+      "rooms": "Ruimtes",
+      "reports": "Rapporten",
+      "settings": "Instellingen"
+    }
+  },
+  "layout": {
+    "topBar": {
+      "chooseProject": "Kies een project",
+      "loadingProjects": "Projecten laden…",
+      "notificationsSoon": "Meldingen — binnenkort beschikbaar"
+    },
+    "tabNav": {
+      "ariaLabel": "Hoofdnavigatie"
+    },
+    "bottomNav": {
+      "ariaLabel": "Mobiele navigatie",
+      "more": "Meer"
+    }
+  },
+  "budget": {
+    "ownMoney": "Eigen geld",
+    "depotTotal": "Bouwdepot totaal",
+    "breakdown": "Budgetverdeling",
+    "breakdownEmpty": "Stel eigen geld en bouwdepot in via projectinstellingen.",
+    "spentDone": "Besteed (voltooide taken)",
+    "totalReadOnly": "Totaal budget"
+  },
+  "bouwdepot": {
+    "cardTitle": "Bouwdepots",
+    "cardHint": "Voortgang t.o.v. het projecttotaal bouwdepot.",
+    "newDepot": "+ Nieuw depot",
+    "viewAll": "Alle bouwdepots beheren",
+    "createModalTitle": "Nieuw bouwdepot",
+    "createModalHint": "Alleen een naam; het budget staat op projectniveau.",
+    "pageSubtitle": "Depots en koppelingen voor {{name}}.",
+    "noProjectTotalWarning": "Stel een bouwdepot-totaal in bij projectinstellingen.",
+    "editBudgetSettings": "Budget aanpassen",
+    "progress": {
+      "usedOfTotal": "{{spent}} gebruikt van {{total}}"
+    }
+  },
+  "tasks": {
+    "subtitleProject": "Taken voor {{name}}",
+    "empty": "Geen taken in dit project.",
+    "editInProject": "Taken bewerken in projectoverzicht"
+  },
+  "rooms": {
+    "subtitleProject": "Ruimtes in {{name}}",
+    "empty": "Nog geen ruimtes.",
+    "addLabel": "Nieuwe ruimte",
+    "newRoom": "Nieuwe ruimte",
+    "deleteConfirm": "Deze ruimte verwijderen?",
+    "fullProjectView": "Volledig projectoverzicht",
+    "noTasksPreview": "Nog geen taken in deze ruimte",
+    "completedPill": "{{done}}/{{total}} voltooid",
+    "dateRange": "{{start}} – {{end}}",
+    "dateOpen": "vanaf {{start}}",
+    "status": {
+      "planned": "Gepland",
+      "inProgress": "Bezig",
+      "completed": "Voltooid"
+    },
+    "detail": {
+      "back": "Terug naar ruimtes",
+      "notFound": "Ruimte niet gevonden."
+    }
+  },
+  "projectSettings": {
+    "notFound": "Project niet gevonden.",
+    "tabProject": "Projectgegevens",
+    "tabAccount": "Accountinstellingen",
+    "accountOnlyHint": "Kies een project om projectgegevens te bewerken.",
+    "subnavAria": "Instellingen secties"
   },
   "projectSubnav": {
     "ariaLabel": "Projectsecties",
@@ -72,6 +149,8 @@
   },
   "common": {
     "save": "Opslaan",
+    "saved": "Opgeslagen",
+    "cancel": "Annuleren",
     "delete": "Verwijderen",
     "remove": "Verwijderen",
     "add": "Toevoegen",
@@ -147,6 +226,16 @@
     "errorOwnerSelf": "Je kunt je eigen project niet als medewerker accepteren."
   },
   "dashboard": {
+    "stats": {
+      "tasks": "Taken",
+      "tasksValue": "{{done}} / {{total}} voltooid",
+      "budgetRemaining": "Budget resterend",
+      "depotRemaining": "Bouwdepot over",
+      "keyDate": "Sleuteldatum",
+      "noKeyDate": "Geen datum",
+      "daysUntilKey": "Nog {{days}} dagen",
+      "daysPastKey": "{{days}} dagen geleden"
+    },
     "heroEyebrow": "RenoTasker",
     "heroTitle": "Jouw renovatie-overzicht",
     "heroSubtitle": "Live cijfers uit je projecten en taken: budget, voortgang en wat je hierna kunt doen.",
@@ -157,7 +246,7 @@
     "keyMetricsHint": "Over al je projecten heen.",
     "metricTotalProjectBudget": "Totaal projectbudget",
     "metricTotalProjectBudgetHint": "Som van alle projectbudgetten",
-    "metricTotalEstimatedTaskCosts": "Totaal geschatte takosten",
+    "metricTotalEstimatedTaskCosts": "Totaal geschatte taakkosten",
     "metricTotalEstimatedTaskCostsHint": "Som van taakschattingen",
     "metricBudgetGap": "Budgetgat",
     "metricBudgetGapHint": "Budget − geschatte kosten",
@@ -168,7 +257,7 @@
     "metricActualFromTasks": "Werkelijk op taken",
     "metricActualFromTasksHint": "Som van werkelijke kosten per taak",
     "metricEstimateVsActual": "Schatting vs werkelijk",
-    "metricEstimateVsActualHint": "Geschatte takosten − totaal geregistreerd",
+    "metricEstimateVsActualHint": "Geschatte taakkosten − totaal geregistreerd",
     "metricTotalTasks": "Totaal taken",
     "metricCompletedTasks": "Afgeronde taken",
     "metricHighPriority": "Hoge prioriteit",
@@ -328,7 +417,31 @@
     "checklistItemRequired": "Beschrijving is verplicht.",
     "rosterNameRequired": "Naam is verplicht.",
     "rosterEmailInvalid": "Vul een geldig e-mailadres in of laat het veld leeg.",
-    "projectSaveInvalid": "Vul een projectnaam en een geldig budget in."
+    "projectSaveInvalid": "Vul een projectnaam en een geldig budget in.",
+    "labelRooms": "Ruimtes",
+    "roomsRequired": "Selecteer minimaal één ruimte.",
+    "noEstimate": "Geen schatting",
+    "roomEstimatedTotal": "Geschat: {{amount}}",
+    "projectEstimatedTotal": "Geschat projecttotaal: {{amount}}"
+  },
+  "constructionDepot": {
+    "dashboardTitle": "Bouwdepots",
+    "dashboardHint": "Voortgang van je bouwdepots over alle projecten.",
+    "viewProject": "Bekijk project",
+    "spent": "Uitgegeven",
+    "remaining": "Resterend",
+    "ofTotal": "van {{total}}",
+    "sectionTitle": "Bouwdepots",
+    "sectionHint": "Beheer bouwdepots en koppel taken aan een depot voor kostenbewaking.",
+    "noDepots": "Nog geen bouwdepots. Maak er een aan om kosten te reserveren.",
+    "deleteConfirm": "Dit bouwdepot verwijderen? Gekoppelde taken worden losgekoppeld.",
+    "nameLabel": "Naam",
+    "totalAmountLabel": "Totaalbedrag",
+    "create": "Bouwdepot aanmaken",
+    "formError": "Vul een naam en een geldig bedrag in.",
+    "totalLabel": "totaal",
+    "taskSelectLabel": "Kosten uit bouwdepot",
+    "taskSelectNone": "— Geen bouwdepot"
   },
   "renovationPhase": {
     "slopen": "Slopen",
@@ -339,6 +452,7 @@
     "nazorg": "Nazorg"
   },
   "task": {
+    "looseLabel": "Losse taak",
     "status": {
       "todo": "Te doen",
       "doing": "Bezig",
@@ -351,6 +465,20 @@
     }
   },
   "planning": {
+    "subtitleProject": "Planning voor {{name}}",
+    "empty": "Nog geen taken in dit project.",
+    "looseSection": "Losse taken",
+    "looseTask": "Los",
+    "noDate": "Geen datum",
+    "gantt": {
+      "taskColumn": "Taak",
+      "editTask": "Taak bewerken"
+    },
+    "taskPanel": {
+      "title": "Taakdetails",
+      "close": "Sluiten",
+      "editInProject": "Bewerken in project"
+    },
     "hubTitle": "Planning",
     "hubSubtitle": "Kies een project voor de volledige tijdlijn, of bekijk hieronder alle taken gegroepeerd per renovatiefase (alle projecten).",
     "hubEmpty": "Nog geen projecten.",
@@ -457,7 +585,7 @@
   },
   "reports": {
     "title": "Rapporten",
-    "subtitle": "Budgetten, schattingen en werkelijke kosten uit je live Supabase-gegevens.",
+    "subtitle": "Budgetten, schattingen en werkelijke kosten uit je projectgegevens.",
     "scope": "Bereik",
     "allProjects": "Alle projecten",
     "totalBudgetScope": "Totaal budget (bereik)",
@@ -523,7 +651,8 @@
   "insights": {
     "actualExceedsEstimated": "Werkelijke kosten overschrijden de totale schattingen op taken. Controleer schattingen of noteer eenmalige kosten.",
     "noProjectBudget": "Eén of meer projecten hebben geen totaalbudget (€0). Vul een realistisch budget per project in om gaten te volgen.",
-    "estimatedExceedsBudget": "Geschatte takosten overschrijden het totale projectbudget. Bekijk scope, offertes of verhoog het budget voor je vastlegt.",
+    "estimatedExceedsBudget": "Geschatte taakkosten overschrijden het totale projectbudget. Bekijk scope, offertes of verhoog het budget voordat je vastlegt.",
+    "depotOverBudget": "Bouwdepot «{{name}}» is overschreden op basis van gekoppelde taakschattingen.",
     "missingDuration": "Aantal taken zonder ingestelde duur (0 dagen): {{count}}.",
     "highTodo": "Aantal hoge-prioriteit taken dat nog op “te doen” staat: {{count}}. Plan of prioriteer ze.",
     "allClear": "Geen grote aandachtspunten. Houd schattingen en losse uitgaven bij naarmate het project verloopt.",
@@ -585,7 +714,7 @@
       "dashboard-metrics": {
         "title": "Kerncijfers op het dashboard",
         "summary": "Wat de kaarten betekenen: budget, schattingen, werkelijk, taken.",
-        "body": "Onder “Kerncijfers” zie je totalen over al je projecten tegelijk (tenzij je nog maar één project hebt). Gangbare regels:\n\n• Totaal projectbudget — som van de budgetvelden die je per project hebt ingevuld.\n• Totaal geschatte takosten — optelsom van de geschatte kosten op taken.\n• Budgetgat — verschil tussen totaal budget en die schattingen (ruimte tot je schatting het budget raakt).\n• Totaal geregistreerde uitgaven — werkelijke kosten: zowel wat je op taken hebt geboekt als losse uitgaven op projectniveau.\n• Losse uitgaven — uitgaven die je niet aan één taak hebt gekoppeld (bijv. bouwmarkt).\n• Werkelijk op taken — som van werkelijke kosten per taak.\n• Schatting vs werkelijk — verschil tussen geschatte takosten en alles wat je hebt geregistreerd.\n• Totaal / afgeronde / hoge-prioriteit taken — tellers om je werklast te zien.\n\nOnder “Komend werk” staan openstaande taken, gesorteerd op prioriteit. Onder “Inzichten” verschijnen regels zoals “schatting boven budget” of “taken zonder duur” — die helpen je data te verbeteren in de projecten zelf."
+        "body": "Onder “Kerncijfers” zie je totalen over al je projecten tegelijk (tenzij je nog maar één project hebt). Gangbare regels:\n\n• Totaal projectbudget — som van de budgetvelden die je per project hebt ingevuld.\n• Totaal geschatte taakkosten — optelsom van de geschatte kosten op taken.\n• Budgetgat — verschil tussen totaal budget en die schattingen (ruimte tot je schatting het budget raakt).\n• Totaal geregistreerde uitgaven — werkelijke kosten: zowel wat je op taken hebt geboekt als losse uitgaven op projectniveau.\n• Losse uitgaven — uitgaven die je niet aan één taak hebt gekoppeld (bijv. bouwmarkt).\n• Werkelijk op taken — som van werkelijke kosten per taak.\n• Schatting vs werkelijk — verschil tussen geschatte taakkosten en alles wat je hebt geregistreerd.\n• Totaal / afgeronde / hoge-prioriteit taken — tellers om je werklast te zien.\n\nOnder “Komend werk” staan openstaande taken, gesorteerd op prioriteit. Onder “Inzichten” verschijnen regels zoals “schatting boven budget” of “taken zonder duur” — die helpen je data te verbeteren in de projecten zelf."
       },
       "projects-create": {
         "title": "Projecten aanmaken en beheren",
@@ -620,7 +749,7 @@
       "finances-expenses": {
         "title": "Financiën en uitgaven op een project",
         "summary": "Tab Financiën: uitgaven, type bon/factuur, koppeling aan taak, bewijsstukken.",
-        "body": "Open een project en ga naar de tab Financiën voor het uitgebreide financiële beeld. Daar registreer je uitgaven met bedrag, datum en type (bon, factuur, overig), notities, en optioneel een koppeling aan een taak. Je kunt bonnen en facturen als bestand toevoegen als bewijsstuk.\n\nLosse uitgaven op het projectoverzicht zijn bedoeld voor snelle aankopen; de Financiën-tab is de plek voor structuur en bewijs. Gekoppelde uitgaven zijn terug te vinden vanuit een taak waar dat van toepassing is.\n\nZo blijft je werkelijke besteding vergelijkbaar met je geschatte takosten en je projectbudget — zie ook Rapporten voor totalen en doorrekening per ruimte."
+        "body": "Open een project en ga naar de tab Financiën voor het uitgebreide financiële beeld. Daar registreer je uitgaven met bedrag, datum en type (bon, factuur, overig), notities, en optioneel een koppeling aan een taak. Je kunt bonnen en facturen als bestand toevoegen als bewijsstuk.\n\nLosse uitgaven op het projectoverzicht zijn bedoeld voor snelle aankopen; de Financiën-tab is de plek voor structuur en bewijs. Gekoppelde uitgaven zijn terug te vinden vanuit een taak waar dat van toepassing is.\n\nZo blijft je werkelijke besteding vergelijkbaar met je geschatte taakkosten en je projectbudget — zie ook Rapporten voor totalen en doorrekening per ruimte."
       },
       "kluscoach-ai": {
         "title": "Kluscoach (AI-chat)",

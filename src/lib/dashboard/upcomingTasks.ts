@@ -28,12 +28,20 @@ export function getUpcomingTasks(
     return a.title.localeCompare(b.title);
   });
   return sorted.slice(0, limit).map((t) => {
-    const room = roomById.get(t.roomId);
-    const pid = room?.projectId ?? "";
+    const names = t.roomIds
+      .map((rid) => roomById.get(rid)?.name)
+      .filter((n): n is string => Boolean(n));
+    const pid = t.projectId;
+    const roomName =
+      names.length === 0
+        ? "Los"
+        : names.length <= 2
+          ? names.join(", ")
+          : `${names[0]}, ${names[1]} +${names.length - 2}`;
     return {
       ...t,
       projectName: projectName.get(pid) ?? "—",
-      roomName: room?.name ?? "—",
+      roomName,
     };
   });
 }

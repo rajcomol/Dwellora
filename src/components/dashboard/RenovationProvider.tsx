@@ -2,6 +2,8 @@
 
 import { DEFAULT_RENOVATION_PHASE, parseRenovationPhase } from "@/lib/renovation/phases";
 import type {
+  ConstructionDepot,
+  ConstructionDepotBalance,
   ExpenseDocument,
   ExpenseDocumentType,
   ID,
@@ -26,36 +28,63 @@ const DOCUMENTS_BUCKET = "documents";
 const EXPENSE_DOCUMENTS_BUCKET = "expense_documents";
 const MAX_EXPENSE_DOC_BYTES = 10 * 1024 * 1024;
 
-/** Ensures roster row belongs to the same project as the task's room. */
-async function resolveAssignedRosterIdForTaskRoom(roomId: ID, rosterId: ID | null | undefined): Promise<ID | null> {
+const TASK_SELECT =
+  "id,project_id,title,renovation_phase,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date,assigned_roster_id,construction_depot_id";
+
+/** Ensures roster row belongs to the same project as the task. */
+async function resolveAssignedRosterIdForProject(
+  projectId: ID,
+  rosterId: ID | null | undefined
+): Promise<ID | null> {
   if (rosterId == null || rosterId === "") return null;
-  const roomRes = await supabase.from("rooms").select("project_id").eq("id", roomId).maybeSingle();
-  if (roomRes.error || !roomRes.data) return null;
-  const projectId = String(roomRes.data.project_id);
   const rs = await supabase.from("project_team_roster").select("project_id").eq("id", rosterId).maybeSingle();
   if (rs.error || !rs.data) return null;
   if (String(rs.data.project_id) !== projectId) return null;
   return rosterId;
 }
 
-/** Ensures task belongs to project (via room); returns null if invalid. */
+/** Ensures task belongs to project; returns null if invalid. */
 async function resolveTaskIdForProjectExpense(projectId: ID, taskId: ID | null | undefined): Promise<ID | null> {
   if (taskId == null || taskId === "") return null;
-  const taskRes = await supabase.from("tasks").select("id, room_id").eq("id", taskId).maybeSingle();
+  const taskRes = await supabase.from("tasks").select("project_id").eq("id", taskId).maybeSingle();
   if (taskRes.error || !taskRes.data) return null;
-  const roomRes = await supabase
-    .from("rooms")
-    .select("project_id")
-    .eq("id", String(taskRes.data.room_id))
-    .maybeSingle();
-  if (roomRes.error || !roomRes.data) return null;
-  if (String(roomRes.data.project_id) !== projectId) return null;
+  if (String(taskRes.data.project_id) !== projectId) return null;
   return taskId;
+}
+
+async function getProjectIdForTask(taskId: ID): Promise<ID | null> {
+  const taskRes = await supabase.from("tasks").select("project_id").eq("id", taskId).maybeSingle();
+  if (taskRes.error || !taskRes.data) return null;
+  return String(taskRes.data.project_id);
+}
+
+async function resolveProjectIdForTaskInput(roomIds: ID[], projectId?: ID): Promise<ID | null> {
+  if (roomIds.length > 0) {
+    const roomRes = await supabase.from("rooms").select("project_id").eq("id", roomIds[0]).maybeSingle();
+    if (roomRes.error || !roomRes.data) return null;
+    return String(roomRes.data.project_id);
+  }
+  return projectId ?? null;
+}
+
+const PROJECT_SELECT =
+  "id,name,total_budget,own_contribution,construction_depot_total,address,expected_key_handover,notes,created_at";
+
+function parseNumericNullable(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const n = Number.parseFloat(String(value));
+  return Number.isFinite(n) ? n : null;
+}
+
+function computeTotalBudget(own: number | null, depot: number | null): number {
+  return (own ?? 0) + (depot ?? 0);
 }
 
 type CreateProjectInput = {
   name: string;
-  totalBudget: number;
+  ownContribution?: number | null;
+  constructionDepotTotal?: number | null;
   address?: string;
   expectedKeyHandover?: string | null;
   notes?: string;
@@ -64,7 +93,8 @@ type CreateProjectInput = {
 type UpdateProjectInput = {
   id: ID;
   name?: string;
-  totalBudget?: number;
+  ownContribution?: number | null;
+  constructionDepotTotal?: number | null;
   address?: string;
   expectedKeyHandover?: string | null;
   notes?: string;
@@ -72,9 +102,11 @@ type UpdateProjectInput = {
 
 type CreateTaskInput = {
   title: string;
-  roomId: ID;
+  /** Required when roomIds is empty (loose task) */
+  projectId?: ID;
+  roomIds: ID[];
   status: TaskStatus;
-  estimatedCost: number;
+  estimatedCost: number | null;
   actualCost?: number;
   durationDays: number;
   priority: TaskPriority;
@@ -83,22 +115,24 @@ type CreateTaskInput = {
   startDate?: string | null;
   assignedRosterId?: ID | null;
   renovationPhase?: RenovationPhase;
+  constructionDepotId?: ID | null;
 };
 
 type UpdateTaskInput = {
   id: ID;
   title?: string;
   status?: TaskStatus;
-  estimatedCost?: number;
+  estimatedCost?: number | null;
   actualCost?: number;
   durationDays?: number;
   priority?: TaskPriority;
   description?: string;
   sortOrder?: number;
   startDate?: string | null;
-  roomId?: ID;
+  roomIds?: ID[];
   assignedRosterId?: ID | null;
   renovationPhase?: RenovationPhase;
+  constructionDepotId?: ID | null;
 };
 
 type RenovationActions = {
@@ -148,6 +182,9 @@ type RenovationActions = {
     documentType: ExpenseDocumentType
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   removeExpenseDocument: (id: ID) => void;
+  createConstructionDepot: (input: { projectId: ID; name: string }) => void;
+  updateConstructionDepot: (input: { id: ID; name?: string; totalAmount?: number }) => void;
+  deleteConstructionDepot: (id: ID) => void;
 };
 
 type RenovationContextValue = RenovationState &
@@ -166,18 +203,26 @@ function mapProject(row: {
   id: unknown;
   name: unknown;
   total_budget: unknown;
+  own_contribution?: unknown;
+  construction_depot_total?: unknown;
   address?: unknown;
   expected_key_handover?: unknown;
   notes?: unknown;
 }): Project {
   const ek = row.expected_key_handover;
+  const own = parseNumericNullable(row.own_contribution);
+  const depot = parseNumericNullable(row.construction_depot_total);
+  const storedTotal =
+    typeof row.total_budget === "number"
+      ? row.total_budget
+      : Number.parseFloat(String(row.total_budget ?? "0")) || 0;
+  const totalBudget = storedTotal > 0 ? storedTotal : computeTotalBudget(own, depot);
   return {
     id: String(row.id),
     name: String(row.name ?? ""),
-    totalBudget:
-      typeof row.total_budget === "number"
-        ? row.total_budget
-        : Number.parseFloat(String(row.total_budget ?? "0")) || 0,
+    totalBudget,
+    ownContribution: own,
+    constructionDepotTotal: depot,
     address: String(row.address ?? ""),
     expectedKeyHandover: ek == null || ek === "" ? null : String(ek),
     notes: String(row.notes ?? ""),
@@ -192,37 +237,47 @@ function mapRoom(row: { id: unknown; name: unknown; project_id: unknown }): Room
   };
 }
 
-function mapTask(row: {
-  id: unknown;
-  title: unknown;
-  room_id: unknown;
-  status: unknown;
-  estimated_cost: unknown;
-  actual_cost?: unknown;
-  duration_days: unknown;
-  priority: unknown;
-  description?: unknown;
-  sort_order?: unknown;
-  start_date?: unknown;
-  assigned_roster_id?: unknown;
-  renovation_phase?: unknown;
-}): Task {
+function parseEstimatedCost(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const n = Number.parseFloat(String(value));
+  return Number.isFinite(n) ? n : null;
+}
+
+function mapTask(
+  row: {
+    id: unknown;
+    project_id?: unknown;
+    title: unknown;
+    status: unknown;
+    estimated_cost: unknown;
+    actual_cost?: unknown;
+    duration_days: unknown;
+    priority: unknown;
+    description?: unknown;
+    sort_order?: unknown;
+    start_date?: unknown;
+    assigned_roster_id?: unknown;
+    renovation_phase?: unknown;
+    construction_depot_id?: unknown;
+  },
+  roomIds: ID[]
+): Task {
   const rawPriority = row.priority;
   const priority: TaskPriority =
     rawPriority === "low" || rawPriority === "medium" || rawPriority === "high" ? rawPriority : "medium";
 
   const sd = row.start_date;
   const ar = row.assigned_roster_id;
+  const cd = row.construction_depot_id;
   return {
     id: String(row.id),
+    projectId: String(row.project_id ?? ""),
     title: String(row.title ?? ""),
-    roomId: String(row.room_id),
+    roomIds,
     renovationPhase: parseRenovationPhase(row.renovation_phase),
     status: isTaskStatus(row.status) ? row.status : "todo",
-    estimatedCost:
-      typeof row.estimated_cost === "number"
-        ? row.estimated_cost
-        : Number.parseFloat(String(row.estimated_cost ?? "0")) || 0,
+    estimatedCost: parseEstimatedCost(row.estimated_cost),
     actualCost:
       typeof row.actual_cost === "number"
         ? row.actual_cost
@@ -236,7 +291,80 @@ function mapTask(row: {
     sortOrder: typeof row.sort_order === "number" ? row.sort_order : Number(row.sort_order ?? 0) || 0,
     startDate: sd == null || sd === "" ? null : String(sd),
     assignedRosterId: ar == null || ar === "" ? null : String(ar),
+    constructionDepotId: cd == null || cd === "" ? null : String(cd),
   };
+}
+
+function mapConstructionDepot(row: {
+  id: unknown;
+  project_id: unknown;
+  name: unknown;
+  total_amount: unknown;
+  created_at?: unknown;
+  user_id: unknown;
+}): ConstructionDepot {
+  return {
+    id: String(row.id),
+    projectId: String(row.project_id),
+    name: String(row.name ?? ""),
+    totalAmount:
+      typeof row.total_amount === "number"
+        ? row.total_amount
+        : Number.parseFloat(String(row.total_amount ?? "0")) || 0,
+    createdAt: String(row.created_at ?? ""),
+    userId: String(row.user_id),
+  };
+}
+
+function mapConstructionDepotBalance(row: {
+  id: unknown;
+  project_id: unknown;
+  name: unknown;
+  total_amount: unknown;
+  created_at?: unknown;
+  user_id: unknown;
+  spent_estimated?: unknown;
+  project_depot_total?: unknown;
+  remaining_estimated?: unknown;
+  percentage_used?: unknown;
+  linked_task_count?: unknown;
+}): ConstructionDepotBalance {
+  const base = mapConstructionDepot(row);
+  return {
+    ...base,
+    spentEstimated:
+      typeof row.spent_estimated === "number"
+        ? row.spent_estimated
+        : Number.parseFloat(String(row.spent_estimated ?? "0")) || 0,
+    projectDepotTotal:
+      typeof row.project_depot_total === "number"
+        ? row.project_depot_total
+        : Number.parseFloat(String(row.project_depot_total ?? "0")) || 0,
+    remainingEstimated:
+      typeof row.remaining_estimated === "number"
+        ? row.remaining_estimated
+        : Number.parseFloat(String(row.remaining_estimated ?? "0")) || 0,
+    percentageUsed:
+      typeof row.percentage_used === "number"
+        ? row.percentage_used
+        : Number.parseFloat(String(row.percentage_used ?? "0")) || 0,
+    linkedTaskCount:
+      typeof row.linked_task_count === "number"
+        ? row.linked_task_count
+        : Number.parseInt(String(row.linked_task_count ?? "0"), 10) || 0,
+  };
+}
+
+function buildRoomIdsByTask(rows: { task_id: unknown; room_id: unknown }[]): Map<ID, ID[]> {
+  const map = new Map<ID, ID[]>();
+  for (const row of rows) {
+    const tid = String(row.task_id);
+    const rid = String(row.room_id);
+    const arr = map.get(tid) ?? [];
+    arr.push(rid);
+    map.set(tid, arr);
+  }
+  return map;
 }
 
 function mapExpense(row: {
@@ -363,10 +491,12 @@ function mapRoster(row: {
 }
 
 export function RenovationProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<RenovationState>({
+  const emptyState = (): RenovationState => ({
     projects: [],
     rooms: [],
     tasks: [],
+    constructionDepots: [],
+    constructionDepotBalances: [],
     projectExpenses: [],
     expenseDocuments: [],
     taskDependencies: [],
@@ -374,6 +504,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     checklistItems: [],
     teamRoster: [],
   });
+
+  const [state, setState] = useState<RenovationState>(emptyState);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [isRenovationDataReady, setIsRenovationDataReady] = useState(false);
@@ -399,17 +531,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
     async function loadAll() {
       if (!sessionUserId) {
-        setState({
-          projects: [],
-          rooms: [],
-          tasks: [],
-          projectExpenses: [],
-          expenseDocuments: [],
-          taskDependencies: [],
-          taskAttachments: [],
-          checklistItems: [],
-          teamRoster: [],
-        });
+        setState(emptyState());
         if (!cancelled) setIsRenovationDataReady(true);
         return;
       }
@@ -418,7 +540,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       try {
       const projectsRes = await supabase
         .from("projects")
-        .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
+        .select(PROJECT_SELECT)
         .eq("user_id", sessionUserId);
 
       if (projectsRes.error) {
@@ -426,17 +548,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         console.error("Failed to load renovation data", {
           projectsError: projectsRes.error.message,
         });
-        setState({
-          projects: [],
-          rooms: [],
-          tasks: [],
-          projectExpenses: [],
-          expenseDocuments: [],
-          taskDependencies: [],
-          taskAttachments: [],
-          checklistItems: [],
-          teamRoster: [],
-        });
+        setState(emptyState());
         return;
       }
 
@@ -462,7 +574,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (sharedProjectIds.length > 0) {
         const sharedRes = await supabase
           .from("projects")
-          .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
+          .select(PROJECT_SELECT)
           .in("id", sharedProjectIds);
         if (sharedRes.error) {
           console.warn("Failed to load shared projects", sharedRes.error.message);
@@ -485,17 +597,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       if (mergedProjects.length === 0) {
         if (cancelled) return;
-        setState({
-          projects: [],
-          rooms: [],
-          tasks: [],
-          projectExpenses: [],
-          expenseDocuments: [],
-          taskDependencies: [],
-          taskAttachments: [],
-          checklistItems: [],
-          teamRoster: [],
-        });
+        setState(emptyState());
         return;
       }
 
@@ -511,19 +613,33 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       const roomIds = (roomsRes.data ?? []).map((r) => String(r.id));
 
-      const tasksRes =
+      const taskRoomsRes =
         roomIds.length > 0
-          ? await supabase
-              .from("tasks")
-              .select(
-                "id,title,room_id,renovation_phase,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date,assigned_roster_id"
-              )
-              .in("room_id", roomIds)
-          : { data: [] as Record<string, unknown>[], error: null };
+          ? await supabase.from("task_rooms").select("task_id,room_id").in("room_id", roomIds)
+          : { data: [] as { task_id: unknown; room_id: unknown }[], error: null };
 
-      const taskIds = (tasksRes.data ?? []).map((t) => String(t.id));
+      if (taskRoomsRes.error) {
+        if (cancelled) return;
+        console.error("Failed to load task_rooms", { error: taskRoomsRes.error.message });
+        return;
+      }
+
+      const roomIdsByTask = buildRoomIdsByTask(taskRoomsRes.data ?? []);
+
+      const tasksRes = await supabase.from("tasks").select(TASK_SELECT).in("project_id", projectIds);
+      const taskIds = (tasksRes.data ?? []).map((r) => String(r.id));
 
       const ext = await Promise.all([
+        supabase
+          .from("construction_depots")
+          .select("id,project_id,name,total_amount,created_at,user_id")
+          .in("project_id", projectIds),
+        supabase
+          .from("construction_depot_balances")
+          .select(
+            "id,project_id,name,total_amount,created_at,user_id,spent_estimated,project_depot_total,remaining_estimated,percentage_used,linked_task_count"
+          )
+          .in("project_id", projectIds),
         supabase
           .from("project_expenses")
           .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
@@ -557,10 +673,13 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] = ext;
+      const [depotsRes, depotBalancesRes, expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] =
+        ext;
       const logExt = (label: string, err: { message: string } | null) => {
         if (err) console.warn(`Renovation extension load (${label}):`, err.message);
       };
+      logExt("construction_depots", depotsRes.error);
+      logExt("construction_depot_balances", depotBalancesRes.error);
       logExt("project_expenses", expensesRes.error);
       logExt("expense_documents", expenseDocsRes.error);
       logExt("task_dependencies", depsRes.error);
@@ -573,7 +692,20 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         rooms: (roomsRes.data ?? []).map((r) =>
           mapRoom(r as { id: unknown; name: unknown; project_id: unknown })
         ),
-        tasks: (tasksRes.data ?? []).map((r) => mapTask(r as Parameters<typeof mapTask>[0])),
+        tasks: (tasksRes.data ?? []).map((r) => {
+          const id = String(r.id);
+          return mapTask(r as Parameters<typeof mapTask>[0], roomIdsByTask.get(id) ?? []);
+        }),
+        constructionDepots: depotsRes.error
+          ? []
+          : (depotsRes.data ?? []).map((r) =>
+              mapConstructionDepot(r as Parameters<typeof mapConstructionDepot>[0])
+            ),
+        constructionDepotBalances: depotBalancesRes.error
+          ? []
+          : (depotBalancesRes.data ?? []).map((r) =>
+              mapConstructionDepotBalance(r as Parameters<typeof mapConstructionDepotBalance>[0])
+            ),
         projectExpenses: expensesRes.error
           ? []
           : (expensesRes.data ?? []).map((r) => mapExpense(r as Parameters<typeof mapExpense>[0])),
@@ -608,19 +740,45 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionUserId, sessionResolved]);
 
+  const reloadDepotBalances = () => {
+    setState((prev) => {
+      void (async () => {
+        const projectIds = prev.projects.map((p) => p.id);
+        if (projectIds.length === 0) return;
+        const res = await supabase
+          .from("construction_depot_balances")
+          .select(
+            "id,project_id,name,total_amount,created_at,user_id,spent_estimated,project_depot_total,remaining_estimated,percentage_used,linked_task_count"
+          )
+          .in("project_id", projectIds);
+        if (res.error) return;
+        setState((p2) => ({
+          ...p2,
+          constructionDepotBalances: (res.data ?? []).map((r) =>
+            mapConstructionDepotBalance(r as Parameters<typeof mapConstructionDepotBalance>[0])
+          ),
+        }));
+      })();
+      return prev;
+    });
+  };
+
   const createProject = (input: CreateProjectInput) => {
     const trimmed = input.name.trim();
     if (!trimmed) return;
-    if (!Number.isFinite(input.totalBudget)) return;
 
     void (async () => {
       const { data: authData } = await supabase.auth.getUser();
       const uid = authData.user?.id;
       if (!uid) return;
 
+      const own = input.ownContribution ?? null;
+      const depot = input.constructionDepotTotal ?? null;
       const row = {
         name: trimmed,
-        total_budget: input.totalBudget,
+        own_contribution: own,
+        construction_depot_total: depot,
+        total_budget: computeTotalBudget(own, depot),
         user_id: uid,
         address: (input.address ?? "").trim(),
         expected_key_handover: input.expectedKeyHandover?.trim() || null,
@@ -630,7 +788,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const res = await supabase
         .from("projects")
         .insert(row)
-        .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
+        .select(PROJECT_SELECT)
         .single();
 
       if (res.error || !res.data) return;
@@ -639,13 +797,30 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProject = (input: UpdateProjectInput) => {
+    let existing: Project | undefined;
+    setState((prev) => {
+      existing = prev.projects.find((p) => p.id === input.id);
+      return prev;
+    });
+
     void (async () => {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
-
       const patch: Record<string, unknown> = {};
       if (input.name !== undefined) patch.name = input.name.trim();
-      if (input.totalBudget !== undefined) patch.total_budget = input.totalBudget;
+      if (input.ownContribution !== undefined) patch.own_contribution = input.ownContribution;
+      if (input.constructionDepotTotal !== undefined) {
+        patch.construction_depot_total = input.constructionDepotTotal;
+      }
+      if (input.ownContribution !== undefined || input.constructionDepotTotal !== undefined) {
+        const own =
+          input.ownContribution !== undefined ? input.ownContribution : (existing?.ownContribution ?? null);
+        const depot =
+          input.constructionDepotTotal !== undefined
+            ? input.constructionDepotTotal
+            : (existing?.constructionDepotTotal ?? null);
+        patch.total_budget = computeTotalBudget(own, depot);
+      }
       if (input.address !== undefined) patch.address = input.address.trim();
       if (input.expectedKeyHandover !== undefined) {
         patch.expected_key_handover = input.expectedKeyHandover?.trim() || null;
@@ -657,7 +832,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         .from("projects")
         .update(patch)
         .eq("id", input.id)
-        .select("id,name,total_budget,address,expected_key_handover,notes,created_at")
+        .select(PROJECT_SELECT)
         .single();
 
       if (res.error || !res.data) return;
@@ -693,11 +868,27 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
 
-      const tasksRes = await supabase.from("tasks").select("id").eq("room_id", roomId);
-      if (tasksRes.error) return;
-      const taskIds = (tasksRes.data ?? []).map((r: { id: unknown }) => String(r.id));
-      if (taskIds.length > 0) {
-        const attsRes = await supabase.from("task_attachments").select("file_path").in("task_id", taskIds);
+      const trRes = await supabase.from("task_rooms").select("task_id").eq("room_id", roomId);
+      if (trRes.error) return;
+      const linkedTaskIds = (trRes.data ?? []).map((r: { task_id: unknown }) => String(r.task_id));
+
+      const orphanTaskIds: ID[] = [];
+      for (const taskId of linkedTaskIds) {
+        const other = await supabase
+          .from("task_rooms")
+          .select("room_id")
+          .eq("task_id", taskId)
+          .neq("room_id", roomId);
+        if (!other.error && (other.data ?? []).length === 0) {
+          orphanTaskIds.push(taskId);
+        }
+      }
+
+      if (orphanTaskIds.length > 0) {
+        const attsRes = await supabase
+          .from("task_attachments")
+          .select("file_path")
+          .in("task_id", orphanTaskIds);
         if (!attsRes.error) {
           const paths = (attsRes.data ?? [])
             .map((r: { file_path?: unknown }) => (typeof r.file_path === "string" ? r.file_path : ""))
@@ -706,21 +897,29 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
             await supabase.storage.from(DOCUMENTS_BUCKET).remove(paths);
           }
         }
+        await supabase.from("tasks").delete().in("id", orphanTaskIds);
       }
 
       const res = await supabase.from("rooms").delete().eq("id", roomId);
       if (res.error) return;
 
       setState((prev) => {
-        const taskIdSet = new Set(prev.tasks.filter((t) => t.roomId === roomId).map((t) => t.id));
+        const orphanSet = new Set(orphanTaskIds);
+        const nextTasks = prev.tasks
+          .filter((t) => !orphanSet.has(t.id))
+          .map((t) => ({
+            ...t,
+            roomIds: t.roomIds.filter((rid) => rid !== roomId),
+          }));
+        const keptIds = new Set(nextTasks.map((t) => t.id));
         return {
           ...prev,
           rooms: prev.rooms.filter((r) => r.id !== roomId),
-          tasks: prev.tasks.filter((t) => t.roomId !== roomId),
+          tasks: nextTasks,
           taskDependencies: prev.taskDependencies.filter(
-            (d) => !taskIdSet.has(d.taskId) && !taskIdSet.has(d.dependsOnTaskId)
+            (d) => keptIds.has(d.taskId) && keptIds.has(d.dependsOnTaskId)
           ),
-          taskAttachments: prev.taskAttachments.filter((a) => !taskIdSet.has(a.taskId)),
+          taskAttachments: prev.taskAttachments.filter((a) => keptIds.has(a.taskId)),
         };
       });
     })();
@@ -729,8 +928,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   const createTask = (input: CreateTaskInput) => {
     const trimmed = input.title.trim();
     if (!trimmed) return;
-    if (!Number.isFinite(input.estimatedCost)) return;
+    if (input.estimatedCost !== null && !Number.isFinite(input.estimatedCost)) return;
     if (!Number.isFinite(input.durationDays)) return;
+    const roomIds = [...new Set(input.roomIds.filter(Boolean))];
 
     const actualCost = input.actualCost ?? 0;
     if (!Number.isFinite(actualCost)) return;
@@ -739,20 +939,43 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
 
+      const resolvedProjectId = await resolveProjectIdForTaskInput(roomIds, input.projectId);
+      if (!resolvedProjectId) return;
+
       let sortOrder = input.sortOrder;
       if (sortOrder === undefined) {
-        const ordRes = await supabase.from("tasks").select("sort_order").eq("room_id", input.roomId);
-        const nums = (ordRes.data ?? []).map((r: { sort_order?: unknown }) =>
-          typeof r.sort_order === "number" ? r.sort_order : Number(r.sort_order ?? 0) || 0
-        );
-        sortOrder = Math.max(-1, ...nums) + 1;
+        if (roomIds.length > 0) {
+          const trOrd = await supabase.from("task_rooms").select("task_id").in("room_id", roomIds);
+          const ordTaskIds = [...new Set((trOrd.data ?? []).map((r: { task_id: unknown }) => String(r.task_id)))];
+          if (ordTaskIds.length > 0) {
+            const ordRes = await supabase.from("tasks").select("sort_order").in("id", ordTaskIds);
+            const nums = (ordRes.data ?? []).map((r: { sort_order?: unknown }) =>
+              typeof r.sort_order === "number" ? r.sort_order : Number(r.sort_order ?? 0) || 0
+            );
+            sortOrder = Math.max(-1, ...nums) + 1;
+          } else {
+            sortOrder = 0;
+          }
+        } else {
+          const ordRes = await supabase
+            .from("tasks")
+            .select("sort_order")
+            .eq("project_id", resolvedProjectId);
+          const nums = (ordRes.data ?? []).map((r: { sort_order?: unknown }) =>
+            typeof r.sort_order === "number" ? r.sort_order : Number(r.sort_order ?? 0) || 0
+          );
+          sortOrder = nums.length > 0 ? Math.max(-1, ...nums) + 1 : 0;
+        }
       }
 
-      const assignedRosterId = await resolveAssignedRosterIdForTaskRoom(input.roomId, input.assignedRosterId);
+      const assignedRosterId = await resolveAssignedRosterIdForProject(
+        resolvedProjectId,
+        input.assignedRosterId
+      );
 
       const insertRow = {
+        project_id: resolvedProjectId,
         title: trimmed,
-        room_id: input.roomId,
         renovation_phase: input.renovationPhase ?? DEFAULT_RENOVATION_PHASE,
         status: input.status,
         estimated_cost: input.estimatedCost,
@@ -763,18 +986,39 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         sort_order: sortOrder,
         start_date: input.startDate?.trim() || null,
         assigned_roster_id: assignedRosterId,
+        construction_depot_id: null,
       };
 
-      const res = await supabase
-        .from("tasks")
-        .insert(insertRow)
-        .select(
-          "id,title,room_id,renovation_phase,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date,assigned_roster_id"
-        )
-        .single();
-
+      const res = await supabase.from("tasks").insert(insertRow).select(TASK_SELECT).single();
       if (res.error || !res.data) return;
-      setState((prev) => ({ ...prev, tasks: [...prev.tasks, mapTask(res.data)] }));
+
+      const taskId = String(res.data.id);
+      if (roomIds.length > 0) {
+        const trIns = await supabase
+          .from("task_rooms")
+          .insert(roomIds.map((roomId) => ({ task_id: taskId, room_id: roomId })));
+        if (trIns.error) {
+          await supabase.from("tasks").delete().eq("id", taskId);
+          return;
+        }
+      }
+
+      let nextTask = mapTask(res.data as Parameters<typeof mapTask>[0], roomIds);
+
+      if (input.constructionDepotId) {
+        const depPatch = await supabase
+          .from("tasks")
+          .update({ construction_depot_id: input.constructionDepotId })
+          .eq("id", taskId)
+          .select(TASK_SELECT)
+          .single();
+        if (!depPatch.error && depPatch.data) {
+          nextTask = mapTask(depPatch.data as Parameters<typeof mapTask>[0], roomIds);
+        }
+      }
+
+      setState((prev) => ({ ...prev, tasks: [...prev.tasks, nextTask] }));
+      reloadDepotBalances();
     })();
   };
 
@@ -782,10 +1026,13 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) return false;
 
-    const taskRes = await supabase.from("tasks").select("room_id").eq("id", input.id).maybeSingle();
-    if (taskRes.error || !taskRes.data) return false;
-    const effectiveRoomId =
-      input.roomId !== undefined ? input.roomId : String(taskRes.data.room_id);
+    const existing = state.tasks.find((t) => t.id === input.id);
+    if (!existing) return false;
+
+    let effectiveRoomIds = existing.roomIds;
+    if (input.roomIds !== undefined) {
+      effectiveRoomIds = [...new Set(input.roomIds.filter(Boolean))];
+    }
 
     const patch: Record<string, unknown> = {};
     if (input.title !== undefined) patch.title = input.title.trim();
@@ -797,31 +1044,48 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     if (input.description !== undefined) patch.description = input.description.trim();
     if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
     if (input.startDate !== undefined) patch.start_date = input.startDate?.trim() || null;
-    if (input.roomId !== undefined) patch.room_id = input.roomId;
     if (input.renovationPhase !== undefined) patch.renovation_phase = input.renovationPhase;
+    if (input.constructionDepotId !== undefined) {
+      patch.construction_depot_id = input.constructionDepotId || null;
+    }
     if (input.assignedRosterId !== undefined) {
-      patch.assigned_roster_id = await resolveAssignedRosterIdForTaskRoom(
-        effectiveRoomId,
+      patch.assigned_roster_id = await resolveAssignedRosterIdForProject(
+        existing.projectId,
         input.assignedRosterId
       );
     }
-    if (Object.keys(patch).length === 0) return true;
 
-    const res = await supabase
-      .from("tasks")
-      .update(patch)
-      .eq("id", input.id)
-      .select(
-        "id,title,room_id,renovation_phase,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date,assigned_roster_id"
-      )
-      .single();
+    const roomsChanged =
+      input.roomIds !== undefined &&
+      (input.roomIds.length !== existing.roomIds.length ||
+        !input.roomIds.every((id) => existing.roomIds.includes(id)));
 
-    if (res.error || !res.data) return false;
-    const next = mapTask(res.data);
+    if (Object.keys(patch).length === 0 && !roomsChanged) return true;
+
+    if (Object.keys(patch).length > 0) {
+      const res = await supabase.from("tasks").update(patch).eq("id", input.id).select(TASK_SELECT).single();
+      if (res.error || !res.data) return false;
+    }
+
+    if (roomsChanged) {
+      await supabase.from("task_rooms").delete().eq("task_id", input.id);
+      if (effectiveRoomIds.length > 0) {
+        const trIns = await supabase
+          .from("task_rooms")
+          .insert(effectiveRoomIds.map((roomId) => ({ task_id: input.id, room_id: roomId })));
+        if (trIns.error) return false;
+      }
+    }
+
+    const fresh = await supabase.from("tasks").select(TASK_SELECT).eq("id", input.id).single();
+    if (fresh.error || !fresh.data) return false;
+
+    const next = mapTask(fresh.data as Parameters<typeof mapTask>[0], effectiveRoomIds);
     setState((prev) => ({
       ...prev,
       tasks: prev.tasks.map((tk) => (tk.id === next.id ? next : tk)),
     }));
+    reloadDepotBalances();
     return true;
   };
 
@@ -838,6 +1102,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         taskDependencies: prev.taskDependencies.filter((d) => d.taskId !== id && d.dependsOnTaskId !== id),
         taskAttachments: prev.taskAttachments.filter((a) => a.taskId !== id),
       }));
+      reloadDepotBalances();
     })();
   };
 
@@ -882,24 +1147,11 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) return { ok: false, error: "Niet ingelogd." };
 
-    const taskRes = await supabase
-      .from("tasks")
-      .select("id,room_id")
-      .eq("id", taskId)
-      .maybeSingle();
-    if (taskRes.error || !taskRes.data) return { ok: false, error: "Taak niet gevonden." };
-
-    const roomRes = await supabase
-      .from("rooms")
-      .select("id,project_id")
-      .eq("id", String(taskRes.data.room_id))
-      .maybeSingle();
-    if (roomRes.error || !roomRes.data) return { ok: false, error: "Ruimte niet gevonden." };
-
-    const room = { projectId: String(roomRes.data.project_id) };
+    const projectId = await getProjectIdForTask(taskId);
+    if (!projectId) return { ok: false, error: "Taak niet gevonden." };
 
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
-    const path = `${room.projectId}/tasks/${taskId}/${safeName}`;
+    const path = `${projectId}/tasks/${taskId}/${safeName}`;
 
     const up = await supabase.storage.from(DOCUMENTS_BUCKET).upload(path, file, { upsert: true });
     if (up.error) return { ok: false, error: up.error.message };
@@ -1269,6 +1521,82 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   };
 
+  const createConstructionDepot = (input: { projectId: ID; name: string }) => {
+    const trimmed = input.name.trim();
+    if (!trimmed) return;
+
+    void (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      if (!uid) return;
+
+      const res = await supabase
+        .from("construction_depots")
+        .insert({
+          project_id: input.projectId,
+          name: trimmed,
+          total_amount: 0,
+          user_id: uid,
+        })
+        .select("id,project_id,name,total_amount,created_at,user_id")
+        .single();
+
+      if (res.error || !res.data) return;
+      const depot = mapConstructionDepot(res.data);
+      setState((prev) => ({
+        ...prev,
+        constructionDepots: [...prev.constructionDepots, depot],
+      }));
+      reloadDepotBalances();
+    })();
+  };
+
+  const updateConstructionDepot = (input: { id: ID; name?: string; totalAmount?: number }) => {
+    void (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) return;
+
+      const patch: Record<string, unknown> = {};
+      if (input.name !== undefined) patch.name = input.name.trim();
+      if (input.totalAmount !== undefined) patch.total_amount = input.totalAmount;
+      if (Object.keys(patch).length === 0) return;
+
+      const res = await supabase
+        .from("construction_depots")
+        .update(patch)
+        .eq("id", input.id)
+        .select("id,project_id,name,total_amount,created_at,user_id")
+        .single();
+
+      if (res.error || !res.data) return;
+      const next = mapConstructionDepot(res.data);
+      setState((prev) => ({
+        ...prev,
+        constructionDepots: prev.constructionDepots.map((d) => (d.id === next.id ? next : d)),
+      }));
+      reloadDepotBalances();
+    })();
+  };
+
+  const deleteConstructionDepot = (id: ID) => {
+    void (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) return;
+
+      const res = await supabase.from("construction_depots").delete().eq("id", id);
+      if (res.error) return;
+
+      setState((prev) => ({
+        ...prev,
+        constructionDepots: prev.constructionDepots.filter((d) => d.id !== id),
+        constructionDepotBalances: prev.constructionDepotBalances.filter((d) => d.id !== id),
+        tasks: prev.tasks.map((t) =>
+          t.constructionDepotId === id ? { ...t, constructionDepotId: null } : t
+        ),
+      }));
+    })();
+  };
+
   const removeExpenseDocument = (id: ID) => {
     void (async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -1314,6 +1642,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     deleteProjectExpense,
     uploadExpenseDocument,
     removeExpenseDocument,
+    createConstructionDepot,
+    updateConstructionDepot,
+    deleteConstructionDepot,
   };
 
   return <RenovationContext.Provider value={value}>{children}</RenovationContext.Provider>;
@@ -1330,5 +1661,15 @@ export function getRoomsForProject(rooms: Room[], projectId: ID) {
 }
 
 export function getTasksForRoom(tasks: Task[], roomId: ID) {
-  return tasks.filter((t) => t.roomId === roomId);
+  return tasks.filter((t) => t.roomIds.includes(roomId));
+}
+
+export function taskBelongsToProject(tasks: Task[], rooms: Room[], projectId: ID): boolean {
+  const roomIds = new Set(rooms.filter((r) => r.projectId === projectId).map((r) => r.id));
+  return tasks.some((t) => t.roomIds.some((rid) => roomIds.has(rid)));
+}
+
+export function filterTasksForProject(tasks: Task[], rooms: Room[], projectId: ID): Task[] {
+  const roomIds = new Set(rooms.filter((r) => r.projectId === projectId).map((r) => r.id));
+  return tasks.filter((t) => t.roomIds.some((rid) => roomIds.has(rid)));
 }

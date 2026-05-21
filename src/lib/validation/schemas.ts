@@ -110,12 +110,18 @@ export const updatePasswordFormSchema = z
 
 const budgetFromString = z
   .string()
-  .transform((s) => (s.trim() === "" ? 0 : Number.parseFloat(s)))
-  .pipe(z.number().finite());
+  .transform((s) => {
+    const t = s.trim();
+    if (t === "") return null;
+    const n = Number.parseFloat(t);
+    return Number.isFinite(n) ? n : NaN;
+  })
+  .pipe(z.union([z.null(), z.number().finite().min(0)]));
 
 export const projectCreateFormSchema = z.object({
   name: z.string().trim().min(1),
-  totalBudget: budgetFromString,
+  ownContribution: budgetFromString,
+  constructionDepotTotal: budgetFromString,
   address: z.string(),
   expectedKeyHandover: z.string(),
   notes: z.string(),
@@ -123,10 +129,15 @@ export const projectCreateFormSchema = z.object({
 
 export const projectUpdateFormSchema = z.object({
   name: z.string().trim().min(1),
-  totalBudget: budgetFromString,
+  ownContribution: budgetFromString,
+  constructionDepotTotal: budgetFromString,
   address: z.string(),
   expectedKeyHandover: z.string(),
   notes: z.string(),
+});
+
+export const constructionDepotNameSchema = z.object({
+  name: z.string().trim().min(1),
 });
 
 export const expenseLineFormSchema = z.object({
@@ -142,10 +153,16 @@ export const expenseLineFormSchema = z.object({
 
 export const taskFormFieldsSchema = z.object({
   title: z.string().trim().min(1),
+  roomIds: z.array(z.string().uuid()),
   estimatedCost: z
     .string()
-    .transform((s) => (s.trim() === "" ? 0 : Number.parseFloat(s)))
-    .pipe(z.number().finite()),
+    .transform((s) => {
+      const t = s.trim();
+      if (t === "") return null;
+      const n = Number.parseFloat(t);
+      return Number.isFinite(n) ? n : NaN;
+    })
+    .pipe(z.union([z.null(), z.number().finite()])),
   actualCost: z
     .string()
     .transform((s) => (s.trim() === "" ? 0 : Number.parseFloat(s)))
@@ -176,6 +193,14 @@ export const rosterEntryFormSchema = z.object({
 
 export const roomNameFormSchema = z.object({
   name: z.string().trim().min(1),
+});
+
+export const constructionDepotFormSchema = z.object({
+  name: z.string().trim().min(1),
+  totalAmount: z
+    .string()
+    .transform((s) => (s.trim() === "" ? NaN : Number.parseFloat(s)))
+    .pipe(z.number().finite().min(0)),
 });
 
 export const chatComposerMessageSchema = z

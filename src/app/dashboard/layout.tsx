@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import DashboardShell from "@/components/dashboard/DashboardShell";
+import { Suspense } from "react";
+import DashboardAppShell from "@/components/layout/DashboardAppShell";
+import { SelectedProjectProvider } from "@/components/layout/SelectedProjectContext";
 import GlobalChatLauncher from "@/components/dashboard/GlobalChatLauncher";
 import { RenovationProvider } from "@/components/dashboard/RenovationProvider";
 import { HelpProvider } from "@/components/help/HelpProvider";
@@ -28,14 +30,17 @@ export default async function DashboardLayout({
 
   return (
     <HelpProvider>
-      <DashboardShell>
-        <RenovationProvider>
-          {children}
-          <GlobalChatLauncher />
-          <OnboardingTourClient />
-        </RenovationProvider>
-      </DashboardShell>
+      <RenovationProvider>
+        <Suspense fallback={null}>
+          <SelectedProjectProvider>
+            <DashboardAppShell>
+              {children}
+              <GlobalChatLauncher />
+              <OnboardingTourClient />
+            </DashboardAppShell>
+          </SelectedProjectProvider>
+        </Suspense>
+      </RenovationProvider>
     </HelpProvider>
   );
 }
-

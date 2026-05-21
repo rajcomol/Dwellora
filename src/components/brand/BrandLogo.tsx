@@ -12,8 +12,8 @@ const LOGO_W = 958;
 const LOGO_H = 566;
 
 type Props = {
-  /** Dashboard-header: klein; `header` = dashboard balk, groter en gecentreerd. */
-  size?: "default" | "compact" | "header";
+  /** `topbar` = 28px hoog in de dashboard-topbar; `compact`/`header` = overige plekken. */
+  size?: "default" | "compact" | "header" | "topbar";
   className?: string;
 };
 
@@ -22,6 +22,20 @@ export default function BrandLogo({ size = "default", className = "" }: Props) {
   const name = t("brand.name");
   const compact = size === "compact";
   const header = size === "header";
+  const topbar = size === "topbar";
+
+  if (topbar) {
+    return (
+      <Image
+        src={LOGO_SRC}
+        width={47}
+        height={28}
+        alt={name}
+        priority
+        className={`block shrink-0 [filter:brightness(0)] dark:[filter:none] ${className}`.trim()}
+      />
+    );
+  }
 
   const cls = header
     ? `h-12 w-auto max-w-full object-contain object-center sm:h-14 lg:h-16 [filter:brightness(0)] dark:[filter:none] ${className}`.trim()

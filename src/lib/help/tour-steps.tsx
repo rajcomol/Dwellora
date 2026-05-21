@@ -47,7 +47,7 @@ export function buildDashboardTourSteps({ t, router, getPathname }: BuildArgs): 
 
   async function ensurePlanningHub() {
     const p = getPathname().replace(/\/$/, "") || "/";
-    if (p === "/dashboard/planning") return;
+    if (p === "/dashboard/planning" || p.startsWith("/dashboard/planning/")) return;
     router.push("/dashboard/planning");
     await waitForElement('[data-tour="planning-hub"]', 15000);
   }
@@ -69,10 +69,11 @@ export function buildDashboardTourSteps({ t, router, getPathname }: BuildArgs): 
       targetWaitTimeout: 16000,
     },
     {
-      target: () => getFirstVisibleTourTarget('[data-tour="nav-main"]'),
+      target: () =>
+        getFirstVisibleTourTarget('[data-tour="tab-nav"], [data-tour="project-switcher"]'),
       title: t("onboarding.stepNavTitle"),
       content: t("onboarding.stepNavBody"),
-      placement: "right",
+      placement: "bottom",
       before: ensureDashboard,
       targetWaitTimeout: 12000,
     },

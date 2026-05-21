@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { ReportsPageSkeleton } from "@/components/ui/Skeleton";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
+import { sumEstimatedCostsUnique } from "@/lib/dashboard/taskCosts";
 import { aggregateSpendByRoom, projectBudgetSummary } from "@/lib/dashboard/reports";
 
 export default function ReportsPageClient() {
   const { t } = useI18n();
   const { projects, rooms, tasks, projectExpenses, isRenovationDataReady } = useRenovation();
+  const { selectedProjectId } = useSelectedProject();
   const [projectFilter, setProjectFilter] = useState<string>("all");
+
+  useEffect(() => {
+    if (selectedProjectId) setProjectFilter(selectedProjectId);
+  }, [selectedProjectId]);
 
   const projectNameById = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects]);
 
@@ -30,7 +37,7 @@ export default function ReportsPageClient() {
     if (projectFilter === "all") return tasks;
     const ids = roomIdsByProject.get(projectFilter);
     if (!ids) return [];
-    return tasks.filter((tk) => ids.has(tk.roomId));
+    return tasks.filter((tk) => tk.roomIds.some((rid) => ids.has(rid)));
   }, [tasks, projectFilter, roomIdsByProject]);
 
   const filteredRooms = useMemo(() => {
@@ -50,7 +57,7 @@ export default function ReportsPageClient() {
   const byRoom = useMemo(() => aggregateSpendByRoom(filteredTasks, filteredRooms), [filteredTasks, filteredRooms]);
 
   const totals = useMemo(() => {
-    const est = filteredTasks.reduce((s, tk) => s + tk.estimatedCost, 0);
+    const est = sumEstimatedCostsUnique(filteredTasks);
     const actTasks = filteredTasks.reduce((s, tk) => s + tk.actualCost, 0);
     const actLoose = filteredExpenses.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
     const act = actTasks + actLoose;
@@ -121,7 +128,7 @@ export default function ReportsPageClient() {
             const p = projects.find((x) => x.id === projectFilter);
             if (!p) return null;
             const pRooms = rooms.filter((r) => r.projectId === p.id);
-            const pTasks = tasks.filter((tk) => pRooms.some((r) => r.id === tk.roomId));
+            const pTasks = tasks.filter((tk) => tk.roomIds.some((rid) => pRooms.some((r) => r.id === rid)));
             const pExp = projectExpenses.filter((e) => e.projectId === p.id);
             const s = projectBudgetSummary(p, pTasks, pExp);
             return (

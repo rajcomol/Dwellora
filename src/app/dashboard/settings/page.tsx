@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   description: nl.settings.subtitle,
 };
 
-export default function DashboardSettingsPage() {
-  return <SettingsPageClient />;
+export default async function DashboardSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const tab = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
+  return <SettingsPageClient initialTab={tab} />;
 }

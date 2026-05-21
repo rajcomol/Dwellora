@@ -15,7 +15,8 @@ export default function ProjectsPageClient() {
   const { t } = useI18n();
   const { projects, createProject, isRenovationDataReady } = useRenovation();
   const [name, setName] = useState("");
-  const [totalBudget, setTotalBudget] = useState("");
+  const [ownContribution, setOwnContribution] = useState("");
+  const [constructionDepotTotal, setConstructionDepotTotal] = useState("");
   const [address, setAddress] = useState("");
   const [expectedKeyHandover, setExpectedKeyHandover] = useState("");
   const [notes, setNotes] = useState("");
@@ -55,7 +56,8 @@ export default function ProjectsPageClient() {
             e.preventDefault();
             const parsed = projectCreateFormSchema.safeParse({
               name,
-              totalBudget,
+              ownContribution,
+              constructionDepotTotal,
               address,
               expectedKeyHandover,
               notes,
@@ -66,7 +68,7 @@ export default function ProjectsPageClient() {
                 setError(t("projects.errorNameRequired"));
                 return;
               }
-              if (path === "totalBudget") {
+              if (path === "ownContribution" || path === "constructionDepotTotal") {
                 setError(t("projects.errorBudgetNumber"));
                 return;
               }
@@ -76,13 +78,15 @@ export default function ProjectsPageClient() {
             const d = parsed.data;
             createProject({
               name: d.name,
-              totalBudget: d.totalBudget,
+              ownContribution: d.ownContribution,
+              constructionDepotTotal: d.constructionDepotTotal,
               address: d.address.trim(),
               expectedKeyHandover: d.expectedKeyHandover.trim() || null,
               notes: d.notes.trim(),
             });
             setName("");
-            setTotalBudget("");
+            setOwnContribution("");
+            setConstructionDepotTotal("");
             setAddress("");
             setExpectedKeyHandover("");
             setNotes("");
@@ -102,18 +106,31 @@ export default function ProjectsPageClient() {
                 className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
               />
             </div>
-            <div>
-              <label htmlFor="project-create-budget" className={fieldLabelClass}>
-                {t("projects.labelBudget")}
-              </label>
-              <input
-                id="project-create-budget"
-                value={totalBudget}
-                onChange={(e) => setTotalBudget(e.target.value)}
-                placeholder={t("projects.placeholderBudget")}
-                inputMode="decimal"
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
-              />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="project-create-own" className={fieldLabelClass}>
+                  {t("budget.ownMoney")}
+                </label>
+                <input
+                  id="project-create-own"
+                  value={ownContribution}
+                  onChange={(e) => setOwnContribution(e.target.value)}
+                  inputMode="decimal"
+                  className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                />
+              </div>
+              <div>
+                <label htmlFor="project-create-depot" className={fieldLabelClass}>
+                  {t("budget.depotTotal")}
+                </label>
+                <input
+                  id="project-create-depot"
+                  value={constructionDepotTotal}
+                  onChange={(e) => setConstructionDepotTotal(e.target.value)}
+                  inputMode="decimal"
+                  className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="project-create-address" className={fieldLabelClass}>

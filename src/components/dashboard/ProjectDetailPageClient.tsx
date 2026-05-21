@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { filterTasksForProject, useRenovation } from "@/components/dashboard/RenovationProvider";
+import {
+  formatEstimatedCostDisplay,
+  sumEstimatedCostsForRoom,
+  sumEstimatedCostsUnique,
+} from "@/lib/dashboard/taskCosts";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { DEFAULT_RENOVATION_PHASE, RENOVATION_PHASE_ORDER } from "@/lib/renovation/phases";
@@ -40,9 +45,53 @@ const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-zinc-600 dar
 function taskFormZodMessage(t: TranslateFn, err: ZodError): string {
   const path = err.issues[0]?.path[0];
   if (path === "title") return t("projectDetail.taskTitleRequired");
+  if (path === "roomIds") return t("projectDetail.roomsRequired");
   if (path === "estimatedCost" || path === "actualCost") return t("projectDetail.taskCostsNumber");
   if (path === "durationDays") return t("projectDetail.taskDurationInvalid");
   return t("validation.generic");
+}
+
+function RoomIdsMultiSelect({
+  idPrefix,
+  rooms,
+  selectedIds,
+  onChange,
+}: {
+  idPrefix: string;
+  rooms: Room[];
+  selectedIds: ID[];
+  onChange: (ids: ID[]) => void;
+}) {
+  const { t } = useI18n();
+  function toggle(roomId: ID) {
+    if (selectedIds.includes(roomId)) {
+      const next = selectedIds.filter((x) => x !== roomId);
+      if (next.length > 0) onChange(next);
+    } else {
+      onChange([...selectedIds, roomId]);
+    }
+  }
+  return (
+    <fieldset className="space-y-1">
+      <legend className={FORM_FIELD_LABEL_CLASS}>{t("projectDetail.labelRooms")}</legend>
+      <div className="flex flex-wrap gap-2">
+        {rooms.map((r) => (
+          <label
+            key={r.id}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-1 text-xs dark:border-zinc-800"
+          >
+            <input
+              id={`${idPrefix}-room-${r.id}`}
+              type="checkbox"
+              checked={selectedIds.includes(r.id)}
+              onChange={() => toggle(r.id)}
+            />
+            {r.name}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
 }
 
 function statusBadge(status: TaskStatus) {
@@ -59,7 +108,9 @@ function statusBadge(status: TaskStatus) {
 function TaskEditor({
   task,
   projectId,
-  roomName,
+  linkedRoomNames,
+  projectRooms,
+  depotOptions,
   projectTaskOptions,
   rosterOptions,
   deps,
@@ -73,7 +124,9 @@ function TaskEditor({
 }: {
   task: Task;
   projectId: ID;
-  roomName: string;
+  linkedRoomNames: string;
+  projectRooms: Room[];
+  depotOptions: { id: ID; name: string }[];
   projectTaskOptions: Task[];
   rosterOptions: TeamRosterEntry[];
   deps: TaskDependency[];
@@ -82,14 +135,16 @@ function TaskEditor({
     id: ID;
     title?: string;
     status?: TaskStatus;
-    estimatedCost?: number;
+    estimatedCost?: number | null;
     actualCost?: number;
     durationDays?: number;
     priority?: TaskPriority;
     description?: string;
     startDate?: string | null;
+    roomIds?: ID[];
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
+    constructionDepotId?: ID | null;
   }) => Promise<boolean>;
   onDelete: () => void;
   onAddDep: (dependsOnTaskId: ID) => void;
@@ -106,7 +161,11 @@ function TaskEditor({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [status, setStatus] = useState<TaskStatus>(task.status);
-  const [estimatedCost, setEstimatedCost] = useState(String(task.estimatedCost));
+  const [selectedRoomIds, setSelectedRoomIds] = useState<ID[]>(task.roomIds);
+  const [constructionDepotId, setConstructionDepotId] = useState(task.constructionDepotId ?? "");
+  const [estimatedCost, setEstimatedCost] = useState(
+    task.estimatedCost == null ? "" : String(task.estimatedCost)
+  );
   const [actualCost, setActualCost] = useState(String(task.actualCost));
   const [durationDays, setDurationDays] = useState(String(task.durationDays));
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
@@ -134,7 +193,9 @@ function TaskEditor({
   useEffect(() => {
     setTitle(task.title);
     setStatus(task.status);
-    setEstimatedCost(String(task.estimatedCost));
+    setSelectedRoomIds(task.roomIds);
+    setConstructionDepotId(task.constructionDepotId ?? "");
+    setEstimatedCost(task.estimatedCost == null ? "" : String(task.estimatedCost));
     setActualCost(String(task.actualCost));
     setDurationDays(String(task.durationDays));
     setPriority(task.priority);
@@ -154,6 +215,8 @@ function TaskEditor({
     task.startDate,
     task.assignedRosterId,
     task.renovationPhase,
+    task.roomIds,
+    task.constructionDepotId,
   ]);
 
   const assigneeLabel =
@@ -173,7 +236,9 @@ function TaskEditor({
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{task.title}</div>
           <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            {roomName} • {formatCost(task.estimatedCost)} {t("projectDetail.estShort")} • {formatCost(task.actualCost)}{" "}
+            {linkedRoomNames} •{" "}
+            {formatEstimatedCostDisplay(task.estimatedCost, formatCost, t("projectDetail.noEstimate"))}{" "}
+            {t("projectDetail.estShort")} • {formatCost(task.actualCost)}{" "}
             {t("projectDetail.actualShort")} • {task.durationDays}d
           </div>
           <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
@@ -342,6 +407,30 @@ function TaskEditor({
               </select>
             </div>
           </div>
+          <RoomIdsMultiSelect
+            idPrefix={`task-edit-${task.id}`}
+            rooms={projectRooms}
+            selectedIds={selectedRoomIds}
+            onChange={setSelectedRoomIds}
+          />
+          <div>
+            <label htmlFor={`task-edit-${task.id}-depot`} className={FORM_FIELD_LABEL_CLASS}>
+              {t("constructionDepot.taskSelectLabel")}
+            </label>
+            <select
+              id={`task-edit-${task.id}-depot`}
+              value={constructionDepotId}
+              onChange={(e) => setConstructionDepotId(e.target.value)}
+              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <option value="">{t("constructionDepot.taskSelectNone")}</option>
+              {depotOptions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label htmlFor={`task-edit-${task.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
               {t("projectDetail.description")}
@@ -363,6 +452,7 @@ function TaskEditor({
                 void (async () => {
                   const parsed = taskFormFieldsSchema.safeParse({
                     title,
+                    roomIds: selectedRoomIds,
                     estimatedCost,
                     actualCost,
                     durationDays,
@@ -391,8 +481,10 @@ function TaskEditor({
                       priority: d.priority,
                       description: d.description.trim(),
                       startDate: d.startDate.trim() || null,
+                      roomIds: d.roomIds,
                       assignedRosterId: d.assignedRosterId.trim() || null,
                       renovationPhase: d.renovationPhase,
+                      constructionDepotId: constructionDepotId.trim() || null,
                     });
                     if (ok) {
                       setOpen(false);
@@ -539,7 +631,8 @@ function ProjectEditSection({
   updateProject: (input: {
     id: ID;
     name?: string;
-    totalBudget?: number;
+    ownContribution?: number | null;
+    constructionDepotTotal?: number | null;
     address?: string;
     expectedKeyHandover?: string | null;
     notes?: string;
@@ -547,7 +640,12 @@ function ProjectEditSection({
 }) {
   const { t } = useI18n();
   const [editName, setEditName] = useState(project.name);
-  const [editBudget, setEditBudget] = useState(String(project.totalBudget));
+  const [editOwn, setEditOwn] = useState(
+    project.ownContribution == null ? "" : String(project.ownContribution)
+  );
+  const [editDepot, setEditDepot] = useState(
+    project.constructionDepotTotal == null ? "" : String(project.constructionDepotTotal)
+  );
   const [editAddress, setEditAddress] = useState(project.address);
   const [editKeyDate, setEditKeyDate] = useState(project.expectedKeyHandover ?? "");
   const [editNotes, setEditNotes] = useState(project.notes);
@@ -562,7 +660,8 @@ function ProjectEditSection({
           e.preventDefault();
           const parsed = projectUpdateFormSchema.safeParse({
             name: editName,
-            totalBudget: editBudget,
+            ownContribution: editOwn,
+            constructionDepotTotal: editDepot,
             address: editAddress,
             expectedKeyHandover: editKeyDate,
             notes: editNotes,
@@ -576,7 +675,8 @@ function ProjectEditSection({
           updateProject({
             id: project.id,
             name: d.name,
-            totalBudget: d.totalBudget,
+            ownContribution: d.ownContribution,
+            constructionDepotTotal: d.constructionDepotTotal,
             address: d.address,
             expectedKeyHandover: d.expectedKeyHandover.trim() || null,
             notes: d.notes,
@@ -596,14 +696,25 @@ function ProjectEditSection({
           />
         </div>
         <div>
-          <label htmlFor={`project-edit-${project.id}-budget`} className={FORM_FIELD_LABEL_CLASS}>
-            {t("projectDetail.labelTotalBudget")}
+          <label htmlFor={`project-edit-${project.id}-own`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("budget.ownMoney")}
           </label>
           <input
-            id={`project-edit-${project.id}-budget`}
-            value={editBudget}
-            onChange={(e) => setEditBudget(e.target.value)}
-            placeholder={t("projectDetail.placeholderTotalBudget")}
+            id={`project-edit-${project.id}-own`}
+            value={editOwn}
+            onChange={(e) => setEditOwn(e.target.value)}
+            inputMode="decimal"
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          />
+        </div>
+        <div>
+          <label htmlFor={`project-edit-${project.id}-depot`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("budget.depotTotal")}
+          </label>
+          <input
+            id={`project-edit-${project.id}-depot`}
+            value={editDepot}
+            onChange={(e) => setEditDepot(e.target.value)}
             inputMode="decimal"
             className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
           />
@@ -694,7 +805,9 @@ function ProjectFinancesSummarySection({
 function RoomCard({
   room,
   tasks,
+  projectRooms,
   projectTasks,
+  depotOptions,
   rosterForProject,
   taskDependencies,
   taskAttachments,
@@ -709,15 +822,18 @@ function RoomCard({
 }: {
   room: Room;
   tasks: Task[];
+  projectRooms: Room[];
   projectTasks: Task[];
+  depotOptions: { id: ID; name: string }[];
   rosterForProject: TeamRosterEntry[];
   taskDependencies: TaskDependency[];
   taskAttachments: TaskAttachment[];
   onCreateTask: (input: {
     title: string;
-    roomId: ID;
+    projectId?: ID;
+    roomIds: ID[];
     status: TaskStatus;
-    estimatedCost: number;
+    estimatedCost: number | null;
     actualCost: number;
     durationDays: number;
     priority: TaskPriority;
@@ -725,21 +841,23 @@ function RoomCard({
     startDate: string | null;
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
+    constructionDepotId?: ID | null;
   }) => void;
   onUpdateTask: (input: {
     id: ID;
     title?: string;
     status?: TaskStatus;
-    estimatedCost?: number;
+    estimatedCost?: number | null;
     actualCost?: number;
     durationDays?: number;
     priority?: TaskPriority;
     description?: string;
     startDate?: string | null;
-    roomId?: ID;
+    roomIds?: ID[];
     sortOrder?: number;
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
+    constructionDepotId?: ID | null;
   }) => Promise<boolean>;
   onDeleteTask: (id: ID) => void;
   onDeleteRoom: (roomId: ID) => void;
@@ -762,9 +880,13 @@ function RoomCard({
   const [startDate, setStartDate] = useState("");
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [newTaskPhase, setNewTaskPhase] = useState<RenovationPhase>(DEFAULT_RENOVATION_PHASE);
+  const [newTaskRoomIds, setNewTaskRoomIds] = useState<ID[]>([room.id]);
+  const [newTaskDepotId, setNewTaskDepotId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const sortedTasks = useMemo(() => sortTasksForPlanning(tasks), [tasks]);
+  const roomEstimatedTotal = useMemo(() => sumEstimatedCostsForRoom(tasks), [tasks]);
+  const roomNameById = useMemo(() => new Map(projectRooms.map((r) => [r.id, r.name])), [projectRooms]);
 
   function confirmRemoveRoom() {
     const n = tasks.length;
@@ -785,6 +907,8 @@ function RoomCard({
           <div className="text-sm font-semibold">{room.name}</div>
           <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
             {tasks.length === 1 ? t("projectDetail.taskCountOne") : t("projectDetail.taskCountMany", { count: tasks.length })}
+            {" • "}
+            {t("projectDetail.roomEstimatedTotal", { amount: formatCost(roomEstimatedTotal) })}
           </div>
         </div>
         <button
@@ -803,12 +927,20 @@ function RoomCard({
           </div>
         ) : (
           <ul className="space-y-2">
-            {sortedTasks.map((task) => (
+            {sortedTasks.map((task) => {
+              const linkedRoomNames =
+                task.roomIds
+                  .map((rid) => roomNameById.get(rid))
+                  .filter(Boolean)
+                  .join(", ") || room.name;
+              return (
               <TaskEditor
                 key={task.id}
                 task={task}
                 projectId={room.projectId}
-                roomName={room.name}
+                linkedRoomNames={linkedRoomNames}
+                projectRooms={projectRooms}
+                depotOptions={depotOptions}
                 projectTaskOptions={projectTasks}
                 rosterOptions={rosterForProject}
                 deps={taskDependencies.filter((d) => d.taskId === task.id)}
@@ -823,7 +955,8 @@ function RoomCard({
                 }}
                 onRemoveAttachment={onRemoveAttachment}
               />
-            ))}
+            );
+            })}
           </ul>
         )}
       </div>
@@ -834,6 +967,7 @@ function RoomCard({
           e.preventDefault();
           const parsed = taskFormFieldsSchema.safeParse({
             title,
+            roomIds: newTaskRoomIds,
             estimatedCost,
             actualCost,
             durationDays,
@@ -851,7 +985,8 @@ function RoomCard({
           const d = parsed.data;
           onCreateTask({
             title: d.title,
-            roomId: room.id,
+            projectId: room.projectId,
+            roomIds: d.roomIds,
             status: d.status,
             estimatedCost: d.estimatedCost,
             actualCost: d.actualCost,
@@ -861,6 +996,7 @@ function RoomCard({
             startDate: d.startDate.trim() || null,
             assignedRosterId: d.assignedRosterId.trim() || null,
             renovationPhase: d.renovationPhase,
+            constructionDepotId: newTaskDepotId.trim() || null,
           });
           setTitle("");
           setStatus("todo");
@@ -872,6 +1008,8 @@ function RoomCard({
           setStartDate("");
           setNewTaskAssignee("");
           setNewTaskPhase(DEFAULT_RENOVATION_PHASE);
+          setNewTaskRoomIds([room.id]);
+          setNewTaskDepotId("");
           setError(null);
         }}
       >
@@ -956,6 +1094,30 @@ function RoomCard({
           </div>
         </div>
 
+        <RoomIdsMultiSelect
+          idPrefix={`new-task-${room.id}`}
+          rooms={projectRooms}
+          selectedIds={newTaskRoomIds}
+          onChange={setNewTaskRoomIds}
+        />
+        <div>
+          <label htmlFor={`new-task-${room.id}-depot`} className={FORM_FIELD_LABEL_CLASS}>
+            {t("constructionDepot.taskSelectLabel")}
+          </label>
+          <select
+            id={`new-task-${room.id}-depot`}
+            value={newTaskDepotId}
+            onChange={(e) => setNewTaskDepotId(e.target.value)}
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+          >
+            <option value="">{t("constructionDepot.taskSelectNone")}</option>
+            {depotOptions.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label htmlFor={`new-task-${room.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
             {t("projectDetail.description")}
@@ -1045,6 +1207,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     taskAttachments,
     checklistItems,
     teamRoster,
+    constructionDepots,
     createRoom,
     deleteRoom,
     createTask,
@@ -1067,17 +1230,33 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
 
   const project = useMemo(() => projects.find((p) => p.id === projectId), [projects, projectId]);
   const roomsForProject = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
-  const roomIds = useMemo(() => new Set(roomsForProject.map((r) => r.id)), [roomsForProject]);
-  const projectTasks = useMemo(() => tasks.filter((t) => roomIds.has(t.roomId)), [tasks, roomIds]);
+  const projectTasks = useMemo(
+    () => filterTasksForProject(tasks, rooms, projectId),
+    [tasks, rooms, projectId]
+  );
+  const projectEstimatedTotal = useMemo(
+    () => sumEstimatedCostsUnique(projectTasks),
+    [projectTasks]
+  );
+  const depotOptions = useMemo(
+    () =>
+      constructionDepots
+        .filter((d) => d.projectId === projectId)
+        .map((d) => ({ id: d.id, name: d.name })),
+    [constructionDepots, projectId]
+  );
   const tasksByRoomId = useMemo(() => {
     const map = new Map<ID, Task[]>();
-    for (const task of tasks) {
-      const arr = map.get(task.roomId) ?? [];
-      arr.push(task);
-      map.set(task.roomId, arr);
+    for (const task of projectTasks) {
+      for (const rid of task.roomIds) {
+        if (!roomsForProject.some((r) => r.id === rid)) continue;
+        const arr = map.get(rid) ?? [];
+        arr.push(task);
+        map.set(rid, arr);
+      }
     }
     return map;
-  }, [tasks]);
+  }, [projectTasks, roomsForProject]);
 
   const timelineTasks = useMemo(() => sortTasksForPlanning(projectTasks), [projectTasks]);
 
@@ -1149,6 +1328,8 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.subtitle")}</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
             {t("projectDetail.budgetLine", { budget: formatCost(project.totalBudget) })}
+            {" • "}
+            {t("projectDetail.projectEstimatedTotal", { amount: formatCost(projectEstimatedTotal) })}
             {project.address ? ` • ${project.address}` : ""}
             {project.expectedKeyHandover
               ? ` • ${t("projectDetail.keyDate", { date: formatDisplayDate(project.expectedKeyHandover) })}`
@@ -1173,7 +1354,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
       </div>
 
       <ProjectEditSection
-        key={`${project.id}|${project.name}|${project.totalBudget}|${project.address}|${project.expectedKeyHandover ?? ""}|${project.notes}`}
+        key={`${project.id}|${project.name}|${project.ownContribution}|${project.constructionDepotTotal}|${project.address}|${project.expectedKeyHandover ?? ""}|${project.notes}`}
         project={project}
         updateProject={updateProject}
       />
@@ -1408,6 +1589,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         </form>
       </section>
 
+
       <section>
         {roomsForProject.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
@@ -1422,7 +1604,9 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
                   key={room.id}
                   room={room}
                   tasks={roomTasks}
+                  projectRooms={roomsForProject}
                   projectTasks={projectTasks}
+                  depotOptions={depotOptions}
                   rosterForProject={rosterForProject}
                   taskDependencies={taskDependencies}
                   taskAttachments={taskAttachments}

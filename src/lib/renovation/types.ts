@@ -11,6 +11,10 @@ export interface Project {
   id: ID;
   name: string;
   totalBudget: number;
+  /** Eigen inbreng; null = not set */
+  ownContribution: number | null;
+  /** Totaal bouwdepot op projectniveau; null = not set */
+  constructionDepotTotal: number | null;
   address: string;
   /** ISO date string (YYYY-MM-DD) or null */
   expectedKeyHandover: string | null;
@@ -25,12 +29,15 @@ export interface Room {
 
 export interface Task {
   id: ID;
+  projectId: ID;
   title: string;
-  roomId: ID;
+  /** One or more rooms this task appears in; empty = loose task */
+  roomIds: ID[];
   /** Planning / hub grouping: Slopen → … → Nazorg */
   renovationPhase: RenovationPhase;
   status: TaskStatus;
-  estimatedCost: number;
+  /** null = no estimate entered */
+  estimatedCost: number | null;
   actualCost: number;
   durationDays: number;
   priority: TaskPriority;
@@ -40,6 +47,26 @@ export interface Task {
   startDate: string | null;
   /** project_team_roster row for this project, or null */
   assignedRosterId: ID | null;
+  /** Optional construction depot (bouwdepot) funding this task */
+  constructionDepotId: ID | null;
+}
+
+export interface ConstructionDepot {
+  id: ID;
+  projectId: ID;
+  name: string;
+  totalAmount: number;
+  createdAt: string;
+  userId: ID;
+}
+
+export interface ConstructionDepotBalance extends ConstructionDepot {
+  spentEstimated: number;
+  /** Project-level bouwdepot cap */
+  projectDepotTotal: number;
+  remainingEstimated: number;
+  percentageUsed: number;
+  linkedTaskCount: number;
 }
 
 export type ExpenseDocumentType = "receipt" | "invoice" | "other";
@@ -110,6 +137,8 @@ export interface RenovationState {
   projects: Project[];
   rooms: Room[];
   tasks: Task[];
+  constructionDepots: ConstructionDepot[];
+  constructionDepotBalances: ConstructionDepotBalance[];
   projectExpenses: ProjectExpense[];
   expenseDocuments: ExpenseDocument[];
   taskDependencies: TaskDependency[];

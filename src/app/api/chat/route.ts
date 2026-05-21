@@ -140,13 +140,29 @@ async function buildProjectContext(
   const rooms = roomsRes.data ?? [];
   const roomIdList = rooms.map((room) => String(room.id));
 
+  const taskRoomsByTask = new Map<string, string[]>();
   if (roomIdList.length > 0) {
-    tasksRes = await supabase
-      .from("tasks")
-      .select(
-        "id,title,room_id,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date"
-      )
-      .in("room_id", roomIdList);
+    const trRes = await supabase.from("task_rooms").select("task_id,room_id").in("room_id", roomIdList);
+    if (trRes.error) {
+      console.error("Chat project context", { taskRoomsError: trRes.error.message });
+      return { ok: false, status: 500, error: "Failed to load task rooms." };
+    }
+    for (const row of trRes.data ?? []) {
+      const tid = String(row.task_id);
+      const rid = String(row.room_id);
+      const arr = taskRoomsByTask.get(tid) ?? [];
+      arr.push(rid);
+      taskRoomsByTask.set(tid, arr);
+    }
+    const taskIdList = [...taskRoomsByTask.keys()];
+    if (taskIdList.length > 0) {
+      tasksRes = await supabase
+        .from("tasks")
+        .select(
+          "id,title,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date"
+        )
+        .in("id", taskIdList);
+    }
   }
 
   if (tasksRes.error) {
@@ -154,12 +170,11 @@ async function buildProjectContext(
     return { ok: false, status: 500, error: "Failed to load tasks." };
   }
 
-  const roomIds = new Set(roomIdList);
-  const scopedTasks = (tasksRes.data ?? []).filter((task) => roomIds.has(String(task.room_id)));
+  const scopedTasks = tasksRes.data ?? [];
 
   const roomLines = rooms.map((room) => {
     const tasksForRoom = scopedTasks
-      .filter((task) => String(task.room_id) === String(room.id))
+      .filter((task) => (taskRoomsByTask.get(String(task.id)) ?? []).includes(String(room.id)))
       .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
       .slice(0, CHAT_CONTEXT_MAX_TASKS_PER_ROOM);
     const taskSummary =

@@ -86,7 +86,7 @@ function copyForAction(action: string, siteUrl: string): MailCopy {
     case "magiclink":
       return {
         headline: "Inloggen bij RenoTasker",
-        subheadline: "Magic link",
+        subheadline: "Directe inloglink",
         bodyText: "Gebruik de link hieronder om in te loggen.",
         bodyTextSecondary: "",
         actionLabel: "Inloggen",
@@ -167,7 +167,7 @@ function copyForAction(action: string, siteUrl: string): MailCopy {
       return {
         headline: "Account gekoppeld",
         subheadline: "RenoTasker",
-        bodyText: "Er is een nieuwe login-methode aan je account gekoppeld.",
+        bodyText: "Er is een nieuwe inlogmethode aan je account gekoppeld.",
         bodyTextSecondary: "",
         actionLabel: "Naar RenoTasker",
         showButton: "yes",
@@ -177,7 +177,7 @@ function copyForAction(action: string, siteUrl: string): MailCopy {
       return {
         headline: "Account ontkoppeld",
         subheadline: "RenoTasker",
-        bodyText: "Een login-methode is van je account verwijderd.",
+        bodyText: "Een inlogmethode is van je account verwijderd.",
         bodyTextSecondary: "",
         actionLabel: "Naar RenoTasker",
         showButton: "yes",
