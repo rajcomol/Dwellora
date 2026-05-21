@@ -1,40 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import {
+  brandAssetUrls,
+  formatExpiresNl,
+  parseEmailFrom,
+  resolveTemplateId,
+  sendBrevoTemplate,
+} from "../_shared/brevo.ts";
 
 type Body = {
   to: string;
   inviteUrl: string;
-  /** Same destination as inviteUrl for copy-paste in mail when click tracking is unreliable. */
   inviteUrlPlain?: string;
   expiresAtIso: string;
   projectName?: string | null;
 };
-
-function parseSender(from: string): { name: string; email: string } {
-  const trimmed = from.trim();
-  const m = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
-  if (m) {
-    return {
-      name: m[1].replace(/^["']|["']$/g, "").trim(),
-      email: m[2].trim(),
-    };
-  }
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-    return { name: "RenoTasker", email: trimmed };
-  }
-  throw new Error("Invalid INVITE_EMAIL_FROM");
-}
-
-function resolveTemplateId(): number | null {
-  const raw = Deno.env.get("BREVO_INVITE_TEMPLATE_ID")?.trim();
-  if (raw === undefined || raw === "") {
-    return 7;
-  }
-  const n = Number.parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 1) {
-    return null;
-  }
-  return n;
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
@@ -56,7 +35,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const templateId = resolveTemplateId();
+  const templateId = resolveTemplateId("BREVO_INVITE_TEMPLATE_ID", 7);
   if (templateId === null) {
     console.error("send-project-invite: invalid BREVO_INVITE_TEMPLATE_ID");
     return new Response(JSON.stringify({ error: "Server misconfigured" }), {
@@ -65,7 +44,6 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  /** Gateway uses anon key in Authorization; app auth uses x-invite-secret (or legacy Bearer secret). */
   const inviteHeader = req.headers.get("x-invite-secret")?.trim();
   const auth = req.headers.get("Authorization");
   const bearer = auth?.startsWith("Bearer ") ? auth.slice(7).trim() : null;
@@ -109,20 +87,24 @@ Deno.serve(async (req: Request) => {
       ? body.inviteUrlPlain.trim()
       : body.inviteUrl;
 
-  const brevoPayload: Record<string, unknown> = {
-    templateId,
-    to: [{ email: body.to.trim() }],
-    params: {
-      inviteUrl: body.inviteUrl,
-      inviteUrlPlain: invitePlain,
-      expiresAtIso: body.expiresAtIso,
-      projectName,
-    },
+  const assets = brandAssetUrls();
+  const expiresNl = formatExpiresNl(body.expiresAtIso);
+  const params: Record<string, string> = {
+    inviteUrl: body.inviteUrl,
+    inviteUrlPlain: invitePlain,
+    expiresAtIso: expiresNl,
+    projectName,
+    projectLine: projectName ? `Project: ${projectName}` : "",
+    expiresLine: `Geldig tot: ${expiresNl}`,
+    logoUrl: assets.logoUrl,
+    instagramUrl: assets.instagramUrl,
+    instagramLink: "https://www.instagram.com/reno.tasker?igsh=bzF2bDBmYTJ3MG1y",
   };
 
+  let sender;
   if (fromRaw) {
     try {
-      brevoPayload.sender = parseSender(fromRaw);
+      sender = parseEmailFrom(fromRaw, "RenoTasker");
     } catch {
       return new Response(JSON.stringify({ error: "Invalid sender configuration" }), {
         status: 500,
@@ -131,36 +113,24 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  try {
-    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        "api-key": brevoKey,
-      },
-      body: JSON.stringify(brevoPayload),
-    });
+  const result = await sendBrevoTemplate({
+    apiKey: brevoKey,
+    templateId,
+    to: body.to,
+    params,
+    sender,
+  });
 
-    if (!res.ok) {
-      const errBody = (await res.text().catch(() => "")) || res.statusText;
-      console.error("Brevo invite email failed", res.status, errBody);
-      return new Response(JSON.stringify({ error: errBody.slice(0, 300) }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("Brevo invite email exception", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
+  if (!result.ok) {
+    console.error("Brevo invite email failed", result.status, result.error);
+    return new Response(JSON.stringify({ error: result.error }), {
+      status: result.status >= 400 ? result.status : 502,
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 });

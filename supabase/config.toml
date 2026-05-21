@@ -369,8 +369,18 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Send Email Hook: enable URI in Supabase Dashboard → Authentication → Hooks after deploy.
+# Local example: http://127.0.0.1:54321/functions/v1/send-auth-email
+# [auth.hook.send_email]
+# enabled = true
+# uri = "http://host.docker.internal:54321/functions/v1/send-auth-email"
+# secrets = "SEND_EMAIL_HOOK_SECRET"
+
 # Called from Next.js API with shared INVITE_EDGE_SECRET (Bearer), not end-user JWT.
 [functions.send-project-invite]
+verify_jwt = false
+
+[functions.send-auth-email]
 verify_jwt = false
 
 [analytics]

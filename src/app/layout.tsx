@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { defaultLocale, isLocale, LOCALE_COOKIE_NAME, type Locale } from "@/i18n/config";
 import nl from "@/i18n/locales/nl.json";
+import MicrosoftClarity from "@/components/analytics/MicrosoftClarity";
 import { I18nProvider } from "@/i18n/provider";
 
 /** Cosmos-inspired UI: geometric sans (Google Fonts), per Envato kit style guidance. */
@@ -81,6 +82,7 @@ export default async function RootLayout({
     >
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <ThemeProvider>
+          <MicrosoftClarity />
           <I18nProvider locale={locale}>{children}</I18nProvider>
         </ThemeProvider>
       </body>

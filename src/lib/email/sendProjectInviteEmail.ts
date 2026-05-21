@@ -10,11 +10,24 @@ export type SendProjectInviteEmailResult =
   | { ok: false; skipped: true }
   | { ok: false; skipped?: false; error: string };
 
+/** Headers for Supabase Edge gateway (publishable/secret keys are not JWTs). */
+function edgeGatewayHeaders(): Record<string, string> | null {
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const gatewayKey = serviceKey || anonKey;
+  if (!gatewayKey) return null;
+  const headers: Record<string, string> = { apikey: gatewayKey };
+  if (gatewayKey.startsWith("eyJ")) {
+    headers.Authorization = `Bearer ${gatewayKey}`;
+  }
+  return headers;
+}
+
 /**
  * Sends a project collaboration invite via Supabase Edge Function `send-project-invite`,
- * which calls the Brevo API. Uses `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `Authorization`/`apikey`
- * so the Supabase gateway accepts the request; `INVITE_EDGE_SECRET` is sent as `x-invite-secret`
- * for app-level auth (same value as Edge secret). If env is incomplete, returns skipped.
+ * which calls the Brevo API. Gateway uses `apikey` (service role or anon); publishable keys
+ * must not be sent as `Authorization: Bearer` (Invalid JWT). `INVITE_EDGE_SECRET` is sent as
+ * `x-invite-secret` for app-level auth (same value as Edge secret). If env is incomplete, skipped.
  */
 export async function sendProjectInviteEmail(
   params: SendProjectInviteEmailParams
@@ -22,7 +35,8 @@ export async function sendProjectInviteEmail(
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/, "");
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   const secret = process.env.INVITE_EDGE_SECRET?.trim();
-  if (!baseUrl || !anonKey || !secret) {
+  const gateway = edgeGatewayHeaders();
+  if (!baseUrl || !anonKey || !secret || !gateway) {
     return { ok: false, skipped: true };
   }
 
@@ -32,8 +46,7 @@ export async function sendProjectInviteEmail(
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${anonKey}`,
-        apikey: anonKey,
+        ...gateway,
         "Content-Type": "application/json",
         "x-invite-secret": secret,
       },

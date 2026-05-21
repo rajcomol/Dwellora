@@ -68,11 +68,13 @@ Serverroutes gebruiken `OPENAI_API_KEY`. Optioneel: **`OPENAI_MODEL`** — stand
 
 Uitnodigingslinks gebruiken `NEXT_PUBLIC_SITE_URL` (of de request-origin) als basis-URL. **Laat deze exact overeenkomen met de host waar gebruikers inloggen** (zelfde scheme + hostname, bijv. `https://www.…` als dat je primaire URL is). Anders raken uitnodigingslinks en sessiecookies op verschillende hosts en faalt accepteren met 401. Automatische uitnodigingsmail gaat via een **Supabase Edge Function** (`send-project-invite`) die **[Brevo](https://www.brevo.com/)** aanroept. Op **Vercel** heb je `NEXT_PUBLIC_SUPABASE_URL`, **`NEXT_PUBLIC_SUPABASE_ANON_KEY`** (voor de gateway) en **`INVITE_EDGE_SECRET`** (zelfde als in Supabase Edge secrets; wordt als `x-invite-secret` meegestuurd). De **Brevo API key** en het afzenderadres (`INVITE_EMAIL_FROM`) staan alleen als **secrets** bij de Edge Function, niet in Vercel. Zonder deze variabelen wordt geen mail verstuurd; de eigenaar ziet dan nog wel de link op het project om handmatig te delen.
 
-Deploy de functie na wijzigingen: `npx supabase functions deploy send-project-invite` (met gelinkt project). Zie `.env.example` voor de volledige checklist.
+Deploy de functie na wijzigingen: `npm run supabase:functions:deploy-invite:prod` en/of `:staging` (zie `docs/SUPABASE_ENVIRONMENT.md`). Zie `.env.example` voor de volledige checklist. Controle: `npm run verify:invite`.
 
 Voor het **voorinvullen van het uitgenodigde e-mailadres** op inlog/registratie gebruikt de app `GET /api/invites/preview` (alleen met geldige token). Die route vereist **`SUPABASE_SERVICE_ROLE_KEY`** op Vercel (server-only; staat vaak al voor andere serverroutes).
 
-De uitnodigingsmail gebruikt een **Brevo transactional template** (`BREVO_INVITE_TEMPLATE_ID`, standaard **7** als de secret ontbreekt). In Brevo moet die template het **New Template Language**-formaat gebruiken en placeholders voor deze API-`params`:
+Uitnodigings- en **Auth-mails** (signup, recovery, magic link, …) gebruiken **Brevo** in de donkere RenoTasker-huisstijl. HTML en params: [`docs/BREVO_EMAIL_TEMPLATES.md`](docs/BREVO_EMAIL_TEMPLATES.md). Auth loopt via Supabase **Send Email Hook** → Edge Function `send-auth-email`.
+
+De uitnodigingsmail gebruikt **Brevo template 7** (`BREVO_INVITE_TEMPLATE_ID`, standaard **7**). In Brevo moet die template het **New Template Language**-formaat gebruiken en placeholders voor deze API-`params`:
 
 | Param | Inhoud |
 |--------|--------|
@@ -83,7 +85,7 @@ De uitnodigingsmail gebruikt een **Brevo transactional template** (`BREVO_INVITE
 
 In de template-editor bijvoorbeeld: `{{ params.inviteUrl }}`, `{{ params.inviteUrlPlain }}`, `{{ params.expiresAtIso }}`, `{{ params.projectName }}`.
 
-De e-mailtemplates onder **Supabase → Authentication → Emails** (bijv. «Invite user») worden door deze app **niet** gebruikt voor projectuitnodigingen — alleen de Edge Function + Brevo.
+De e-mailtemplates onder **Supabase → Authentication → Emails** worden **niet** meer gebruikt zodra de **Send Email Hook** actief is — Auth-mail gaat via Brevo template **8**. Projectuitnodigingen blijven template **7** + `send-project-invite`.
 
 ## Documenten (Supabase Storage)
 
