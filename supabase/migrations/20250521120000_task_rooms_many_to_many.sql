@@ -38,6 +38,22 @@ AS $$
 $$;
 
 -- ---------------------------------------------------------------------------
+-- Drop RLS policies that still reference tasks.room_id (required before DROP COLUMN)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "tasks_select_via_room" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_insert_via_room" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_update_via_room" ON public.tasks;
+DROP POLICY IF EXISTS "tasks_delete_via_room" ON public.tasks;
+
+DROP POLICY IF EXISTS "task_deps_select" ON public.task_dependencies;
+DROP POLICY IF EXISTS "task_deps_insert" ON public.task_dependencies;
+DROP POLICY IF EXISTS "task_deps_delete" ON public.task_dependencies;
+
+DROP POLICY IF EXISTS "task_attachments_select" ON public.task_attachments;
+DROP POLICY IF EXISTS "task_attachments_insert" ON public.task_attachments;
+DROP POLICY IF EXISTS "task_attachments_delete" ON public.task_attachments;
+
+-- ---------------------------------------------------------------------------
 -- Drop legacy index and column
 -- ---------------------------------------------------------------------------
 DROP INDEX IF EXISTS public.tasks_room_id_idx;
@@ -112,11 +128,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.task_rooms TO authenticated;
 -- ---------------------------------------------------------------------------
 -- tasks RLS (via task_rooms)
 -- ---------------------------------------------------------------------------
-DROP POLICY IF EXISTS "tasks_select_via_room" ON public.tasks;
-DROP POLICY IF EXISTS "tasks_insert_via_room" ON public.tasks;
-DROP POLICY IF EXISTS "tasks_update_via_room" ON public.tasks;
-DROP POLICY IF EXISTS "tasks_delete_via_room" ON public.tasks;
-
 CREATE POLICY "tasks_select_via_room" ON public.tasks
   FOR SELECT TO authenticated
   USING (public.user_has_task_access(tasks.id));
@@ -137,10 +148,6 @@ CREATE POLICY "tasks_delete_via_room" ON public.tasks
 -- ---------------------------------------------------------------------------
 -- task_dependencies RLS
 -- ---------------------------------------------------------------------------
-DROP POLICY IF EXISTS "task_deps_select" ON public.task_dependencies;
-DROP POLICY IF EXISTS "task_deps_insert" ON public.task_dependencies;
-DROP POLICY IF EXISTS "task_deps_delete" ON public.task_dependencies;
-
 CREATE POLICY "task_deps_select" ON public.task_dependencies
   FOR SELECT TO authenticated
   USING (public.user_has_task_access(task_dependencies.task_id));
@@ -159,10 +166,6 @@ CREATE POLICY "task_deps_delete" ON public.task_dependencies
 -- ---------------------------------------------------------------------------
 -- task_attachments RLS
 -- ---------------------------------------------------------------------------
-DROP POLICY IF EXISTS "task_attachments_select" ON public.task_attachments;
-DROP POLICY IF EXISTS "task_attachments_insert" ON public.task_attachments;
-DROP POLICY IF EXISTS "task_attachments_delete" ON public.task_attachments;
-
 CREATE POLICY "task_attachments_select" ON public.task_attachments
   FOR SELECT TO authenticated
   USING (public.user_has_task_access(task_attachments.task_id));
