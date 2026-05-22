@@ -39,7 +39,7 @@ function KluscoachFabIcon() {
       />
       <path
         d="M5.5 8h5.5M5.5 10.25h4"
-        className="stroke-white dark:stroke-zinc-900"
+        className="stroke-white dark:stroke-renovation-elevated"
         strokeWidth="1.35"
         strokeLinecap="round"
       />
@@ -50,7 +50,7 @@ function KluscoachFabIcon() {
           width="5.5"
           height="3.25"
           rx="0.65"
-          className="fill-white stroke-current dark:fill-zinc-900"
+          className="fill-white stroke-current dark:fill-renovation-elevated"
           strokeWidth="0.85"
         />
         <rect
@@ -59,7 +59,7 @@ function KluscoachFabIcon() {
           width="2.35"
           height="11.25"
           rx="0.55"
-          className="fill-white stroke-current dark:fill-zinc-900"
+          className="fill-white stroke-current dark:fill-renovation-elevated"
           strokeWidth="0.85"
         />
       </g>
@@ -119,15 +119,15 @@ export default function GlobalChatLauncher() {
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-renovation-border px-4 py-3 dark:border-renovation-border">
           <div className="min-w-0">
-            <h2 id={titleId} className="text-lg font-semibold text-renovation-steel dark:text-zinc-100">
+            <h2 id={titleId} className="text-lg font-semibold text-renovation-steel dark:text-foreground">
               {t("chat.panelTitle")}
             </h2>
-            <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400">{t("chat.panelSubtitle")}</p>
+            <p className="mt-0.5 text-xs text-renovation-concrete">{t("chat.panelSubtitle")}</p>
           </div>
           <button
             ref={closeBtnRef}
             type="button"
-            className="min-h-11 min-w-11 shrink-0 rounded-lg border border-transparent px-2 text-sm font-medium text-zinc-700 hover:bg-renovation-muted dark:text-zinc-200 dark:hover:bg-zinc-900"
+            className="min-h-11 min-w-11 shrink-0 rounded-lg border border-transparent px-2 text-sm font-medium text-foreground hover:bg-renovation-muted dark:text-foreground dark:hover:bg-renovation-muted"
             onClick={() => setOpen(false)}
           >
             {t("common.close")}
@@ -155,7 +155,7 @@ export default function GlobalChatLauncher() {
         className={
           open
             ? "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 inline-flex max-w-[min(calc(100vw-2rem),18rem)] min-h-11 items-center gap-2 rounded-full border border-transparent bg-transparent px-3.5 py-2.5 opacity-0 pointer-events-none sm:px-4"
-            : "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 inline-flex max-w-[min(calc(100vw-2rem),18rem)] min-h-11 items-center gap-2 rounded-full border border-renovation-border bg-renovation-elevated px-3.5 py-2.5 text-renovation-steel shadow-renovation-card transition hover:brightness-[0.97] hover:shadow-lg motion-safe:active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-renovation-accent dark:border-renovation-border dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:brightness-100 sm:px-4"
+            : "fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 inline-flex max-w-[min(calc(100vw-2rem),18rem)] min-h-11 items-center gap-2 rounded-full border border-renovation-border bg-renovation-elevated px-3.5 py-2.5 text-renovation-steel shadow-renovation-card transition hover:brightness-[0.97] hover:shadow-lg motion-safe:active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-renovation-accent dark:border-renovation-border dark:bg-renovation-elevated dark:text-foreground dark:hover:bg-renovation-muted dark:hover:brightness-100 sm:px-4"
         }
         aria-label={t("chat.launcherAriaLabel")}
         aria-expanded={open}
@@ -164,7 +164,7 @@ export default function GlobalChatLauncher() {
         onClick={() => setOpen(true)}
       >
         <KluscoachFabIcon />
-        <span className="min-w-0 truncate text-sm font-semibold text-renovation-steel dark:text-zinc-100">
+        <span className="min-w-0 truncate text-sm font-semibold text-renovation-steel dark:text-foreground">
           {t("chat.launcherLabel")}
         </span>
       </button>

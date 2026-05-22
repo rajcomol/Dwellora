@@ -10,7 +10,7 @@ export default function Card({
   return (
     <div
       className={[
-        "rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950",
+        "rounded-xl border border-renovation-border bg-renovation-elevated p-4 text-foreground shadow-sm dark:border-renovation-border dark:bg-renovation-elevated dark:text-foreground",
         className,
       ]
         .filter(Boolean)
@@ -20,4 +20,3 @@ export default function Card({
     </div>
   );
 }
-

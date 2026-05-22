@@ -8,6 +8,8 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const tailwindPkg = path.join(appRoot, "node_modules", "tailwindcss");
 
 const nextConfig: NextConfig = {
+  /** Hide floating Next.js “N” dev indicator (default bottom-left); errors still show in overlay. */
+  devIndicators: false,
   async redirects() {
     return [
       { source: "/dashboard/assistant", destination: "/dashboard", permanent: false },

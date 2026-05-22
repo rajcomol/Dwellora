@@ -16,9 +16,9 @@ export function getUpcomingTasks(
   tasks: Task[],
   limit = 12
 ): UpcomingTaskView[] {
-  const projectName = new Map(projects.map((p) => [p.id, p.name]));
-  const roomById = new Map(rooms.map((r) => [r.id, r]));
-  const open = tasks.filter((t) => t.status === "todo" || t.status === "doing");
+  const projectName = new Map((projects ?? []).map((p) => [p.id, p.name]));
+  const roomById = new Map((rooms ?? []).map((r) => [r.id, r]));
+  const open = (tasks ?? []).filter((t) => t.status === "todo" || t.status === "doing");
   const sorted = [...open].sort((a, b) => {
     const pr = priorityRank[a.priority] - priorityRank[b.priority];
     if (pr !== 0) return pr;
@@ -28,7 +28,7 @@ export function getUpcomingTasks(
     return a.title.localeCompare(b.title);
   });
   return sorted.slice(0, limit).map((t) => {
-    const names = t.roomIds
+    const names = (t.roomIds ?? [])
       .map((rid) => roomById.get(rid)?.name)
       .filter((n): n is string => Boolean(n));
     const pid = t.projectId;

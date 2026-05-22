@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 
 const baseClass =
-  "rounded-md bg-zinc-200/90 dark:bg-zinc-800/90 motion-safe:animate-pulse motion-reduce:animate-none";
+  "rounded-md bg-renovation-muted/90 dark:bg-renovation-muted/90 motion-safe:animate-pulse motion-reduce:animate-none";
 
 type SkeletonProps = HTMLAttributes<HTMLDivElement>;
 
@@ -71,13 +71,13 @@ export function DocumentsPageSkeleton() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="mt-2 h-4 w-full max-w-lg" />
       </div>
-      <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <div className="rounded-xl border border-renovation-border p-5 dark:border-renovation-border">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="mt-4 h-10 w-full" />
         <Skeleton className="mt-3 h-10 w-full" />
         <Skeleton className="mt-3 h-9 w-32" />
       </div>
-      <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <div className="rounded-xl border border-renovation-border p-5 dark:border-renovation-border">
         <Skeleton className="h-5 w-56" />
         <Skeleton className="mt-4 h-24 w-full" />
       </div>
@@ -91,7 +91,7 @@ export function DocumentsListSkeleton() {
   return (
     <div className="space-y-3" aria-hidden>
       {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <div key={i} className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 dark:border-renovation-border dark:bg-renovation-elevated">
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-3/5 max-w-xs" />
@@ -114,7 +114,7 @@ export function ProjectsPageSkeleton() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="mt-2 h-4 w-full max-w-lg" />
       </div>
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 dark:border-renovation-border dark:bg-renovation-elevated">
         <Skeleton className="h-4 w-40" />
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <Skeleton className="h-10 flex-1" />
@@ -125,7 +125,7 @@ export function ProjectsPageSkeleton() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+            className="flex flex-col gap-2 rounded-xl border border-renovation-border p-4 dark:border-renovation-border"
           >
             <Skeleton className="h-5 w-2/5" />
             <Skeleton className="h-3 w-3/5" />
@@ -168,7 +168,7 @@ export function ProjectDetailPageSkeleton() {
         </div>
       </div>
       {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+        <div key={i} className="rounded-xl border border-renovation-border p-5 dark:border-renovation-border">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="mt-4 h-24 w-full" />
         </div>

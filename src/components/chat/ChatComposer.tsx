@@ -42,7 +42,7 @@ export default function ChatComposer({
       }}
     >
       <div className="min-w-0 flex-1">
-        <label htmlFor="chat-composer-message" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label htmlFor="chat-composer-message" className="mb-1 block text-xs font-medium text-renovation-concrete">
           {t("chat.messageLabel")}
         </label>
         <input
@@ -51,7 +51,7 @@ export default function ChatComposer({
           onChange={(e) => setValue(e.target.value)}
           placeholder={t("chat.placeholder")}
           disabled={disabled}
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-950"
+          className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel disabled:cursor-not-allowed disabled:opacity-60 dark:border-renovation-border dark:bg-renovation-elevated"
         />
       </div>
       <Button

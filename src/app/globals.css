@@ -3,7 +3,7 @@
 @source "../..";
 
 /**
- * Design tokens — Cosmos-inspired tech UI (cool neutrals, cyan + violet accents, space grid).
+ * Design tokens — warm & modern (stone neutrals, amber accents).
  * Semantic names kept as --renovation-* for Tailwind compatibility across the app.
  */
 
@@ -11,28 +11,21 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f0f4f8;
-  --foreground: #0f172a;
-  --renovation-surface: #e8eef6;
+  --background: #fafaf7;
+  --foreground: #1c1917;
+  --renovation-surface: #f5f0e8;
   --renovation-elevated: #ffffff;
-  --renovation-muted: #dce3ee;
-  --renovation-accent: #0891b2;
-  --renovation-accent-foreground: #f0fdfa;
-  --renovation-steel: #0e7490;
-  --renovation-concrete: #64748b;
-  --renovation-border: #c8d2e0;
-  --renovation-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 4px 14px rgb(14 116 144 / 0.08);
+  --renovation-muted: #e8dfd0;
+  --renovation-accent: #d97706;
+  --renovation-accent-foreground: #ffffff;
+  --renovation-steel: #b45309;
+  --renovation-concrete: #78716c;
+  --renovation-border: #e8dfd0;
+  --renovation-shadow: 0 1px 3px rgb(28 20 12 / 0.06), 0 4px 12px rgb(180 130 80 / 0.08);
   --radius-renovation: 0.875rem;
-  --renovation-pattern: linear-gradient(
-      to right,
-      rgb(8 145 178 / 0.07) 1px,
-      transparent 1px
-    ),
-    linear-gradient(to bottom, rgb(8 145 178 / 0.07) 1px, transparent 1px);
-  --renovation-pattern-size: 28px 28px;
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-renovation-surface: var(--renovation-surface);
@@ -49,23 +42,17 @@
 }
 
 html.dark {
-  --background: #07080d;
-  --foreground: #e8eefc;
-  --renovation-surface: #0c0e14;
-  --renovation-elevated: #12151c;
-  --renovation-muted: #1a2332;
-  --renovation-accent: #22d3ee;
-  --renovation-accent-foreground: #042f2e;
-  --renovation-steel: #7dd3fc;
-  --renovation-concrete: #94a3b8;
-  --renovation-border: #2a3444;
-  --renovation-shadow: 0 1px 2px rgb(0 0 0 / 0.45), 0 4px 20px rgb(34 211 238 / 0.06);
-  --renovation-pattern: linear-gradient(
-      to right,
-      rgb(125 211 252 / 0.06) 1px,
-      transparent 1px
-    ),
-    linear-gradient(to bottom, rgb(125 211 252 / 0.06) 1px, transparent 1px);
+  --background: #141210;
+  --foreground: #f5f0e8;
+  --renovation-surface: #1e1a16;
+  --renovation-elevated: #1e1a16;
+  --renovation-muted: #292420;
+  --renovation-accent: #fbbf24;
+  --renovation-accent-foreground: #1c1917;
+  --renovation-steel: #fbbf24;
+  --renovation-concrete: #a8a29e;
+  --renovation-border: #292420;
+  --renovation-shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 4px 16px rgb(251 191 36 / 0.06);
 }
 
 body {
@@ -161,14 +148,11 @@ body {
 }
 
 /**
- * Dashboard header e.a.: glas met lichte cyan-rand (Cosmos-thema).
+ * Dashboard header e.a.: elevated surface met subtiele rand.
  */
 .glass-card {
-  background-color: rgba(8, 12, 22, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(34, 211, 238, 0.18);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  background-color: var(--renovation-elevated);
+  border-bottom: 0.5px solid var(--renovation-border);
 }
 
 /**
@@ -188,29 +172,18 @@ body {
     0 0 36px rgb(255 190 140 / 0.05);
 }
 
+/** Dashboard hero: uniforme randkleur (geen accent-gloed bovenaan in dark mode). */
+[data-tour="dashboard-hero"] {
+  border-color: var(--renovation-border);
+  outline: none;
+}
+
 .bg-renovation-app {
   background-color: var(--renovation-surface);
-  background-image: radial-gradient(
-      ellipse 130% 90% at 50% -25%,
-      rgb(8 145 178 / 0.14),
-      transparent 58%
-    ),
-    radial-gradient(ellipse 80% 60% at 100% 50%, rgb(99 102 241 / 0.06), transparent 50%),
-    var(--renovation-pattern);
-  background-size: auto, auto, var(--renovation-pattern-size);
-  background-position: center top, center, 0 0;
 }
 
 html.dark .bg-renovation-app {
-  background-image: radial-gradient(
-      ellipse 130% 90% at 50% -20%,
-      rgb(34 211 238 / 0.09),
-      transparent 55%
-    ),
-    radial-gradient(ellipse 70% 55% at 100% 30%, rgb(99 102 241 / 0.12), transparent 52%),
-    radial-gradient(ellipse 50% 40% at 0% 80%, rgb(168 85 247 / 0.06), transparent 50%),
-    var(--renovation-pattern);
-  background-size: auto, auto, auto, var(--renovation-pattern-size);
+  background-color: var(--background);
 }
 
 @media (prefers-reduced-motion: reduce) {

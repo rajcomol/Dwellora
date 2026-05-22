@@ -33,13 +33,13 @@ export default function SettingsChangePasswordForm() {
   }
 
   const fieldClass =
-    "mt-1 w-full min-h-11 rounded-lg border border-renovation-border bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-renovation-accent/30 placeholder:text-zinc-400 focus:ring-2 dark:border-renovation-border dark:bg-zinc-950 dark:text-zinc-50";
+    "mt-1 w-full min-h-11 rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm text-foreground outline-none ring-renovation-accent/30 placeholder:text-renovation-concrete focus:ring-2 dark:border-renovation-border dark:bg-renovation-elevated dark:text-foreground";
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-renovation-concrete">{t("settings.passwordChangeHint")}</p>
       <div>
-        <label htmlFor="settings-new-password" className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        <label htmlFor="settings-new-password" className="text-sm font-medium text-foreground">
           {t("settings.passwordNew")}
         </label>
         <input
@@ -52,7 +52,7 @@ export default function SettingsChangePasswordForm() {
         />
       </div>
       <div>
-        <label htmlFor="settings-confirm-password" className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        <label htmlFor="settings-confirm-password" className="text-sm font-medium text-foreground">
           {t("settings.passwordConfirm")}
         </label>
         <input

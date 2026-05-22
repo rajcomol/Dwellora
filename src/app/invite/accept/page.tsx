@@ -91,14 +91,14 @@ function InviteAcceptInner() {
     return (
       <div className="space-y-4 text-center">
         <p className="text-sm text-red-200">{t("inviteAccept.missingToken")}</p>
-        <p className="text-xs text-zinc-400">{t("inviteAccept.needLogin")}</p>
+        <p className="text-xs text-renovation-concrete">{t("inviteAccept.needLogin")}</p>
       </div>
     );
   }
 
   if (status === "idle" || status === "redirect_login" || status === "working") {
     return (
-      <p className="text-center text-sm text-zinc-200">
+      <p className="text-center text-sm text-foreground">
         {status === "idle" || status === "redirect_login" ? t("common.loading") : t("inviteAccept.accepting")}
       </p>
     );
@@ -109,13 +109,13 @@ function InviteAcceptInner() {
       <div className="space-y-4 text-center">
         <p className="text-sm text-red-200">{message ?? t("inviteAccept.error")}</p>
         {errHint === "needLogin" ? (
-          <p className="text-xs text-zinc-400">{t("inviteAccept.needLogin")}</p>
+          <p className="text-xs text-renovation-concrete">{t("inviteAccept.needLogin")}</p>
         ) : null}
         {errHint === "wrongAccount" ? (
-          <p className="text-xs text-zinc-400">{t("inviteAccept.hintWrongAccount")}</p>
+          <p className="text-xs text-renovation-concrete">{t("inviteAccept.hintWrongAccount")}</p>
         ) : null}
         {errHint === "openInBrowser" ? (
-          <p className="text-xs text-zinc-400">{t("inviteAccept.hintOpenInBrowser")}</p>
+          <p className="text-xs text-renovation-concrete">{t("inviteAccept.hintOpenInBrowser")}</p>
         ) : null}
       </div>
     );
@@ -146,7 +146,7 @@ function InviteAcceptInner() {
 }
 
 function Fallback() {
-  return <div className="h-24 animate-pulse rounded-xl bg-white/10" aria-busy="true" />;
+  return <div className="h-24 animate-pulse rounded-xl bg-renovation-elevated/10" aria-busy="true" />;
 }
 
 export default function InviteAcceptPage() {

@@ -50,8 +50,8 @@ export default function PlanningHubPageClient() {
   return (
     <div className="space-y-6">
       <div data-tour="planning-hub">
-        <h1 className="text-2xl font-semibold">{t("nav.tabs.planning")}</h1>
-        <p className="mt-1 text-sm text-renovation-concrete">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.tabs.planning")}</h1>
+        <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">
           {selectedProject
             ? t("planning.subtitleProject", { name: selectedProject.name })
             : t("layout.topBar.chooseProject")}

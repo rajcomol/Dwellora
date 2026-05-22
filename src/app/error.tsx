@@ -16,23 +16,23 @@ export default function GlobalError({
 
   /* Segment error boundary: geen <html>/<body> — die komen uit de root layout. */
   return (
-    <div className="mx-auto flex min-h-full max-w-lg flex-col justify-center bg-white px-6 py-16 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+    <div className="mx-auto flex min-h-full max-w-lg flex-col justify-center bg-renovation-elevated px-6 py-16 text-foreground dark:bg-renovation-elevated">
       <h1 className="text-2xl font-semibold">{nl.errors.title}</h1>
-      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{nl.errors.description}</p>
+      <p className="mt-3 text-sm text-renovation-concrete">{nl.errors.description}</p>
       {error.digest ? (
-        <p className="mt-2 font-mono text-xs text-zinc-500">Ref: {error.digest}</p>
+        <p className="mt-2 font-mono text-xs text-renovation-concrete">Ref: {error.digest}</p>
       ) : null}
       <div className="mt-8 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={() => reset()}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="rounded-md bg-renovation-accent px-4 py-2 text-sm font-medium text-white hover:bg-renovation-steel"
         >
           {nl.errors.retry}
         </button>
         <a
           href="/dashboard"
-          className="inline-flex items-center rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="inline-flex items-center rounded-md border border-renovation-border px-4 py-2 text-sm font-medium text-foreground hover:bg-renovation-surface dark:border-renovation-border dark:hover:bg-renovation-muted"
         >
           {nl.errors.dashboard}
         </a>

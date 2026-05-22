@@ -85,6 +85,7 @@
     "deleteConfirm": "Deze ruimte verwijderen?",
     "fullProjectView": "Volledig projectoverzicht",
     "noTasksPreview": "Nog geen taken in deze ruimte",
+    "totalEstimated": "Totaal geschat: {{amount}}",
     "completedPill": "{{done}}/{{total}} voltooid",
     "dateRange": "{{start}} – {{end}}",
     "dateOpen": "vanaf {{start}}",
@@ -475,7 +476,8 @@
     "noDate": "Geen datum",
     "gantt": {
       "taskColumn": "Taak",
-      "editTask": "Taak bewerken"
+      "editTask": "Taak bewerken",
+      "noDateTooltip": "Geen datum ingesteld"
     },
     "taskPanel": {
       "title": "Taakdetails",

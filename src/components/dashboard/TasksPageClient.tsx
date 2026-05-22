@@ -41,8 +41,8 @@ export default function TasksPageClient() {
   return (
     <div className="space-y-6">
       <div data-tour="planning-hub">
-        <h1 className="text-2xl font-semibold">{t("nav.tabs.tasks")}</h1>
-        <p className="mt-1 text-sm text-renovation-concrete">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.tabs.tasks")}</h1>
+        <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">
           {selectedProject
             ? t("tasks.subtitleProject", { name: selectedProject.name })
             : t("layout.topBar.chooseProject")}
@@ -63,7 +63,7 @@ export default function TasksPageClient() {
           if (list.length === 0) return null;
           return (
             <section key={phase}>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-renovation-steel dark:text-renovation-accent">
+              <h2 className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
                 {t(`renovationPhase.${phase}`)}
               </h2>
               <ul className="mt-2 space-y-2">

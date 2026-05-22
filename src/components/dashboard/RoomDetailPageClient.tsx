@@ -60,16 +60,16 @@ export default function RoomDetailPageClient({ roomId }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <Link href={roomsHref} className="text-sm font-medium text-renovation-steel hover:underline dark:text-renovation-accent">
+        <Link href={roomsHref} className="text-sm font-medium text-renovation-steel hover:underline">
           ← {t("rooms.detail.back")}
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{room.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{room.name}</h1>
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${roomStatusBadgeClass(roomStatus)}`}>
             {t(roomStatusLabelKey(roomStatus))}
           </span>
         </div>
-        <p className="mt-1 text-sm text-renovation-concrete">
+        <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">
           {t("rooms.completedPill", { done: completed, total: roomTasks.length })}
         </p>
       </div>
@@ -95,7 +95,7 @@ export default function RoomDetailPageClient({ roomId }: Props) {
               </div>
               <div className="flex gap-2">
                 <select
-                  className="rounded border border-renovation-border bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-950"
+                  className="rounded border border-renovation-border bg-renovation-elevated px-2 py-1 text-xs dark:border-renovation-border dark:bg-renovation-elevated"
                   value={tk.status}
                   onChange={(e) => {
                     void updateTask({ id: tk.id, status: e.target.value as TaskStatus });
@@ -151,7 +151,7 @@ export default function RoomDetailPageClient({ roomId }: Props) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t("projectDetail.taskTitlePlaceholder")}
-          className="w-full rounded-lg border border-renovation-border bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+          className="w-full rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
         />
         {error ? <p className="text-xs text-red-600">{error}</p> : null}
         <Button type="submit">{t("common.save")}</Button>

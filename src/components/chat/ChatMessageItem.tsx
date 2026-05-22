@@ -19,8 +19,8 @@ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
         className={[
           "max-w-[80ch] rounded-xl px-4 py-3 text-sm leading-6 shadow-sm ring-1 ring-inset",
           isUser
-            ? "bg-zinc-900 text-white ring-zinc-900 dark:bg-white dark:text-black dark:ring-white/30"
-            : "bg-white text-zinc-900 ring-zinc-200 dark:bg-zinc-950 dark:text-zinc-50 dark:ring-zinc-800",
+            ? "bg-renovation-accent text-white ring-renovation-accent dark:bg-renovation-elevated dark:text-foreground dark:ring-renovation-border"
+            : "bg-renovation-elevated text-foreground ring-renovation-border dark:bg-renovation-elevated dark:text-foreground dark:ring-renovation-border",
         ].join(" ")}
       >
         {isUser ? (

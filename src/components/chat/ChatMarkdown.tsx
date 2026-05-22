@@ -36,7 +36,7 @@ const mdComponents = {
     const inline = !className;
     if (inline) {
       return (
-        <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.85em] text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
+        <code className="rounded bg-renovation-surface px-1 py-0.5 font-mono text-[0.85em] text-foreground dark:bg-renovation-muted dark:text-foreground">
           {children}
         </code>
       );
@@ -44,12 +44,12 @@ const mdComponents = {
     return <code className={className}>{children}</code>;
   },
   pre: ({ children }: { children?: ReactNode }) => (
-    <pre className="mb-2 overflow-x-auto rounded-lg bg-zinc-100 p-3 font-mono text-[0.85em] text-zinc-900 last:mb-0 dark:bg-zinc-900 dark:text-zinc-100">
+    <pre className="mb-2 overflow-x-auto rounded-lg bg-renovation-surface p-3 font-mono text-[0.85em] text-foreground last:mb-0 dark:bg-renovation-muted dark:text-foreground">
       {children}
     </pre>
   ),
   blockquote: ({ children }: { children?: React.ReactNode }) => (
-    <blockquote className="mb-2 border-l-2 border-zinc-300 pl-3 text-zinc-700 last:mb-0 dark:border-zinc-600 dark:text-zinc-300">
+    <blockquote className="mb-2 border-l-2 border-renovation-border pl-3 text-foreground last:mb-0 dark:border-renovation-border dark:text-foreground">
       {children}
     </blockquote>
   ),
@@ -58,12 +58,12 @@ const mdComponents = {
       <table className="w-full border-collapse text-left text-sm">{children}</table>
     </div>
   ),
-  thead: ({ children }: { children?: ReactNode }) => <thead className="border-b border-zinc-200 dark:border-zinc-700">{children}</thead>,
+  thead: ({ children }: { children?: ReactNode }) => <thead className="border-b border-renovation-border dark:border-renovation-border">{children}</thead>,
   th: ({ children }: { children?: ReactNode }) => (
-    <th className="border border-zinc-200 px-2 py-1.5 font-semibold dark:border-zinc-700">{children}</th>
+    <th className="border border-renovation-border px-2 py-1.5 font-semibold dark:border-renovation-border">{children}</th>
   ),
   td: ({ children }: { children?: ReactNode }) => (
-    <td className="border border-zinc-200 px-2 py-1.5 align-top dark:border-zinc-700">{children}</td>
+    <td className="border border-renovation-border px-2 py-1.5 align-top dark:border-renovation-border">{children}</td>
   ),
 };
 

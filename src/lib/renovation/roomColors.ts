@@ -1,21 +1,23 @@
 import type { ID } from "@/lib/renovation/types";
 
-const ROOM_BAR_COLORS = [
-  "bg-sky-500",
-  "bg-emerald-500",
-  "bg-violet-500",
+/** Vaste kleuren voor veelvoorkomende ruimtenamen (case-insensitive). */
+const NAMED_ROOM_COLORS: Record<string, string> = {
+  woonkamer: "bg-amber-500",
+  keuken: "bg-orange-400",
+  badkamer: "bg-yellow-500",
+  slaapkamer: "bg-amber-300",
+};
+
+/** Palette voor overige ruimtes (index op gesorteerde room_id-lijst). */
+const ROOM_COLOR_PALETTE = [
   "bg-amber-500",
-  "bg-rose-500",
-  "bg-cyan-500",
-  "bg-indigo-500",
-  "bg-teal-500",
-  "bg-orange-500",
-  "bg-fuchsia-500",
-  "bg-lime-600",
-  "bg-blue-600",
+  "bg-orange-400",
+  "bg-yellow-500",
+  "bg-amber-300",
+  "bg-orange-300",
 ] as const;
 
-export const LOOSE_TASK_BAR_CLASS = "bg-zinc-400 dark:bg-zinc-500";
+export const LOOSE_TASK_BAR_CLASS = "bg-renovation-muted";
 
 function hashRoomId(roomId: string): number {
   let h = 0;
@@ -25,15 +27,43 @@ function hashRoomId(roomId: string): number {
   return Math.abs(h);
 }
 
-export function roomBarColorClass(roomId: ID | null): string {
+export function roomBarColorClass(
+  roomId: ID | null,
+  roomName?: string,
+  orderedRoomIds?: ID[]
+): string {
   if (!roomId) return LOOSE_TASK_BAR_CLASS;
-  return ROOM_BAR_COLORS[hashRoomId(roomId) % ROOM_BAR_COLORS.length]!;
+
+  const normalized = roomName?.trim().toLowerCase();
+  if (normalized && NAMED_ROOM_COLORS[normalized]) {
+    return NAMED_ROOM_COLORS[normalized]!;
+  }
+
+  if (orderedRoomIds && orderedRoomIds.length > 0) {
+    const idx = orderedRoomIds.indexOf(roomId);
+    const paletteIndex = idx >= 0 ? idx : hashRoomId(roomId);
+    return ROOM_COLOR_PALETTE[paletteIndex % ROOM_COLOR_PALETTE.length]!;
+  }
+
+  return ROOM_COLOR_PALETTE[hashRoomId(roomId) % ROOM_COLOR_PALETTE.length]!;
 }
 
-export function buildRoomColorMap(roomIds: ID[]): Map<ID, string> {
+export function buildRoomColorMap(
+  roomIds: ID[],
+  roomNameById?: Map<ID, string>
+): Map<ID, string> {
+  const ordered = [...roomIds].sort();
   const map = new Map<ID, string>();
-  for (const id of roomIds) {
-    map.set(id, roomBarColorClass(id));
+  for (const id of ordered) {
+    map.set(id, roomBarColorClass(id, roomNameById?.get(id), ordered));
   }
   return map;
+}
+
+/** Tekstkleur op gekleurde badges/balken */
+export function roomBarTextClass(colorClass: string): string {
+  if (colorClass === "bg-amber-300" || colorClass === "bg-yellow-500") {
+    return "text-amber-950";
+  }
+  return "text-white";
 }

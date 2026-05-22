@@ -31,22 +31,22 @@ export default function ProjectsPageClient() {
     return <ProjectsPageSkeleton />;
   }
 
-  const fieldLabelClass = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
+  const fieldLabelClass = "mb-1 block text-xs font-medium text-renovation-concrete";
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{t("projects.title")}</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projects.subtitle")}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("projects.title")}</h1>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("projects.subtitle")}</p>
         </div>
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium">{t("projects.addNew")}</div>
-            <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projects.addNewHint")}</div>
+            <div className="mt-1 text-xs text-renovation-concrete">{t("projects.addNewHint")}</div>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export default function ProjectsPageClient() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("projects.placeholderName")}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -116,7 +116,7 @@ export default function ProjectsPageClient() {
                   value={ownContribution}
                   onChange={(e) => setOwnContribution(e.target.value)}
                   inputMode="decimal"
-                  className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                  className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
                 />
               </div>
               <div>
@@ -128,7 +128,7 @@ export default function ProjectsPageClient() {
                   value={constructionDepotTotal}
                   onChange={(e) => setConstructionDepotTotal(e.target.value)}
                   inputMode="decimal"
-                  className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                  className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
                 />
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function ProjectsPageClient() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder={t("projects.placeholderAddress")}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -153,7 +153,7 @@ export default function ProjectsPageClient() {
                 type="date"
                 value={expectedKeyHandover}
                 onChange={(e) => setExpectedKeyHandover(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function ProjectsPageClient() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={t("projects.placeholderNotes")}
                 rows={2}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             {error ? (
@@ -181,7 +181,7 @@ export default function ProjectsPageClient() {
         <h2 className="mb-3 text-base font-semibold">{t("projects.listTitle")}</h2>
 
         {sortedProjects.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+          <div className="rounded-xl border border-dashed border-renovation-border bg-renovation-elevated p-6 text-sm text-renovation-concrete dark:border-renovation-border dark:bg-renovation-elevated">
             {t("projects.emptyList")}
           </div>
         ) : (
@@ -191,19 +191,19 @@ export default function ProjectsPageClient() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold">{project.name}</div>
-                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="mt-1 text-xs text-renovation-concrete">
                       {t("projects.budgetLabel")}: {formatCurrency(project.totalBudget)}
                       {project.expectedKeyHandover
                         ? ` • ${t("projects.keyLabel")}: ${formatDisplayDate(project.expectedKeyHandover)}`
                         : ""}
                     </div>
                     {project.address ? (
-                      <div className="mt-1 text-xs text-zinc-500 line-clamp-2">{project.address}</div>
+                      <div className="mt-1 text-xs text-renovation-concrete line-clamp-2">{project.address}</div>
                     ) : null}
                   </div>
                   <Link
                     href={`/dashboard/projects/${project.id}`}
-                    className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                    className="rounded-md bg-renovation-accent px-3 py-2 text-xs font-medium text-white hover:bg-renovation-steel"
                   >
                     {t("projects.openProject")}
                   </Link>

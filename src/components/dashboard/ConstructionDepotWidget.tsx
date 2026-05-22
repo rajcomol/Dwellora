@@ -21,7 +21,7 @@ export default function ConstructionDepotWidget() {
 
   return (
     <section>
-      <h2 className="text-sm font-semibold text-renovation-steel dark:text-zinc-200">
+      <h2 className="text-base font-semibold text-foreground">
         {t("constructionDepot.dashboardTitle")}
       </h2>
       <p className="mt-1 text-xs text-renovation-concrete">{t("constructionDepot.dashboardHint")}</p>
@@ -36,7 +36,7 @@ export default function ConstructionDepotWidget() {
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <div className="font-medium text-zinc-900 dark:text-zinc-50">{d.name}</div>
+                  <div className="font-medium text-foreground">{d.name}</div>
                   <div className="mt-0.5 text-xs text-renovation-concrete">
                     {projectNameById.get(d.projectId) ?? "—"}
                   </div>
@@ -48,7 +48,7 @@ export default function ConstructionDepotWidget() {
                   {t("constructionDepot.viewProject")}
                 </Link>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-renovation-muted">
                 <div
                   className={[
                     "h-full rounded-full transition-all",
@@ -57,7 +57,7 @@ export default function ConstructionDepotWidget() {
                   style={{ width: `${Math.min(100, pct)}%` }}
                 />
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-renovation-concrete">
                 <span>
                   {t("constructionDepot.spent")}: {formatCurrency(d.spentEstimated)}
                 </span>

@@ -33,9 +33,7 @@ export default function BottomNav() {
               href={href}
               className={[
                 "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium",
-                active
-                  ? "text-renovation-steel dark:text-renovation-accent"
-                  : "text-renovation-concrete",
+                active ? "font-medium text-renovation-steel" : "text-renovation-concrete",
               ].join(" ")}
               aria-current={active ? "page" : undefined}
             >

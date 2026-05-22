@@ -27,10 +27,8 @@ export default function BudgetBreakdownCard() {
   if (!breakdown || breakdown.totalBudget <= 0) {
     return (
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-        <h2 className="text-sm font-semibold text-renovation-steel dark:text-zinc-200">
-          {t("budget.breakdown")}
-        </h2>
-        <p className="mt-2 text-sm text-renovation-concrete">{t("budget.breakdownEmpty")}</p>
+        <h2 className="text-base font-semibold text-foreground">{t("budget.breakdown")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-renovation-concrete">{t("budget.breakdownEmpty")}</p>
       </section>
     );
   }
@@ -42,16 +40,32 @@ export default function BudgetBreakdownCard() {
 
   return (
     <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-      <h2 className="text-sm font-semibold text-renovation-steel dark:text-zinc-200">{t("budget.breakdown")}</h2>
-      <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+      <h2 className="text-base font-semibold text-foreground">{t("budget.breakdown")}</h2>
+      <div className="mt-4 flex h-3 gap-[2px] overflow-hidden rounded-full bg-white dark:bg-renovation-elevated">
         {ownPct > 0 ? (
-          <div className="h-full bg-emerald-500" style={{ width: `${ownPct}%` }} title={t("budget.ownMoney")} />
+          <div
+            className="h-full shrink-0 rounded-l-full bg-renovation-accent"
+            style={{ width: `${ownPct}%` }}
+            title={t("budget.ownMoney")}
+          />
         ) : null}
         {depotPct > 0 ? (
-          <div className="h-full bg-blue-500" style={{ width: `${depotPct}%` }} title={t("budget.depotTotal")} />
+          <div
+            className={[
+              "h-full shrink-0 bg-amber-300",
+              ownPct <= 0 ? "rounded-l-full" : "",
+              spentPct <= 0 ? "rounded-r-full" : "",
+            ].join(" ")}
+            style={{ width: `${depotPct}%` }}
+            title={t("budget.depotTotal")}
+          />
         ) : null}
         {spentPct > 0 ? (
-          <div className="h-full bg-red-500" style={{ width: `${spentPct}%` }} title={t("budget.spentDone")} />
+          <div
+            className="h-full shrink-0 rounded-r-full bg-red-500"
+            style={{ width: `${spentPct}%` }}
+            title={t("budget.spentDone")}
+          />
         ) : null}
       </div>
       <ul className="mt-4 space-y-2 text-sm">

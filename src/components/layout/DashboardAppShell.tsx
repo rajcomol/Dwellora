@@ -12,7 +12,7 @@ export default function DashboardAppShell({ children }: { children: ReactNode })
   const { t } = useI18n();
 
   return (
-    <div className="min-h-screen bg-renovation-surface text-zinc-900 dark:text-zinc-50">
+    <div className="min-h-screen bg-renovation-surface text-foreground">
       <TopBar />
       <TabNav />
       <div className="border-b border-renovation-border px-4 py-2 md:hidden dark:border-renovation-border">

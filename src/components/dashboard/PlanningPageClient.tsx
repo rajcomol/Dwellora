@@ -45,11 +45,11 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
   if (!project) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{t("planning.notFoundTitle")}</h1>
-        <p className="text-sm text-renovation-concrete">{t("planning.notFoundBody")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("planning.notFoundTitle")}</h1>
+        <p className="text-sm leading-relaxed text-renovation-concrete">{t("planning.notFoundBody")}</p>
         <Link
           href="/dashboard/projects"
-          className="inline-flex rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+          className="inline-flex rounded-lg bg-renovation-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
         >
           {t("planning.backToProjects")}
         </Link>
@@ -61,32 +61,32 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-renovation-steel dark:text-renovation-accent">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
             {t("planning.eyebrow")}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{project.name}</h1>
-          <p className="mt-1 text-sm text-renovation-concrete">{t("planning.intro")}</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{project.name}</h1>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("planning.intro")}</p>
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
             <span className="rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-1.5 font-medium tabular-nums dark:border-renovation-border dark:bg-renovation-elevated">
               {t("planning.timelineTotal")}{" "}
-              <strong className="text-zinc-900 dark:text-zinc-100">{totalDays}</strong> {t("planning.days")}
+              <strong className="text-foreground">{totalDays}</strong> {t("planning.days")}
             </span>
             <span className="rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-1.5 tabular-nums text-renovation-concrete dark:border-renovation-border dark:bg-renovation-elevated">
               {t("planning.openRemaining")}{" "}
-              <strong className="text-zinc-900 dark:text-zinc-100">{remainingDays}</strong> {t("planning.openRemainingDays")}
+              <strong className="text-foreground">{remainingDays}</strong> {t("planning.openRemainingDays")}
             </span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/dashboard/projects/${projectId}`}
-            className="inline-flex rounded-xl border border-renovation-border px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
+            className="inline-flex rounded-lg border border-renovation-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-renovation-muted"
           >
             {t("planning.projectOverview")}
           </Link>
           <Link
             href="/dashboard/projects"
-            className="inline-flex rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+            className="inline-flex rounded-lg bg-renovation-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
           >
             {t("planning.allProjects")}
           </Link>
@@ -124,7 +124,7 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-2">
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">{task.title}</span>
+                      <span className="font-medium text-foreground">{task.title}</span>
                       <span className="text-xs text-renovation-concrete">
                         {task.roomIds
                           .map((rid) => roomNameById.get(rid))
@@ -135,7 +135,7 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-renovation-concrete">
-                      <span className="tabular-nums font-medium text-renovation-steel dark:text-zinc-300">{dayLabel}</span>
+                      <span className="tabular-nums font-medium text-renovation-steel">{dayLabel}</span>
                       {row.estimatedStart && row.estimatedEnd ? (
                         <span>
                           {t("planning.estRange", {
@@ -165,7 +165,7 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                         id={`status-${task.id}`}
                         value={task.status}
                         onChange={(e) => updateTask({ id: task.id, status: e.target.value as TaskStatus })}
-                        className="min-w-[7rem] rounded-lg border border-renovation-border bg-white px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-zinc-950"
+                        className="min-w-[7rem] rounded-lg border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
                       >
                         <option value="todo">{t("task.status.todo")}</option>
                         <option value="doing">{t("task.status.doing")}</option>

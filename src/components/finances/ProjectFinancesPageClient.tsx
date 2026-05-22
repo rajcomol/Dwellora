@@ -16,7 +16,7 @@ import type { TranslateFn } from "@/i18n/create-translator";
 import type { ZodError } from "zod";
 import { supabase } from "@/lib/supabase/client";
 
-const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
+const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-renovation-concrete";
 
 function expenseFormZodMessage(t: TranslateFn, err: ZodError): string {
   const path = err.issues[0]?.path[0];
@@ -55,20 +55,20 @@ function ExpenseDocumentsBlock({
   }
 
   return (
-    <div className="mt-3 rounded-md border border-zinc-100 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-      <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("finances.attachmentsHeading")}</div>
+    <div className="mt-3 rounded-md border border-renovation-border bg-renovation-surface/80 p-3 dark:border-renovation-border dark:bg-renovation-muted/40">
+      <div className="text-xs font-medium text-foreground">{t("finances.attachmentsHeading")}</div>
       {documents.length === 0 ? (
-        <p className="mt-1 text-xs text-zinc-500">{t("finances.noAttachmentsYet")}</p>
+        <p className="mt-1 text-xs text-renovation-concrete">{t("finances.noAttachmentsYet")}</p>
       ) : (
         <ul className="mt-2 space-y-1.5 text-xs">
           {documents.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-2">
               <button
                 type="button"
-                className="min-w-0 truncate text-left text-zinc-800 underline dark:text-zinc-200"
+                className="min-w-0 truncate text-left text-foreground underline"
                 onClick={() => void openFile(d.filePath)}
               >
-                <span className="text-zinc-500">[{docTypeLabel(t, d.documentType)}]</span> {d.fileName}
+                <span className="text-renovation-concrete">[{docTypeLabel(t, d.documentType)}]</span> {d.fileName}
               </button>
               <button
                 type="button"
@@ -154,10 +154,10 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold">{t("projectDetail.notFoundTitle")}</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.notFoundBody")}</p>
+        <p className="text-sm text-renovation-concrete">{t("projectDetail.notFoundBody")}</p>
         <Link
           href="/dashboard/projects"
-          className="inline-flex rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="inline-flex rounded-md bg-renovation-accent px-4 py-2 text-sm font-medium text-white hover:bg-renovation-steel"
         >
           {t("projectDetail.backToProjects")}
         </Link>
@@ -168,9 +168,9 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
   return (
     <div className="min-w-0 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{t("finances.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("finances.subtitle")}</p>
-        <p className="mt-2 text-sm tabular-nums text-zinc-800 dark:text-zinc-200">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("finances.title")}</h1>
+        <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("finances.subtitle")}</p>
+        <p className="mt-2 text-sm tabular-nums text-foreground">
           {t("finances.totalRecorded")}: {formatCurrency(totalAmount)} · {t("finances.expenseCount", { count: expenses.length })} ·{" "}
           {t("finances.documentCount", { count: docCount })}
         </p>
@@ -212,7 +212,7 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
               id={`fin-new-title-${projectId}`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -224,7 +224,7 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               inputMode="decimal"
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -236,7 +236,7 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
               type="date"
               value={spentOn}
               onChange={(e) => setSpentOn(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div className="sm:col-span-2">
@@ -247,7 +247,7 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
               id={`fin-new-task-${projectId}`}
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <option value="">{t("finances.noTask")}</option>
               {projectTasks.map((tk) => {
@@ -270,7 +270,7 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <Button type="submit" className="w-fit sm:col-span-2">
@@ -281,9 +281,9 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
       </Card>
 
       <section>
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("finances.expenseListTitle")}</h2>
+        <h2 className="text-base font-semibold text-foreground">{t("finances.expenseListTitle")}</h2>
         {sortedExpenses.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">{t("projectDetail.expenseEmpty")}</p>
+          <p className="mt-2 text-sm text-renovation-concrete">{t("projectDetail.expenseEmpty")}</p>
         ) : (
           <ul className="mt-4 space-y-4">
             {sortedExpenses.map((ex) => (
@@ -356,14 +356,14 @@ function ExpenseRow({
 
   if (editing) {
     return (
-      <li className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <li className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className={FORM_FIELD_LABEL_CLASS}>{t("projectDetail.labelExpenseTitle")}</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -372,7 +372,7 @@ function ExpenseRow({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               inputMode="decimal"
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -381,7 +381,7 @@ function ExpenseRow({
               type="date"
               value={spentOn}
               onChange={(e) => setSpentOn(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div className="sm:col-span-2">
@@ -389,7 +389,7 @@ function ExpenseRow({
             <select
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <option value="">{t("finances.noTask")}</option>
               {projectTasks.map((tk) => {
@@ -409,7 +409,7 @@ function ExpenseRow({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
         </div>
@@ -461,21 +461,21 @@ function ExpenseRow({
   }
 
   return (
-    <li className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <li className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-zinc-900 dark:text-zinc-50">{expense.title}</div>
-          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="font-medium text-foreground">{expense.title}</div>
+          <div className="mt-1 text-xs text-renovation-concrete">
             {formatCurrency(expense.amount)}
             {expense.spentOn ? ` • ${formatDisplayDate(expense.spentOn)}` : ""}
             {taskSummary ? ` • ${t("finances.linkedTask")}: ${taskSummary}` : ""}
           </div>
-          {expense.notes ? <div className="mt-1 text-xs text-zinc-500">{expense.notes}</div> : null}
+          {expense.notes ? <div className="mt-1 text-xs text-renovation-concrete">{expense.notes}</div> : null}
         </div>
         <div className="flex shrink-0 gap-2">
           <button
             type="button"
-            className="text-xs font-medium text-zinc-700 underline dark:text-zinc-300"
+            className="text-xs font-medium text-foreground underline"
             onClick={() => {
               setTitle(expense.title);
               setAmount(String(expense.amount));
@@ -510,7 +510,7 @@ function ExpenseRow({
           <select
             value={uploadType}
             onChange={(e) => setUploadType(e.target.value as ExpenseDocumentType)}
-            className="w-full max-w-xs rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full max-w-xs rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-xs dark:border-renovation-border dark:bg-renovation-elevated"
           >
             <option value="receipt">{t("finances.documentTypeReceipt")}</option>
             <option value="invoice">{t("finances.documentTypeInvoice")}</option>
@@ -541,7 +541,7 @@ function ExpenseRow({
         </div>
       </div>
       {uploadErr ? <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadErr}</p> : null}
-      <p className="mt-1 text-[11px] text-zinc-500">{t("finances.uploadHint")}</p>
+      <p className="mt-1 text-[11px] text-renovation-concrete">{t("finances.uploadHint")}</p>
     </li>
   );
 }

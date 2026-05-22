@@ -125,11 +125,11 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
 
   return (
     <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("projectDetail.collaborationTitle")}</h2>
+      <h2 className="text-base font-semibold text-foreground">{t("projectDetail.collaborationTitle")}</h2>
       <p className="mt-1 text-xs text-renovation-concrete">{t("projectDetail.collaborationHint")}</p>
 
       {!state.isOwner ? (
-        <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="mt-3 text-sm text-foreground">
           {state.collaboratorUserId
             ? t("projectDetail.collaborationYouAreCollaborator")
             : t("projectDetail.collaborationOwnerOnly")}
@@ -137,18 +137,18 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
       ) : null}
 
       {state.isOwner && state.collaboratorUserId ? (
-        <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">{t("projectDetail.collaborationHasCollaborator")}</p>
+        <p className="mt-3 text-sm text-foreground">{t("projectDetail.collaborationHasCollaborator")}</p>
       ) : null}
 
       {state.isOwner && !state.collaboratorUserId && state.pendingInvite ? (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm text-foreground">
             {t("projectDetail.collaborationPending", {
               email: state.pendingInvite.email,
               expires: formatDisplayDate(state.pendingInvite.expiresAt),
             })}
           </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("projectDetail.collaborationPendingFooter")}</p>
+          <p className="text-xs text-renovation-concrete">{t("projectDetail.collaborationPendingFooter")}</p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" disabled={busy} onClick={() => void cancelInvite()}>
               {t("projectDetail.collaborationCancelInvite")}
@@ -162,7 +162,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
           <div>
             <label
               htmlFor="collab-email"
-              className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              className="mb-1 block text-xs font-medium text-renovation-concrete"
             >
               {t("projectDetail.collaborationInviteEmail")}
             </label>
@@ -173,7 +173,7 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t("login.placeholderEmail")}
-              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              className="w-full rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
@@ -190,9 +190,9 @@ export default function ProjectCollaborationSection({ projectId }: { projectId: 
           ) : (
             <p className="text-sm text-amber-800 dark:text-amber-200/90">{t("projectDetail.collaborationEmailNotSent")}</p>
           )}
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
-          <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{t("projectDetail.collaborationInviteLink")}</p>
-          <p className="mt-1 break-all font-mono text-xs text-zinc-800 dark:text-zinc-200">{inviteUrl}</p>
+          <div className="rounded-lg border border-renovation-border bg-renovation-surface p-3 dark:border-renovation-border dark:bg-renovation-muted">
+          <p className="text-xs font-medium text-renovation-concrete">{t("projectDetail.collaborationInviteLink")}</p>
+          <p className="mt-1 break-all font-mono text-xs text-foreground">{inviteUrl}</p>
           <button
             type="button"
             className="mt-2 text-sm text-cyan-700 underline hover:text-cyan-600 dark:text-cyan-400"

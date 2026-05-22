@@ -76,15 +76,15 @@ export default function ReportsPageClient() {
     <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{t("reports.title")}</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.subtitle")}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("reports.title")}</h1>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("reports.subtitle")}</p>
         </div>
         <div className="sm:w-64">
-          <label className="mb-1 block text-xs font-medium text-zinc-500">{t("reports.scope")}</label>
+          <label className="mb-1 block text-xs text-renovation-concrete">{t("reports.scope")}</label>
           <select
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           >
             <option value="all">{t("reports.allProjects")}</option>
             {projects.map((p) => (
@@ -98,17 +98,17 @@ export default function ReportsPageClient() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t("reports.totalBudgetScope")}</div>
+          <div className="text-xs text-renovation-concrete">{t("reports.totalBudgetScope")}</div>
           <div className="mt-2 text-lg font-semibold tabular-nums">{formatCurrency(totals.budget)}</div>
         </Card>
         <Card>
-          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t("reports.sumEstimates")}</div>
+          <div className="text-xs text-renovation-concrete">{t("reports.sumEstimates")}</div>
           <div className="mt-2 text-lg font-semibold tabular-nums">{formatCurrency(totals.est)}</div>
         </Card>
         <Card>
-          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t("reports.sumActuals")}</div>
+          <div className="text-xs text-renovation-concrete">{t("reports.sumActuals")}</div>
           <div className="mt-2 text-lg font-semibold tabular-nums">{formatCurrency(totals.act)}</div>
-          <div className="mt-1 text-xs text-zinc-500">
+          <div className="mt-1 text-xs text-renovation-concrete">
             {t("reports.sumActualsBreakdown", {
               tasks: formatCurrency(totals.actTasks),
               loose: formatCurrency(totals.actLoose),
@@ -116,7 +116,7 @@ export default function ReportsPageClient() {
           </div>
         </Card>
         <Card>
-          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t("reports.budgetMinusEstimates")}</div>
+          <div className="text-xs text-renovation-concrete">{t("reports.budgetMinusEstimates")}</div>
           <div className="mt-2 text-lg font-semibold tabular-nums">{formatCurrency(totals.gap)}</div>
         </Card>
       </div>
@@ -134,29 +134,29 @@ export default function ReportsPageClient() {
             return (
               <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs text-zinc-500">{t("reports.address")}</dt>
+                  <dt className="text-xs text-renovation-concrete">{t("reports.address")}</dt>
                   <dd>{p.address || t("common.emDash")}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">{t("reports.keyHandover")}</dt>
+                  <dt className="text-xs text-renovation-concrete">{t("reports.keyHandover")}</dt>
                   <dd>
                     {p.expectedKeyHandover ? formatDisplayDate(p.expectedKeyHandover) : t("common.emDash")}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">{t("reports.budgetVsEstimated")}</dt>
+                  <dt className="text-xs text-renovation-concrete">{t("reports.budgetVsEstimated")}</dt>
                   <dd className="tabular-nums">{formatCurrency(s.budgetVsEstimated)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">{t("reports.estimatedVsActual")}</dt>
+                  <dt className="text-xs text-renovation-concrete">{t("reports.estimatedVsActual")}</dt>
                   <dd className="tabular-nums">{formatCurrency(s.estimatedVsActual)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">{t("reports.actualFromTasks")}</dt>
+                  <dt className="text-xs text-renovation-concrete">{t("reports.actualFromTasks")}</dt>
                   <dd className="tabular-nums">{formatCurrency(s.totalActualFromTasks)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-zinc-500">{t("reports.looseExpensesTotal")}</dt>
+                  <dt className="text-xs text-renovation-concrete">{t("reports.looseExpensesTotal")}</dt>
                   <dd className="tabular-nums">{formatCurrency(s.totalLooseExpenses)}</dd>
                 </div>
               </dl>
@@ -168,14 +168,14 @@ export default function ReportsPageClient() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <h2 className="text-base font-semibold">{t("reports.looseExpensesTitle")}</h2>
-          <p className="mt-1 text-xs text-zinc-500">{t("reports.looseExpensesHint")}</p>
+          <p className="mt-1 text-xs text-renovation-concrete">{t("reports.looseExpensesHint")}</p>
           {sortedExpenses.length === 0 ? (
-            <p className="mt-3 text-sm text-zinc-500">{t("reports.noLooseExpensesScope")}</p>
+            <p className="mt-3 text-sm text-renovation-concrete">{t("reports.noLooseExpensesScope")}</p>
           ) : (
             <div className="mt-4 min-w-0 overflow-x-auto">
               <table className="w-full min-w-[28rem] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
+                  <tr className="border-b border-renovation-border text-xs text-renovation-concrete dark:border-renovation-border">
                     {projectFilter === "all" ? (
                       <th className="pb-2 pr-2 font-medium">{t("reports.thProject")}</th>
                     ) : null}
@@ -187,7 +187,7 @@ export default function ReportsPageClient() {
                 </thead>
                 <tbody>
                   {sortedExpenses.map((row) => (
-                    <tr key={row.id} className="border-b border-zinc-100 dark:border-zinc-800/80">
+                    <tr key={row.id} className="border-b border-renovation-border dark:border-renovation-border/80">
                       {projectFilter === "all" ? (
                         <td className="py-2 pr-2">{projectNameById.get(row.projectId) ?? row.projectId}</td>
                       ) : null}
@@ -196,7 +196,7 @@ export default function ReportsPageClient() {
                         {row.spentOn ? formatDisplayDate(row.spentOn) : t("common.emDash")}
                       </td>
                       <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.amount)}</td>
-                      <td className="max-w-[12rem] truncate py-2 text-zinc-600 dark:text-zinc-400" title={row.notes}>
+                      <td className="max-w-[12rem] truncate py-2 text-renovation-concrete" title={row.notes}>
                         {row.notes || t("common.emDash")}
                       </td>
                     </tr>
@@ -209,14 +209,14 @@ export default function ReportsPageClient() {
 
         <Card>
           <h2 className="text-base font-semibold">{t("reports.byRoom")}</h2>
-          <p className="mt-1 text-xs text-zinc-500">{t("reports.byRoomHint")}</p>
+          <p className="mt-1 text-xs text-renovation-concrete">{t("reports.byRoomHint")}</p>
           {byRoom.length === 0 ? (
-            <p className="mt-3 text-sm text-zinc-500">{t("reports.noRoomsScope")}</p>
+            <p className="mt-3 text-sm text-renovation-concrete">{t("reports.noRoomsScope")}</p>
           ) : (
             <div className="mt-4 min-w-0 overflow-x-auto">
               <table className="w-full min-w-[22rem] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
+                  <tr className="border-b border-renovation-border text-xs text-renovation-concrete dark:border-renovation-border">
                     <th className="pb-2 pr-2 font-medium">{t("reports.thRoom")}</th>
                     <th className="pb-2 pr-2 font-medium">{t("reports.thTasks")}</th>
                     <th className="pb-2 pr-2 font-medium">{t("reports.thEstimated")}</th>
@@ -225,7 +225,7 @@ export default function ReportsPageClient() {
                 </thead>
                 <tbody>
                   {byRoom.map((row) => (
-                    <tr key={row.roomId} className="border-b border-zinc-100 dark:border-zinc-800/80">
+                    <tr key={row.roomId} className="border-b border-renovation-border dark:border-renovation-border/80">
                       <td className="py-2 pr-2">{row.roomName}</td>
                       <td className="py-2 pr-2 tabular-nums">{row.taskCount}</td>
                       <td className="py-2 pr-2 tabular-nums">{formatCurrency(row.estimated)}</td>

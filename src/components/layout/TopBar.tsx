@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import BrandLogo from "@/components/brand/BrandLogo";
 import AuthHeader from "@/components/dashboard/AuthHeader";
 import HelpMenu from "@/components/help/HelpMenu";
 import ProjectSwitcher from "@/components/layout/ProjectSwitcher";
@@ -25,15 +25,18 @@ export default function TopBar() {
           href="/dashboard"
           aria-label={t("brand.name")}
           data-tour="brand-home"
-          className="flex shrink-0 items-center"
+          className="flex shrink-0 items-center gap-2"
         >
-          <BrandLogo size="topbar" />
+          <Image src="/logo.svg" alt="RenoTasker" width={28} height={28} priority />
+          <span className="hidden text-[15px] font-semibold tracking-tight text-foreground sm:block">
+            RenoTasker
+          </span>
         </Link>
         <ProjectSwitcher />
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-center md:hidden">
-        <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+        <span className="truncate text-sm font-semibold text-foreground">
           {selectedProject?.name ?? t("layout.topBar.chooseProject")}
         </span>
       </div>
@@ -42,7 +45,7 @@ export default function TopBar() {
         <button
           type="button"
           title={t("layout.topBar.notificationsSoon")}
-          className="hidden rounded-lg p-2 text-renovation-concrete hover:bg-renovation-muted sm:inline-flex dark:hover:bg-zinc-900"
+          className="hidden rounded-lg p-2 text-renovation-concrete hover:bg-renovation-muted sm:inline-flex dark:hover:bg-renovation-muted"
           aria-label={t("layout.topBar.notificationsSoon")}
         >
           <span aria-hidden className="text-lg leading-none">

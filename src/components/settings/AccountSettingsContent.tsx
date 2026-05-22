@@ -42,19 +42,19 @@ export default function AccountSettingsContent({ forgotReturnPath = "/dashboard/
   return (
     <div className="space-y-8">
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-renovation-steel dark:text-renovation-accent">
+        <h2 className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
           {t("settings.sectionAppearance")}
         </h2>
         {settingsCard(
           <div className="space-y-3">
-            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{t("settings.themeLabel")}</div>
+            <div className="text-base font-semibold text-foreground">{t("settings.themeLabel")}</div>
             <ThemePreferenceControl />
           </div>,
         )}
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-renovation-steel dark:text-renovation-accent">
+        <h2 className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
           {t("settings.sectionAccount")}
         </h2>
         {settingsCard(
@@ -63,7 +63,7 @@ export default function AccountSettingsContent({ forgotReturnPath = "/dashboard/
               <div className="text-xs font-medium uppercase tracking-wide text-renovation-concrete">
                 {t("settings.accountEmailLabel")}
               </div>
-              <div className="mt-1 font-medium text-zinc-900 dark:text-zinc-100">{user?.email ?? "—"}</div>
+              <div className="mt-1 font-medium text-foreground">{user?.email ?? "—"}</div>
             </div>
             <Link
               href="/privacy"
@@ -76,23 +76,23 @@ export default function AccountSettingsContent({ forgotReturnPath = "/dashboard/
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-renovation-steel dark:text-renovation-accent">
+        <h2 className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
           {t("settings.sectionSecurity")}
         </h2>
         {settingsCard(
           <div className="space-y-6">
             <div>
-              <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-50">{t("settings.passwordChangeTitle")}</h3>
+              <h3 className="text-base font-semibold text-foreground">{t("settings.passwordChangeTitle")}</h3>
               <div className="mt-4">
                 <SettingsChangePasswordForm />
               </div>
             </div>
             <div className="border-t border-renovation-border pt-6 dark:border-renovation-border">
-              <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-50">{t("settings.resetEmailTitle")}</h3>
+              <h3 className="text-base font-semibold text-foreground">{t("settings.resetEmailTitle")}</h3>
               <p className="mt-1 text-sm text-renovation-concrete">{t("settings.resetEmailHint")}</p>
               <Link
                 href={forgotHref}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-renovation-border px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-zinc-900"
+                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-renovation-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-renovation-muted"
               >
                 {t("settings.resetEmailButton")}
               </Link>
@@ -102,19 +102,19 @@ export default function AccountSettingsContent({ forgotReturnPath = "/dashboard/
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-renovation-steel dark:text-renovation-accent">
+        <h2 className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
           {t("settings.sectionLanguage")}
         </h2>
         {settingsCard(
           <div className="space-y-1 text-sm">
-            <div className="font-medium text-zinc-900 dark:text-zinc-50">{t("settings.languageCurrent")}</div>
+            <div className="text-base font-semibold text-foreground">{t("settings.languageCurrent")}</div>
             <p className="text-renovation-concrete">{t("settings.languageHint")}</p>
           </div>,
         )}
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-renovation-steel dark:text-renovation-accent">
+        <h2 className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
           {t("settings.sectionData")}
         </h2>
         {settingsCard(
@@ -126,8 +126,8 @@ export default function AccountSettingsContent({ forgotReturnPath = "/dashboard/
             >
               {t("settings.dataPrivacyCta")}
             </Link>
-            <div className="rounded-lg border border-dashed border-renovation-border bg-renovation-muted/40 p-4 dark:border-renovation-border dark:bg-zinc-900/40">
-              <div className="font-medium text-zinc-900 dark:text-zinc-100">{t("settings.dataComingTitle")}</div>
+            <div className="rounded-lg border border-dashed border-renovation-border bg-renovation-muted/40 p-4 dark:border-renovation-border dark:bg-renovation-muted/40">
+              <div className="font-medium text-foreground">{t("settings.dataComingTitle")}</div>
               <p className="mt-1 text-renovation-concrete">{t("settings.dataComingBody")}</p>
             </div>
           </div>,

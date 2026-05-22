@@ -49,8 +49,8 @@ export function tabNavLinkClass(active: boolean) {
   return [
     "shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors",
     active
-      ? "bg-renovation-accent/15 text-renovation-steel dark:bg-renovation-accent/20 dark:text-renovation-accent"
-      : "text-zinc-600 hover:bg-renovation-muted hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+      ? "bg-renovation-surface font-medium text-renovation-steel"
+      : "text-renovation-concrete hover:bg-renovation-muted hover:text-foreground",
   ].join(" ");
 }
 

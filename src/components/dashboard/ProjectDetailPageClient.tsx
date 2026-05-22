@@ -40,7 +40,7 @@ import { ProjectDetailPageSkeleton } from "@/components/ui/Skeleton";
 import { supabase } from "@/lib/supabase/client";
 import type { ZodError } from "zod";
 
-const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400";
+const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-renovation-concrete";
 
 function taskFormZodMessage(t: TranslateFn, err: ZodError): string {
   const path = err.issues[0]?.path[0];
@@ -78,7 +78,7 @@ function RoomIdsMultiSelect({
         {rooms.map((r) => (
           <label
             key={r.id}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-1 text-xs dark:border-zinc-800"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-renovation-border px-2 py-1 text-xs dark:border-renovation-border"
           >
             <input
               id={`${idPrefix}-room-${r.id}`}
@@ -97,7 +97,7 @@ function RoomIdsMultiSelect({
 function statusBadge(status: TaskStatus) {
   switch (status) {
     case "todo":
-      return "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200";
+      return "bg-renovation-surface text-foreground dark:bg-renovation-muted dark:text-foreground";
     case "doing":
       return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
     case "done":
@@ -231,17 +231,17 @@ function TaskEditor({
   }
 
   return (
-    <li className="rounded-md border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <li className="rounded-md border border-renovation-border bg-renovation-elevated p-3 dark:border-renovation-border dark:bg-renovation-elevated">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{task.title}</div>
-          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="mt-1 text-xs text-renovation-concrete">
             {linkedRoomNames} •{" "}
             {formatEstimatedCostDisplay(task.estimatedCost, formatCost, t("projectDetail.noEstimate"))}{" "}
             {t("projectDetail.estShort")} • {formatCost(task.actualCost)}{" "}
             {t("projectDetail.actualShort")} • {task.durationDays}d
           </div>
-          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="mt-1 text-xs text-renovation-concrete">
             {t(`renovationPhase.${task.renovationPhase}`)}
             {" • "}
             {t(`task.priority.${task.priority}`)}
@@ -271,7 +271,7 @@ function TaskEditor({
                 return next;
               })
             }
-            className="text-xs font-medium text-zinc-700 underline dark:text-zinc-300"
+            className="text-xs font-medium text-foreground underline"
           >
             {open ? t("common.close") : t("common.edit")}
           </button>
@@ -279,7 +279,7 @@ function TaskEditor({
       </div>
 
       {open ? (
-        <div className="mt-3 space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+        <div className="mt-3 space-y-3 border-t border-renovation-border pt-3 dark:border-renovation-border">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor={`task-edit-${task.id}-title`} className={FORM_FIELD_LABEL_CLASS}>
@@ -290,7 +290,7 @@ function TaskEditor({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t("projectDetail.taskTitlePlaceholder")}
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -301,7 +301,7 @@ function TaskEditor({
                 id={`task-edit-${task.id}-status`}
                 value={status}
                 onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <option value="todo">{t("task.status.todo")}</option>
                 <option value="doing">{t("task.status.doing")}</option>
@@ -317,7 +317,7 @@ function TaskEditor({
                 value={estimatedCost}
                 onChange={(e) => setEstimatedCost(e.target.value)}
                 inputMode="decimal"
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -329,7 +329,7 @@ function TaskEditor({
                 value={actualCost}
                 onChange={(e) => setActualCost(e.target.value)}
                 inputMode="decimal"
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -341,7 +341,7 @@ function TaskEditor({
                 value={durationDays}
                 onChange={(e) => setDurationDays(e.target.value)}
                 inputMode="numeric"
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -353,7 +353,7 @@ function TaskEditor({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
             <div>
@@ -364,7 +364,7 @@ function TaskEditor({
                 id={`task-edit-${task.id}-pri`}
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <option value="low">{t("task.priority.low")}</option>
                 <option value="medium">{t("task.priority.medium")}</option>
@@ -379,7 +379,7 @@ function TaskEditor({
                 id={`task-edit-${task.id}-phase`}
                 value={renovationPhase}
                 onChange={(e) => setRenovationPhase(e.target.value as RenovationPhase)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 {RENOVATION_PHASE_ORDER.map((ph) => (
                   <option key={ph} value={ph}>
@@ -396,7 +396,7 @@ function TaskEditor({
                 id={`task-edit-${task.id}-assign`}
                 value={assignedRosterId}
                 onChange={(e) => setAssignedRosterId(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <option value="">{t("projectDetail.assigneeNone")}</option>
                 {rosterOptions.map((r) => (
@@ -421,7 +421,7 @@ function TaskEditor({
               id={`task-edit-${task.id}-depot`}
               value={constructionDepotId}
               onChange={(e) => setConstructionDepotId(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <option value="">{t("constructionDepot.taskSelectNone")}</option>
               {depotOptions.map((d) => (
@@ -441,7 +441,7 @@ function TaskEditor({
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t("projectDetail.descriptionOptional")}
               rows={2}
-              className="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -510,13 +510,13 @@ function TaskEditor({
             </p>
           ) : null}
 
-          <div className="rounded-md border border-zinc-100 p-2 dark:border-zinc-800">
-            <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("projectDetail.dependsOn")}</div>
+          <div className="rounded-md border border-renovation-border p-2 dark:border-renovation-border">
+            <div className="text-xs font-medium text-foreground">{t("projectDetail.dependsOn")}</div>
             <div className="mt-2 flex flex-wrap gap-2">
               <select
                 value={depPick}
                 onChange={(e) => setDepPick(e.target.value)}
-                className="max-w-full flex-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-800 dark:bg-zinc-950"
+                className="max-w-full flex-1 rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1 text-xs dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <option value="">{t("projectDetail.selectPredecessor")}</option>
                 {projectTaskOptions
@@ -552,12 +552,12 @@ function TaskEditor({
                   </li>
                 );
               })}
-              {deps.length === 0 ? <li className="text-zinc-500">{t("projectDetail.noDependencies")}</li> : null}
+              {deps.length === 0 ? <li className="text-renovation-concrete">{t("projectDetail.noDependencies")}</li> : null}
             </ul>
           </div>
 
-          <div className="rounded-md border border-zinc-100 p-2 dark:border-zinc-800">
-            <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("projectDetail.attachments")}</div>
+          <div className="rounded-md border border-renovation-border p-2 dark:border-renovation-border">
+            <div className="text-xs font-medium text-foreground">{t("projectDetail.attachments")}</div>
             <input
               type="file"
               className="mt-2 block w-full text-xs"
@@ -579,7 +579,7 @@ function TaskEditor({
                 <li key={a.id} className="flex items-center justify-between gap-2">
                   <button
                     type="button"
-                    className="truncate text-left text-zinc-800 underline dark:text-zinc-200"
+                    className="truncate text-left text-foreground underline"
                     onClick={async () => {
                       const url = await signedUrl(a.filePath);
                       if (url) window.open(url, "_blank", "noopener,noreferrer");
@@ -592,18 +592,18 @@ function TaskEditor({
                   </button>
                 </li>
               ))}
-              {attachments.length === 0 ? <li className="text-zinc-500">{t("projectDetail.noFilesYet")}</li> : null}
+              {attachments.length === 0 ? <li className="text-renovation-concrete">{t("projectDetail.noFilesYet")}</li> : null}
             </ul>
           </div>
 
           {linkedExpenses.length > 0 ? (
-            <div className="rounded-md border border-zinc-100 p-2 dark:border-zinc-800">
-              <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            <div className="rounded-md border border-renovation-border p-2 dark:border-renovation-border">
+              <div className="text-xs font-medium text-foreground">
                 {t("projectDetail.linkedExpensesTitle")}
               </div>
               <ul className="mt-2 space-y-1 text-xs">
                 {linkedExpenses.map((ex) => (
-                  <li key={ex.id} className="flex justify-between gap-2 text-zinc-700 dark:text-zinc-300">
+                  <li key={ex.id} className="flex justify-between gap-2 text-foreground">
                     <span className="min-w-0 truncate">{ex.title}</span>
                     <span className="shrink-0 tabular-nums">{formatCost(ex.amount)}</span>
                   </li>
@@ -652,7 +652,7 @@ function ProjectEditSection({
   const [projectFormError, setProjectFormError] = useState<string | null>(null);
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
       <h2 className="text-base font-semibold">{t("projectDetail.projectDetailsTitle")}</h2>
       <form
         className="mt-4 grid gap-3 sm:grid-cols-2"
@@ -692,7 +692,7 @@ function ProjectEditSection({
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             placeholder={t("projectDetail.placeholderProjectName")}
-            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
         <div>
@@ -704,7 +704,7 @@ function ProjectEditSection({
             value={editOwn}
             onChange={(e) => setEditOwn(e.target.value)}
             inputMode="decimal"
-            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
         <div>
@@ -716,7 +716,7 @@ function ProjectEditSection({
             value={editDepot}
             onChange={(e) => setEditDepot(e.target.value)}
             inputMode="decimal"
-            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
         <div className="sm:col-span-2">
@@ -728,7 +728,7 @@ function ProjectEditSection({
             value={editAddress}
             onChange={(e) => setEditAddress(e.target.value)}
             placeholder={t("projectDetail.placeholderAddress")}
-            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
         <div>
@@ -740,7 +740,7 @@ function ProjectEditSection({
             type="date"
             value={editKeyDate}
             onChange={(e) => setEditKeyDate(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
         <div className="sm:col-span-2">
@@ -752,7 +752,7 @@ function ProjectEditSection({
             value={editNotes}
             onChange={(e) => setEditNotes(e.target.value)}
             rows={3}
-            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
         <Button type="submit" className="sm:col-span-2 w-fit">
@@ -781,19 +781,19 @@ function ProjectFinancesSummarySection({
 }) {
   const { t } = useI18n();
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-base font-semibold">{t("finances.summaryCardTitle")}</h2>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("finances.summaryCardBody")}</p>
-          <p className="mt-2 text-sm tabular-nums text-zinc-800 dark:text-zinc-200">
+          <p className="mt-1 text-xs text-renovation-concrete">{t("finances.summaryCardBody")}</p>
+          <p className="mt-2 text-sm tabular-nums text-foreground">
             {formatCost(expenseTotal)} · {t("finances.expenseCount", { count: expenseCount })} ·{" "}
             {t("finances.documentCount", { count: documentCount })}
           </p>
         </div>
         <Link
           href={`/dashboard/projects/${projectId}/finances`}
-          className="inline-flex shrink-0 rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+          className="inline-flex shrink-0 rounded-lg bg-renovation-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
         >
           {t("finances.goToFinances")}
         </Link>
@@ -905,7 +905,7 @@ function RoomCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold">{room.name}</div>
-          <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="mt-1 text-xs text-renovation-concrete">
             {tasks.length === 1 ? t("projectDetail.taskCountOne") : t("projectDetail.taskCountMany", { count: tasks.length })}
             {" • "}
             {t("projectDetail.roomEstimatedTotal", { amount: formatCost(roomEstimatedTotal) })}
@@ -922,7 +922,7 @@ function RoomCard({
 
       <div className="mt-4 space-y-3">
         {sortedTasks.length === 0 ? (
-          <div className="rounded-md border border-dashed border-zinc-200 bg-white p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+          <div className="rounded-md border border-dashed border-renovation-border bg-renovation-elevated p-3 text-xs text-renovation-concrete dark:border-renovation-border dark:bg-renovation-elevated">
             {t("projectDetail.noTasksInRoom")}
           </div>
         ) : (
@@ -1023,7 +1023,7 @@ function RoomCard({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t("projectDetail.taskTitlePlaceholder")}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel focus:ring-2 focus:ring-renovation-accent/40 dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -1034,7 +1034,7 @@ function RoomCard({
               id={`new-task-${room.id}-status`}
               value={status}
               onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel focus:ring-2 focus:ring-renovation-accent/40 dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <option value="todo">{t("task.status.todo")}</option>
               <option value="doing">{t("task.status.doing")}</option>
@@ -1053,7 +1053,7 @@ function RoomCard({
               value={estimatedCost}
               onChange={(e) => setEstimatedCost(e.target.value)}
               inputMode="decimal"
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -1065,7 +1065,7 @@ function RoomCard({
               value={actualCost}
               onChange={(e) => setActualCost(e.target.value)}
               inputMode="decimal"
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -1077,7 +1077,7 @@ function RoomCard({
               value={durationDays}
               onChange={(e) => setDurationDays(e.target.value)}
               inputMode="numeric"
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -1089,7 +1089,7 @@ function RoomCard({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
         </div>
@@ -1108,7 +1108,7 @@ function RoomCard({
             id={`new-task-${room.id}-depot`}
             value={newTaskDepotId}
             onChange={(e) => setNewTaskDepotId(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           >
             <option value="">{t("constructionDepot.taskSelectNone")}</option>
             {depotOptions.map((d) => (
@@ -1128,7 +1128,7 @@ function RoomCard({
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t("projectDetail.descriptionOptional")}
             rows={2}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
           />
         </div>
 
@@ -1141,7 +1141,7 @@ function RoomCard({
               id={`new-task-${room.id}-pri`}
               value={priority}
               onChange={(e) => setPriority(e.target.value as TaskPriority)}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <option value="low">{t("task.priority.low")}</option>
               <option value="medium">{t("task.priority.medium")}</option>
@@ -1156,7 +1156,7 @@ function RoomCard({
               id={`new-task-${room.id}-phase`}
               value={newTaskPhase}
               onChange={(e) => setNewTaskPhase(e.target.value as RenovationPhase)}
-              className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full min-w-[10rem] rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             >
               {RENOVATION_PHASE_ORDER.map((ph) => (
                 <option key={ph} value={ph}>
@@ -1173,7 +1173,7 @@ function RoomCard({
               id={`new-task-${room.id}-assign`}
               value={newTaskAssignee}
               onChange={(e) => setNewTaskAssignee(e.target.value)}
-              className="w-full min-w-[10rem] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full min-w-[10rem] rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <option value="">{t("projectDetail.assigneeNone")}</option>
               {rosterForProject.map((r) => (
@@ -1308,11 +1308,11 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   if (!project) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">{t("projectDetail.notFoundTitle")}</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.notFoundBody")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("projectDetail.notFoundTitle")}</h1>
+        <p className="text-sm text-renovation-concrete">{t("projectDetail.notFoundBody")}</p>
         <Link
           href="/dashboard/projects"
-          className="inline-flex rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="inline-flex rounded-md bg-renovation-accent px-4 py-2 text-sm font-medium text-white hover:bg-renovation-steel"
         >
           {t("projectDetail.backToProjects")}
         </Link>
@@ -1324,9 +1324,9 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     <div className="min-w-0 space-y-6" data-tour="project-overview">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">{project.name}</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.subtitle")}</p>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{project.name}</h1>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("projectDetail.subtitle")}</p>
+          <p className="mt-1 text-xs text-renovation-concrete">
             {t("projectDetail.budgetLine", { budget: formatCost(project.totalBudget) })}
             {" • "}
             {t("projectDetail.projectEstimatedTotal", { amount: formatCost(projectEstimatedTotal) })}
@@ -1340,13 +1340,13 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/dashboard/projects/${projectId}/planning`}
-            className="inline-flex rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+            className="inline-flex rounded-lg bg-renovation-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
           >
             {t("nav.planning")}
           </Link>
           <Link
             href="/dashboard/projects"
-            className="inline-flex rounded-xl border border-renovation-border px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-50 dark:hover:bg-renovation-muted"
+            className="inline-flex rounded-lg border border-renovation-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-renovation-muted"
           >
             {t("common.back")}
           </Link>
@@ -1371,7 +1371,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("projectDetail.timelineTitle")}</h2>
+            <h2 className="text-base font-semibold text-foreground">{t("projectDetail.timelineTitle")}</h2>
             <p className="mt-1 text-xs text-renovation-concrete">
               {timelineTasks.length === 0
                 ? t("projectDetail.timelineEmpty")
@@ -1382,14 +1382,14 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
           </div>
           <Link
             href={`/dashboard/projects/${projectId}/planning`}
-            className="inline-flex shrink-0 rounded-xl bg-renovation-steel px-4 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-renovation-accent dark:text-renovation-accent-foreground"
+            className="inline-flex shrink-0 rounded-lg bg-renovation-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
           >
             {t("projectDetail.openFullPlanning")}
           </Link>
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
         <h2 className="text-base font-semibold">{t("projectDetail.checklistTitle")}</h2>
         <form
           className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end"
@@ -1417,7 +1417,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
                 setCheckError(null);
               }}
               placeholder={t("projectDetail.checklistPlaceholder")}
-              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <Button type="submit">{t("projectDetail.checklistAdd")}</Button>
@@ -1425,13 +1425,13 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         {checkError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{checkError}</div> : null}
         <ul className="mt-4 space-y-2">
           {checklistForProject.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 rounded-md border border-zinc-100 px-3 py-2 dark:border-zinc-800">
+            <li key={item.id} className="flex items-center gap-3 rounded-md border border-renovation-border px-3 py-2 dark:border-renovation-border">
               <input
                 type="checkbox"
                 checked={item.isDone}
                 onChange={(e) => updateChecklistItem({ id: item.id, isDone: e.target.checked })}
               />
-              <span className={item.isDone ? "flex-1 text-sm line-through text-zinc-500" : "flex-1 text-sm"}>{item.title}</span>
+              <span className={item.isDone ? "flex-1 text-sm line-through text-renovation-concrete" : "flex-1 text-sm"}>{item.title}</span>
               <button
                 type="button"
                 className="text-xs text-red-600 dark:text-red-400"
@@ -1441,13 +1441,13 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
               </button>
             </li>
           ))}
-          {checklistForProject.length === 0 ? <li className="text-sm text-zinc-500">{t("projectDetail.checklistEmpty")}</li> : null}
+          {checklistForProject.length === 0 ? <li className="text-sm text-renovation-concrete">{t("projectDetail.checklistEmpty")}</li> : null}
         </ul>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
         <h2 className="text-base font-semibold">{t("projectDetail.rosterTitle")}</h2>
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("projectDetail.rosterHint")}</p>
+        <p className="mt-1 text-xs text-renovation-concrete">{t("projectDetail.rosterHint")}</p>
         <form
           className="mt-3 grid gap-3 sm:grid-cols-3"
           onSubmit={(e) => {
@@ -1488,7 +1488,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
                 setRosterError(null);
               }}
               placeholder={t("projectDetail.rosterNamePlaceholder")}
-              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -1503,7 +1503,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
                 setRosterError(null);
               }}
               placeholder={t("projectDetail.rosterEmailPlaceholder")}
-              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <div>
@@ -1518,7 +1518,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
                 setRosterError(null);
               }}
               placeholder={t("projectDetail.rosterRolePlaceholder")}
-              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
           <Button type="submit" className="sm:col-span-3 w-fit">
@@ -1528,10 +1528,10 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
         {rosterError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{rosterError}</div> : null}
         <ul className="mt-4 space-y-2 text-sm">
           {rosterForProject.map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-100 px-3 py-2 dark:border-zinc-800">
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-renovation-border px-3 py-2 dark:border-renovation-border">
               <div>
                 <div className="font-medium">{r.displayName}</div>
-                <div className="text-xs text-zinc-500">
+                <div className="text-xs text-renovation-concrete">
                   {r.email || t("common.emDash")} {r.roleHint ? `• ${r.roleHint}` : ""}
                 </div>
               </div>
@@ -1540,15 +1540,15 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
               </button>
             </li>
           ))}
-          {rosterForProject.length === 0 ? <li className="text-zinc-500">{t("projectDetail.rosterEmpty")}</li> : null}
+          {rosterForProject.length === 0 ? <li className="text-renovation-concrete">{t("projectDetail.rosterEmpty")}</li> : null}
         </ul>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold">{t("projectDetail.roomsTitle")}</h2>
-            <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            <div className="mt-1 text-xs text-renovation-concrete">
               {roomsForProject.length === 1
                 ? t("projectDetail.roomsCountOne")
                 : t("projectDetail.roomsCountMany", { count: roomsForProject.length })}
@@ -1579,7 +1579,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder={t("projectDetail.roomPlaceholder")}
-              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel focus:ring-2 focus:ring-renovation-accent/40 dark:border-renovation-border dark:bg-renovation-elevated"
             />
             {roomError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{roomError}</div> : null}
           </div>
@@ -1592,7 +1592,7 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
 
       <section>
         {roomsForProject.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+          <div className="rounded-xl border border-dashed border-renovation-border bg-renovation-elevated p-6 text-sm text-renovation-concrete dark:border-renovation-border dark:bg-renovation-elevated">
             {t("projectDetail.roomsEmpty")}
           </div>
         ) : (

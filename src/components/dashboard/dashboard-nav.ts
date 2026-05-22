@@ -21,7 +21,7 @@ export function dashboardNavLinkClass(active: boolean) {
   return [
     "block min-h-11 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
     active
-      ? "bg-renovation-accent/15 text-renovation-steel dark:bg-renovation-accent/20 dark:text-renovation-accent"
-      : "text-zinc-700 hover:bg-renovation-muted dark:text-zinc-300 dark:hover:bg-zinc-900",
+      ? "bg-renovation-surface font-medium text-renovation-steel"
+      : "text-renovation-concrete hover:bg-renovation-muted hover:text-foreground",
   ].join(" ");
 }

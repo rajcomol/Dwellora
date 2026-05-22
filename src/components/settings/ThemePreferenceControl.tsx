@@ -16,7 +16,7 @@ export default function ThemePreferenceControl() {
   const mounted = useIsClient();
 
   if (!mounted) {
-    return <div className="h-11 max-w-md animate-pulse rounded-xl bg-renovation-muted dark:bg-zinc-800" aria-hidden />;
+    return <div className="h-11 max-w-md animate-pulse rounded-xl bg-renovation-muted dark:bg-renovation-muted" aria-hidden />;
   }
 
   const current = theme ?? "system";
@@ -29,7 +29,7 @@ export default function ThemePreferenceControl() {
   return (
     <div className="space-y-2">
       <div
-        className="inline-flex flex-wrap gap-1 rounded-xl border border-renovation-border bg-renovation-muted/80 p-1 dark:border-renovation-border dark:bg-zinc-900/50"
+        className="inline-flex flex-wrap gap-1 rounded-xl border border-renovation-border bg-renovation-muted/80 p-1 dark:border-renovation-border dark:bg-renovation-muted/50"
         role="group"
         aria-label={t("settings.themeLabel")}
       >
@@ -43,8 +43,8 @@ export default function ThemePreferenceControl() {
               className={[
                 "min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-renovation-elevated text-zinc-900 shadow-sm dark:bg-renovation-elevated dark:text-zinc-50"
-                  : "text-renovation-concrete hover:text-zinc-900 dark:hover:text-zinc-200",
+                  ? "bg-renovation-elevated text-foreground shadow-sm dark:bg-renovation-elevated dark:text-foreground"
+                  : "text-renovation-concrete hover:text-foreground dark:hover:text-foreground",
               ].join(" ")}
             >
               {o.label}

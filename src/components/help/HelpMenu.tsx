@@ -248,7 +248,7 @@ export default function HelpMenu() {
         ref={triggerRef}
         type="button"
         data-tour="help-button"
-        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-renovation-border/70 bg-renovation-muted/35 px-3 text-xs font-medium text-renovation-concrete transition-colors hover:border-renovation-border hover:bg-renovation-muted/60 hover:text-renovation-steel dark:border-renovation-border/80 dark:bg-zinc-900/35 dark:text-zinc-400 dark:hover:border-renovation-border dark:hover:bg-zinc-900/55 dark:hover:text-zinc-100"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-renovation-border/70 bg-renovation-muted/35 px-3 text-xs font-medium text-renovation-concrete transition-colors hover:border-renovation-border hover:bg-renovation-muted/60 hover:text-renovation-steel dark:border-renovation-border/80 dark:bg-renovation-muted/35 dark:text-renovation-concrete dark:hover:border-renovation-border dark:hover:bg-renovation-muted/55 dark:hover:text-foreground"
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={open ? "help-menu-panel" : undefined}
@@ -284,13 +284,13 @@ export default function HelpMenu() {
                 }}
               >
                 <div className="flex items-start justify-between gap-2 border-b border-renovation-border px-4 py-3 dark:border-renovation-border">
-                  <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                  <h2 id={titleId} className="text-base font-semibold text-foreground">
                     {t("help.menuTitle")}
                   </h2>
                   <button
                     ref={closeBtnRef}
                     type="button"
-                    className="min-h-11 min-w-11 shrink-0 rounded-lg px-2 text-sm text-zinc-700 hover:bg-renovation-muted dark:text-zinc-200 dark:hover:bg-zinc-900"
+                    className="min-h-11 min-w-11 shrink-0 rounded-lg px-2 text-sm text-foreground hover:bg-renovation-muted dark:hover:bg-renovation-muted"
                     onClick={close}
                   >
                     {t("common.close")}
@@ -299,7 +299,7 @@ export default function HelpMenu() {
                 <nav className="flex flex-col gap-1 p-2 text-sm" aria-label={t("help.menuTitle")}>
                   <button
                     type="button"
-                    className="rounded-lg px-3 py-3 text-left font-medium text-zinc-900 hover:bg-renovation-muted dark:text-zinc-50 dark:hover:bg-zinc-900"
+                    className="rounded-lg px-3 py-3 text-left font-medium text-foreground hover:bg-renovation-muted dark:hover:bg-renovation-muted"
                     onClick={() => {
                       close();
                       startTour();
@@ -309,14 +309,14 @@ export default function HelpMenu() {
                   </button>
                   <Link
                     href={contextHref}
-                    className="rounded-lg px-3 py-3 font-medium text-zinc-900 hover:bg-renovation-muted dark:text-zinc-50 dark:hover:bg-zinc-900"
+                    className="rounded-lg px-3 py-3 font-medium text-foreground hover:bg-renovation-muted dark:hover:bg-renovation-muted"
                     onClick={close}
                   >
                     {topic ? t("help.menuContextHelp") : t("help.menuContextNone")}
                   </Link>
                   <Link
                     href="/dashboard/help"
-                    className="rounded-lg px-3 py-3 font-medium text-zinc-900 hover:bg-renovation-muted dark:text-zinc-50 dark:hover:bg-zinc-900"
+                    className="rounded-lg px-3 py-3 font-medium text-foreground hover:bg-renovation-muted dark:hover:bg-renovation-muted"
                     onClick={close}
                   >
                     {t("help.menuKnowledgeBase")}

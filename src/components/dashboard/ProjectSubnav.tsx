@@ -17,8 +17,8 @@ export default function ProjectSubnav({ projectId }: { projectId: string }) {
     return [
       "inline-flex rounded-xl px-4 py-2 text-sm font-medium transition-colors",
       active
-        ? "bg-renovation-accent/15 text-renovation-steel dark:bg-renovation-accent/20 dark:text-renovation-accent"
-        : "border border-renovation-border text-zinc-700 hover:bg-renovation-muted dark:border-renovation-border dark:text-zinc-200 dark:hover:bg-zinc-900",
+        ? "bg-renovation-surface font-medium text-renovation-steel"
+        : "border border-renovation-border text-renovation-concrete hover:bg-renovation-muted hover:text-foreground",
     ].join(" ");
   }
 

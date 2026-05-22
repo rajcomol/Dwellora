@@ -15,6 +15,10 @@ function parseTab(value: string | null): SettingsTab {
   return value === "account" ? "account" : "project";
 }
 
+/** Consistente veldstijl voor nested project- en accountformulieren (light + dark). */
+const SETTINGS_FORM_FIELD_CLASS =
+  "[&_input]:border-renovation-border [&_input]:bg-renovation-elevated [&_input]:text-foreground [&_input]:placeholder:text-renovation-concrete [&_input]:outline-none [&_input]:focus:ring-2 [&_input]:focus:ring-renovation-accent/40 [&_textarea]:border-renovation-border [&_textarea]:bg-renovation-elevated [&_textarea]:text-foreground [&_textarea]:placeholder:text-renovation-concrete [&_textarea]:outline-none [&_textarea]:focus:ring-2 [&_textarea]:focus:ring-renovation-accent/40";
+
 type Props = {
   projectId?: ID;
   initialTab?: string | null;
@@ -84,13 +88,13 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className={`mx-auto max-w-2xl space-y-6 ${SETTINGS_FORM_FIELD_CLASS}`}>
       <header>
-        <h1 className="text-2xl font-semibold">{t("nav.tabs.settings")}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.tabs.settings")}</h1>
         {project ? (
-          <p className="mt-1 text-sm text-renovation-concrete">{project.name}</p>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{project.name}</p>
         ) : (
-          <p className="mt-1 text-sm text-renovation-concrete">{t("settings.subtitle")}</p>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("settings.subtitle")}</p>
         )}
       </header>
 

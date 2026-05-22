@@ -310,7 +310,7 @@ export default function DocumentsPageClient() {
       {/* Tour-target alleen op de kop — volledige kolom als target breekt joyride bij lange inhoud. */}
       <div data-tour="quotes-hub">
         <h1 className="text-2xl font-semibold">{t("documents.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("documents.subtitle")}</p>
+        <p className="mt-1 text-sm text-renovation-concrete">{t("documents.subtitle")}</p>
       </div>
 
       <Card>
@@ -325,7 +325,7 @@ export default function DocumentsPageClient() {
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
           >
             {projects.length === 0 ? (
               <option value="">{t("documents.noProjectsOption")}</option>
@@ -338,13 +338,24 @@ export default function DocumentsPageClient() {
             )}
           </select>
 
-          <input
-            id="document-upload-input"
-            type="file"
-            accept="application/pdf,.pdf"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-sm dark:border-zinc-800 dark:bg-zinc-950 dark:file:bg-zinc-900"
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              id="file-upload"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="hidden"
+            />
+            <label
+              htmlFor="file-upload"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-renovation-border bg-renovation-surface px-4 py-2 text-sm text-foreground transition-colors hover:bg-renovation-muted"
+            >
+              Bestand kiezen
+            </label>
+            <span className="text-sm text-renovation-concrete">
+              {file ? file.name : "Geen bestand gekozen"}
+            </span>
+          </div>
 
           <Button type="submit" disabled={uploading || projects.length === 0}>
             {uploading ? t("documents.uploading") : t("documents.uploadPdf")}
@@ -354,17 +365,17 @@ export default function DocumentsPageClient() {
 
       <Card>
         <h2 className="text-base font-semibold">{t("documents.compareTitle")}</h2>
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("documents.compareHint")}</p>
+        <p className="mt-1 text-xs text-renovation-concrete">{t("documents.compareHint")}</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              <label className="mb-1 block text-xs font-medium text-renovation-concrete">
                 {t("documents.documentA")}
               </label>
               <select
                 value={compareDocA}
                 onChange={(e) => setCompareDocA(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <option value="">{t("documents.selectPlaceholder")}</option>
                 {documentsForSelectedProject.map((d) => (
@@ -375,13 +386,13 @@ export default function DocumentsPageClient() {
               </select>
             </div>
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              <label className="mb-1 block text-xs font-medium text-renovation-concrete">
                 {t("documents.documentB")}
               </label>
               <select
                 value={compareDocB}
                 onChange={(e) => setCompareDocB(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <option value="">{t("documents.selectPlaceholder")}</option>
                 {documentsForSelectedProject.map((d) => (
@@ -408,7 +419,7 @@ export default function DocumentsPageClient() {
         </div>
 
         {comparisonText ? (
-          <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm whitespace-pre-wrap dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div className="mt-4 rounded-md border border-renovation-border bg-renovation-surface p-3 text-sm whitespace-pre-wrap dark:border-renovation-border dark:bg-renovation-muted/40">
             {comparisonText}
           </div>
         ) : null}
@@ -419,7 +430,7 @@ export default function DocumentsPageClient() {
         {documentsListLoading ? (
           <DocumentsListSkeleton />
         ) : documents.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+          <div className="rounded-xl border border-dashed border-renovation-border bg-renovation-elevated p-6 text-sm text-renovation-concrete dark:border-renovation-border dark:bg-renovation-elevated">
             {t("documents.uploadedEmpty")}
           </div>
         ) : (
@@ -429,10 +440,10 @@ export default function DocumentsPageClient() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="text-sm font-semibold">{doc.fileName}</div>
-                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="mt-1 text-xs text-renovation-concrete">
                       {t("documents.projectLabel")}: {projectNameById.get(doc.projectId) ?? doc.projectId}
                     </div>
-                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="mt-1 text-xs text-renovation-concrete">
                       {t("documents.uploadedAt")}: {formatDisplayDate(doc.createdAt)}
                     </div>
                   </div>
@@ -446,7 +457,7 @@ export default function DocumentsPageClient() {
                 </div>
 
                 {summaryByDocumentId[doc.id] ? (
-                  <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm whitespace-pre-wrap dark:border-zinc-800 dark:bg-zinc-900/40">
+                  <div className="mt-4 rounded-md border border-renovation-border bg-renovation-surface p-3 text-sm whitespace-pre-wrap dark:border-renovation-border dark:bg-renovation-muted/40">
                     {summaryByDocumentId[doc.id]}
                   </div>
                 ) : null}

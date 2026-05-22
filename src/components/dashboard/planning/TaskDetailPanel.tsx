@@ -42,7 +42,7 @@ export default function TaskDetailPanel({ task, roomLabel, projectId, onClose }:
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-renovation-concrete hover:bg-renovation-muted dark:hover:bg-zinc-900"
+            className="rounded-lg p-2 text-renovation-concrete hover:bg-renovation-muted dark:hover:bg-renovation-muted"
           >
             {t("planning.taskPanel.close")}
           </button>

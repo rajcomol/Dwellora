@@ -31,7 +31,7 @@ export default function ProjectSwitcher({ compact }: { compact?: boolean }) {
         data-tour="project-switcher"
         onClick={() => setOpen((v) => !v)}
         className={[
-          "flex max-w-full items-center gap-2 rounded-lg border border-renovation-border bg-renovation-surface px-3 py-1.5 text-left text-sm font-medium text-zinc-900 transition-colors hover:bg-renovation-muted dark:border-renovation-border dark:bg-renovation-muted/40 dark:text-zinc-50",
+          "flex max-w-full items-center gap-2 rounded-lg border border-renovation-border bg-renovation-surface px-3 py-1.5 text-left text-sm font-medium text-foreground transition-colors hover:bg-renovation-muted dark:border-renovation-border dark:bg-renovation-muted/40 dark:text-foreground",
           compact ? "w-full" : "min-w-[10rem] max-w-[14rem]",
         ].join(" ")}
         aria-expanded={open}
@@ -59,7 +59,7 @@ export default function ProjectSwitcher({ compact }: { compact?: boolean }) {
                 type="button"
                 role="option"
                 aria-selected={selectedProjectId === null}
-                className="block w-full px-3 py-2 text-left text-sm text-renovation-concrete hover:bg-renovation-muted dark:hover:bg-zinc-900"
+                className="block w-full px-3 py-2 text-left text-sm text-renovation-concrete hover:bg-renovation-muted dark:hover:bg-renovation-muted"
                 onClick={() => {
                   setSelectedProjectId(null);
                   setOpen(false);
@@ -75,10 +75,10 @@ export default function ProjectSwitcher({ compact }: { compact?: boolean }) {
                   role="option"
                   aria-selected={p.id === selectedProjectId}
                   className={[
-                    "block w-full truncate px-3 py-2 text-left text-sm hover:bg-renovation-muted dark:hover:bg-zinc-900",
+                    "block w-full truncate px-3 py-2 text-left text-sm hover:bg-renovation-muted dark:hover:bg-renovation-muted",
                     p.id === selectedProjectId
                       ? "font-semibold text-renovation-steel dark:text-renovation-accent"
-                      : "text-zinc-800 dark:text-zinc-200",
+                      : "text-foreground dark:text-foreground",
                   ].join(" ")}
                   onClick={() => {
                     setSelectedProjectId(p.id);

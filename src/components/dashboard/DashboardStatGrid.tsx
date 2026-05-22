@@ -15,9 +15,9 @@ import type { Project, Task } from "@/lib/renovation/types";
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-      <div className="text-xs font-medium text-renovation-concrete">{label}</div>
-      <div className="mt-2 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">{value}</div>
+    <div className="rounded-xl bg-renovation-surface p-4 dark:border dark:border-renovation-border dark:bg-renovation-elevated">
+      <div className="text-xs text-renovation-concrete">{label}</div>
+      <div className="mt-2 font-semibold tabular-nums text-foreground">{value}</div>
       {hint ? <div className="mt-1 text-xs text-renovation-concrete">{hint}</div> : null}
     </div>
   );

@@ -147,13 +147,13 @@ export default function DashboardMobileNav() {
           style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
         >
           <div className="flex items-center justify-between gap-2 border-b border-renovation-border px-4 py-3 dark:border-renovation-border">
-            <h2 id={titleId} className="text-sm font-semibold text-renovation-steel dark:text-zinc-100">
+            <h2 id={titleId} className="text-sm font-semibold text-renovation-steel dark:text-foreground">
               {t("shell.sidebarSubtitle")}
             </h2>
             <button
               ref={closeBtnRef}
               type="button"
-              className="min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium text-zinc-700 hover:bg-renovation-muted dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium text-foreground hover:bg-renovation-muted dark:text-foreground dark:hover:bg-renovation-muted"
               onClick={close}
             >
               {t("common.close")}
@@ -170,13 +170,13 @@ export default function DashboardMobileNav() {
             className="space-y-2 border-t border-renovation-border p-4 text-xs text-renovation-concrete dark:border-renovation-border"
             style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
           >
-            <Link href="/privacy" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-zinc-300" onClick={close}>
+            <Link href="/privacy" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-renovation-concrete" onClick={close}>
               {t("shell.privacyLink")}
             </Link>
-            <Link href="/dashboard/help" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-zinc-300" onClick={close}>
+            <Link href="/dashboard/help" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-renovation-concrete" onClick={close}>
               {t("help.sidebarLink")}
             </Link>
-            <Link href="/login" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-zinc-300" onClick={close}>
+            <Link href="/login" className="block min-h-10 font-medium text-renovation-steel hover:underline dark:text-renovation-concrete" onClick={close}>
               {t("nav.account")}
             </Link>
           </div>
@@ -189,7 +189,7 @@ export default function DashboardMobileNav() {
       <button
         ref={menuBtnRef}
         type="button"
-        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-renovation-border bg-renovation-muted/40 px-3 text-sm font-medium text-renovation-steel transition-colors hover:bg-renovation-muted/60 dark:border-renovation-border dark:bg-zinc-900/40 dark:text-zinc-100"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-renovation-border bg-renovation-muted/40 px-3 text-sm font-medium text-renovation-steel transition-colors hover:bg-renovation-muted/60 dark:border-renovation-border dark:bg-renovation-muted/40 dark:text-foreground"
         aria-expanded={portalMounted && drawerOpen}
         aria-controls="dashboard-mobile-nav-panel"
         aria-haspopup="dialog"

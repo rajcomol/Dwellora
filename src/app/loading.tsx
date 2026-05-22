@@ -3,9 +3,8 @@ export default function Loading() {
     <div className="flex min-h-[50vh] items-center justify-center">
       <div
         aria-label="Loading"
-        className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-800 dark:border-t-zinc-50"
+        className="h-10 w-10 animate-spin rounded-full border-4 border-renovation-border border-t-foreground dark:border-renovation-border dark:border-t-foreground"
       />
     </div>
   );
 }
-

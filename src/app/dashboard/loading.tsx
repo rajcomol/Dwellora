@@ -6,9 +6,9 @@ export default function DashboardLoading() {
     <div className="space-y-8" aria-busy aria-live="polite">
       <span className="sr-only">{nl.common.loading}</span>
       <div className="animate-pulse space-y-3">
-        <div className="h-4 w-40 rounded bg-zinc-200 dark:bg-zinc-800" />
-        <div className="h-9 max-w-md rounded-lg bg-zinc-200 dark:bg-zinc-800" />
-        <div className="h-4 max-w-xl rounded bg-zinc-200/80 dark:bg-zinc-700/80" />
+        <div className="h-4 w-40 rounded bg-renovation-muted dark:bg-renovation-muted" />
+        <div className="h-9 max-w-md rounded-lg bg-renovation-muted dark:bg-renovation-muted" />
+        <div className="h-4 max-w-xl rounded bg-renovation-muted/80 dark:bg-renovation-muted/80" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {["a", "b", "c"].map((k) => (

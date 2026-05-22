@@ -3,15 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import ProjectDetailPageClient from "@/components/dashboard/ProjectDetailPageClient";
-import RoomOverviewCard, { previewTasksForRoom } from "@/components/dashboard/RoomOverviewCard";
+import RoomOverviewCard from "@/components/dashboard/RoomOverviewCard";
 import RoomsSubtabNav, { type RoomsTab } from "@/components/dashboard/RoomsSubtabNav";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import Button from "@/components/ui/Button";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
-import type { RoomTaskSummaryRow } from "@/lib/dashboard/roomOverview";
-import { supabase } from "@/lib/supabase/client";
+import {
+  buildRoomSummariesFromTasks,
+  previewTasksForRoom,
+  tasksForRoom,
+} from "@/lib/dashboard/roomOverview";
 import { roomNameFormSchema } from "@/lib/validation/schemas";
 
 function parseTab(value: string | null | undefined): RoomsTab {
@@ -29,8 +32,6 @@ export default function RoomsPageClient({ initialTab }: Props) {
   const searchParams = useSearchParams();
   const { selectedProjectId, selectedProject } = useSelectedProject();
   const { rooms, tasks, createRoom, isRenovationDataReady } = useRenovation();
-  const [summaries, setSummaries] = useState<RoomTaskSummaryRow[]>([]);
-  const [summariesLoading, setSummariesLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -65,38 +66,20 @@ export default function RoomsPageClient({ initialTab }: Props) {
     [rooms, selectedProjectId]
   );
 
+  const projectTasks = useMemo(() => {
+    if (!selectedProjectId) return [];
+    return tasks.filter(
+      (tk) => tk.projectId === selectedProjectId || tk.roomIds.some((rid) => projectRooms.some((r) => r.id === rid))
+    );
+  }, [tasks, selectedProjectId, projectRooms]);
+
   const summaryByRoomId = useMemo(() => {
-    const map = new Map<string, RoomTaskSummaryRow>();
-    for (const s of summaries) {
+    const map = new Map<string, ReturnType<typeof buildRoomSummariesFromTasks>[number]>();
+    for (const s of buildRoomSummariesFromTasks(projectRooms, projectTasks)) {
       map.set(s.room_id, s);
     }
     return map;
-  }, [summaries]);
-
-  useEffect(() => {
-    if (!selectedProjectId || activeTab !== "rooms") {
-      return;
-    }
-    let cancelled = false;
-    setSummariesLoading(true);
-    void (async () => {
-      const res = await supabase
-        .from("room_task_summary")
-        .select(
-          "room_id,project_id,room_name,task_count,completed_count,estimated_cost_sum,earliest_start_date,latest_end_date"
-        )
-        .eq("project_id", selectedProjectId);
-      if (!cancelled) {
-        setSummariesLoading(false);
-        if (!res.error && res.data) {
-          setSummaries(res.data as RoomTaskSummaryRow[]);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedProjectId, rooms.length, tasks.length, activeTab]);
+  }, [projectRooms, projectTasks]);
 
   if (!isRenovationDataReady) {
     return <DashboardPageSkeleton />;
@@ -106,8 +89,8 @@ export default function RoomsPageClient({ initialTab }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{t("nav.tabs.rooms")}</h1>
-          <p className="mt-1 text-sm text-renovation-concrete">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.tabs.rooms")}</h1>
+          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">
             {selectedProject
               ? t("rooms.subtitleProject", { name: selectedProject.name })
               : t("layout.topBar.chooseProject")}
@@ -152,16 +135,12 @@ export default function RoomsPageClient({ initialTab }: Props) {
                   id="new-room-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-renovation-border bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                  className="w-full rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
                 />
                 {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
               </div>
               <Button type="submit">{t("common.save")}</Button>
             </form>
-          ) : null}
-
-          {summariesLoading && projectRooms.length > 0 ? (
-            <p className="text-sm text-renovation-concrete">{t("common.loading")}</p>
           ) : null}
 
           {projectRooms.length === 0 ? (
@@ -184,7 +163,8 @@ export default function RoomsPageClient({ initialTab }: Props) {
                     key={room.id}
                     summary={summary}
                     roomName={room.name}
-                    previewTasks={previewTasksForRoom(tasks, room.id)}
+                    roomTasks={tasksForRoom(projectTasks, room.id)}
+                    previewTasks={previewTasksForRoom(projectTasks, room.id)}
                     projectId={selectedProjectId}
                   />
                 );

@@ -13,19 +13,19 @@ export default function DashboardShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-renovation-surface text-zinc-900 dark:text-zinc-50">
+    <div className="min-h-screen bg-renovation-surface text-foreground">
       <div className="flex min-h-screen">
         <aside className="hidden w-64 border-r border-renovation-border bg-renovation-elevated shadow-sm dark:border-renovation-border dark:bg-renovation-elevated lg:block">
           <div className="flex h-full flex-col p-5">
             <DashboardShellNav />
             <div className="mt-auto flex flex-col gap-2 pt-6 text-xs text-renovation-concrete">
-              <Link href="/privacy" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
+              <Link href="/privacy" className="font-medium text-renovation-steel hover:underline dark:text-renovation-concrete">
                 {nl.shell.privacyLink}
               </Link>
-              <Link href="/dashboard/help" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
+              <Link href="/dashboard/help" className="font-medium text-renovation-steel hover:underline dark:text-renovation-concrete">
                 {nl.help.sidebarLink}
               </Link>
-              <Link href="/login" className="font-medium text-renovation-steel hover:underline dark:text-zinc-300">
+              <Link href="/login" className="font-medium text-renovation-steel hover:underline dark:text-renovation-concrete">
                 {nl.nav.account}
               </Link>
             </div>

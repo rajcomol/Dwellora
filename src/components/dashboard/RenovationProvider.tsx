@@ -490,8 +490,8 @@ function mapRoster(row: {
   };
 }
 
-export function RenovationProvider({ children }: { children: ReactNode }) {
-  const emptyState = (): RenovationState => ({
+function emptyRenovationState(): RenovationState {
+  return {
     projects: [],
     rooms: [],
     tasks: [],
@@ -503,9 +503,28 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     taskAttachments: [],
     checklistItems: [],
     teamRoster: [],
-  });
+  };
+}
 
-  const [state, setState] = useState<RenovationState>(emptyState);
+/** Ensures context consumers never see undefined arrays (avoids `.map` crashes). */
+function normalizeRenovationState(state: RenovationState): RenovationState {
+  return {
+    projects: state.projects ?? [],
+    rooms: state.rooms ?? [],
+    tasks: state.tasks ?? [],
+    constructionDepots: state.constructionDepots ?? [],
+    constructionDepotBalances: state.constructionDepotBalances ?? [],
+    projectExpenses: state.projectExpenses ?? [],
+    expenseDocuments: state.expenseDocuments ?? [],
+    taskDependencies: state.taskDependencies ?? [],
+    taskAttachments: state.taskAttachments ?? [],
+    checklistItems: state.checklistItems ?? [],
+    teamRoster: state.teamRoster ?? [],
+  };
+}
+
+export function RenovationProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<RenovationState>(emptyRenovationState);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [isRenovationDataReady, setIsRenovationDataReady] = useState(false);
@@ -530,8 +549,14 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function loadAll() {
+      const failLoad = (label: string, detail?: string) => {
+        if (cancelled) return;
+        console.error("Failed to load renovation data", { label, detail });
+        setState(emptyRenovationState());
+      };
+
       if (!sessionUserId) {
-        setState(emptyState());
+        setState(emptyRenovationState());
         if (!cancelled) setIsRenovationDataReady(true);
         return;
       }
@@ -544,11 +569,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         .eq("user_id", sessionUserId);
 
       if (projectsRes.error) {
-        if (cancelled) return;
-        console.error("Failed to load renovation data", {
-          projectsError: projectsRes.error.message,
-        });
-        setState(emptyState());
+        failLoad("projects", projectsRes.error.message);
         return;
       }
 
@@ -597,7 +618,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       if (mergedProjects.length === 0) {
         if (cancelled) return;
-        setState(emptyState());
+        setState(emptyRenovationState());
         return;
       }
 
@@ -606,8 +627,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const roomsRes = await supabase.from("rooms").select("id,name,project_id").in("project_id", projectIds);
 
       if (roomsRes.error) {
-        if (cancelled) return;
-        console.error("Failed to load renovation data", { roomsError: roomsRes.error.message });
+        failLoad("rooms", roomsRes.error.message);
         return;
       }
 
@@ -619,15 +639,39 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           : { data: [] as { task_id: unknown; room_id: unknown }[], error: null };
 
       if (taskRoomsRes.error) {
-        if (cancelled) return;
-        console.error("Failed to load task_rooms", { error: taskRoomsRes.error.message });
+        failLoad("task_rooms", taskRoomsRes.error.message);
         return;
       }
 
       const roomIdsByTask = buildRoomIdsByTask(taskRoomsRes.data ?? []);
+      const linkedTaskIds = [...roomIdsByTask.keys()];
 
-      const tasksRes = await supabase.from("tasks").select(TASK_SELECT).in("project_id", projectIds);
-      const taskIds = (tasksRes.data ?? []).map((r) => String(r.id));
+      const tasksByProjectRes = await supabase
+        .from("tasks")
+        .select(TASK_SELECT)
+        .in("project_id", projectIds);
+      const tasksByIdRes =
+        linkedTaskIds.length > 0
+          ? await supabase.from("tasks").select(TASK_SELECT).in("id", linkedTaskIds)
+          : { data: [] as Record<string, unknown>[], error: null };
+
+      if (tasksByProjectRes.error) {
+        failLoad("tasks", tasksByProjectRes.error.message);
+        return;
+      }
+      if (tasksByIdRes.error) {
+        console.warn("Failed to load linked tasks by id", tasksByIdRes.error.message);
+      }
+
+      const mergedTaskRowsById = new Map<string, Record<string, unknown>>();
+      for (const row of tasksByProjectRes.data ?? []) {
+        mergedTaskRowsById.set(String(row.id), row as Record<string, unknown>);
+      }
+      for (const row of tasksByIdRes.data ?? []) {
+        mergedTaskRowsById.set(String(row.id), row as Record<string, unknown>);
+      }
+      const mergedTaskRows = [...mergedTaskRowsById.values()];
+      const taskIds = mergedTaskRows.map((r) => String(r.id));
 
       const ext = await Promise.all([
         supabase
@@ -668,11 +712,6 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
 
-      if (tasksRes.error) {
-        console.error("Failed to load renovation data", { tasksError: tasksRes.error.message });
-        return;
-      }
-
       const [depotsRes, depotBalancesRes, expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] =
         ext;
       const logExt = (label: string, err: { message: string } | null) => {
@@ -692,7 +731,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         rooms: (roomsRes.data ?? []).map((r) =>
           mapRoom(r as { id: unknown; name: unknown; project_id: unknown })
         ),
-        tasks: (tasksRes.data ?? []).map((r) => {
+        tasks: mergedTaskRows.map((r) => {
           const id = String(r.id);
           return mapTask(r as Parameters<typeof mapTask>[0], roomIdsByTask.get(id) ?? []);
         }),
@@ -859,7 +898,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (res.error || !res.data) return;
-      setState((prev) => ({ ...prev, rooms: [...prev.rooms, mapRoom(res.data)] }));
+      setState((prev) => ({ ...prev, rooms: [...(prev.rooms ?? []), mapRoom(res.data)] }));
     })();
   };
 
@@ -905,18 +944,18 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       setState((prev) => {
         const orphanSet = new Set(orphanTaskIds);
-        const nextTasks = prev.tasks
+        const nextTasks = (prev.tasks ?? [])
           .filter((t) => !orphanSet.has(t.id))
           .map((t) => ({
             ...t,
-            roomIds: t.roomIds.filter((rid) => rid !== roomId),
+            roomIds: (t.roomIds ?? []).filter((rid) => rid !== roomId),
           }));
         const keptIds = new Set(nextTasks.map((t) => t.id));
         return {
           ...prev,
-          rooms: prev.rooms.filter((r) => r.id !== roomId),
+          rooms: (prev.rooms ?? []).filter((r) => r.id !== roomId),
           tasks: nextTasks,
-          taskDependencies: prev.taskDependencies.filter(
+          taskDependencies: (prev.taskDependencies ?? []).filter(
             (d) => keptIds.has(d.taskId) && keptIds.has(d.dependsOnTaskId)
           ),
           taskAttachments: prev.taskAttachments.filter((a) => keptIds.has(a.taskId)),
@@ -1017,7 +1056,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      setState((prev) => ({ ...prev, tasks: [...prev.tasks, nextTask] }));
+      setState((prev) => ({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] }));
       reloadDepotBalances();
     })();
   };
@@ -1026,7 +1065,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) return false;
 
-    const existing = state.tasks.find((t) => t.id === input.id);
+    const existing = (state.tasks ?? []).find((t) => t.id === input.id);
     if (!existing) return false;
 
     let effectiveRoomIds = existing.roomIds;
@@ -1083,7 +1122,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     const next = mapTask(fresh.data as Parameters<typeof mapTask>[0], effectiveRoomIds);
     setState((prev) => ({
       ...prev,
-      tasks: prev.tasks.map((tk) => (tk.id === next.id ? next : tk)),
+      tasks: (prev.tasks ?? []).map((tk) => (tk.id === next.id ? next : tk)),
     }));
     reloadDepotBalances();
     return true;
@@ -1098,7 +1137,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (res.error) return;
       setState((prev) => ({
         ...prev,
-        tasks: prev.tasks.filter((t) => t.id !== id),
+        tasks: (prev.tasks ?? []).filter((t) => t.id !== id),
         taskDependencies: prev.taskDependencies.filter((d) => d.taskId !== id && d.dependsOnTaskId !== id),
         taskAttachments: prev.taskAttachments.filter((a) => a.taskId !== id),
       }));
@@ -1346,7 +1385,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({
         ...prev,
         teamRoster: prev.teamRoster.filter((r) => r.id !== id),
-        tasks: prev.tasks.map((t) => (t.assignedRosterId === id ? { ...t, assignedRosterId: null } : t)),
+        tasks: (prev.tasks ?? []).map((t) =>
+          t.assignedRosterId === id ? { ...t, assignedRosterId: null } : t
+        ),
       }));
     })();
   };
@@ -1385,7 +1426,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (res.error || !res.data) return;
       setState((prev) => ({
         ...prev,
-        projectExpenses: [...prev.projectExpenses, mapExpense(res.data)],
+        projectExpenses: [...(prev.projectExpenses ?? []), mapExpense(res.data)],
       }));
     })();
   };
@@ -1425,7 +1466,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const next = mapExpense(res.data);
       setState((prev) => ({
         ...prev,
-        projectExpenses: prev.projectExpenses.map((e) => (e.id === next.id ? next : e)),
+        projectExpenses: (prev.projectExpenses ?? []).map((e) => (e.id === next.id ? next : e)),
       }));
     })();
   };
@@ -1449,7 +1490,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (res.error) return;
       setState((prev) => ({
         ...prev,
-        projectExpenses: prev.projectExpenses.filter((e) => e.id !== id),
+        projectExpenses: (prev.projectExpenses ?? []).filter((e) => e.id !== id),
         expenseDocuments: prev.expenseDocuments.filter((d) => d.expenseId !== id),
       }));
     })();
@@ -1590,7 +1631,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         ...prev,
         constructionDepots: prev.constructionDepots.filter((d) => d.id !== id),
         constructionDepotBalances: prev.constructionDepotBalances.filter((d) => d.id !== id),
-        tasks: prev.tasks.map((t) =>
+        tasks: (prev.tasks ?? []).map((t) =>
           t.constructionDepotId === id ? { ...t, constructionDepotId: null } : t
         ),
       }));
@@ -1618,7 +1659,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   };
 
   const value: RenovationContextValue = {
-    ...state,
+    ...normalizeRenovationState(state),
     isRenovationDataReady,
     createProject,
     updateProject,
@@ -1653,7 +1694,34 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 export function useRenovation() {
   const ctx = useContext(RenovationContext);
   if (!ctx) throw new Error("useRenovation must be used within RenovationProvider");
-  return ctx;
+  const {
+    projects,
+    rooms,
+    tasks,
+    constructionDepots,
+    constructionDepotBalances,
+    projectExpenses,
+    expenseDocuments,
+    taskDependencies,
+    taskAttachments,
+    checklistItems,
+    teamRoster,
+    ...rest
+  } = ctx;
+  return {
+    ...rest,
+    projects: projects ?? [],
+    rooms: rooms ?? [],
+    tasks: tasks ?? [],
+    constructionDepots: constructionDepots ?? [],
+    constructionDepotBalances: constructionDepotBalances ?? [],
+    projectExpenses: projectExpenses ?? [],
+    expenseDocuments: expenseDocuments ?? [],
+    taskDependencies: taskDependencies ?? [],
+    taskAttachments: taskAttachments ?? [],
+    checklistItems: checklistItems ?? [],
+    teamRoster: teamRoster ?? [],
+  };
 }
 
 export function getRoomsForProject(rooms: Room[], projectId: ID) {
@@ -1661,7 +1729,7 @@ export function getRoomsForProject(rooms: Room[], projectId: ID) {
 }
 
 export function getTasksForRoom(tasks: Task[], roomId: ID) {
-  return tasks.filter((t) => t.roomIds.includes(roomId));
+  return (tasks ?? []).filter((t) => (t.roomIds ?? []).includes(roomId));
 }
 
 export function taskBelongsToProject(tasks: Task[], rooms: Room[], projectId: ID): boolean {
@@ -1670,6 +1738,6 @@ export function taskBelongsToProject(tasks: Task[], rooms: Room[], projectId: ID
 }
 
 export function filterTasksForProject(tasks: Task[], rooms: Room[], projectId: ID): Task[] {
-  const roomIds = new Set(rooms.filter((r) => r.projectId === projectId).map((r) => r.id));
-  return tasks.filter((t) => t.roomIds.some((rid) => roomIds.has(rid)));
+  const roomIds = new Set((rooms ?? []).filter((r) => r.projectId === projectId).map((r) => r.id));
+  return (tasks ?? []).filter((t) => (t.roomIds ?? []).some((rid) => roomIds.has(rid)));
 }

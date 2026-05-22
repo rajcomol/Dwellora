@@ -28,9 +28,7 @@ export default function BouwdepotDashboardCard() {
     <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-renovation-steel dark:text-zinc-200">
-            {t("bouwdepot.cardTitle")}
-          </h2>
+          <h2 className="text-base font-semibold text-foreground">{t("bouwdepot.cardTitle")}</h2>
           <p className="mt-1 text-xs text-renovation-concrete">{t("bouwdepot.cardHint")}</p>
         </div>
         {selectedProjectId ? (
@@ -56,8 +54,8 @@ export default function BouwdepotDashboardCard() {
             const pct = cap > 0 ? Math.min(100, d.percentageUsed) : 0;
             return (
               <li key={d.id} className="rounded-lg border border-renovation-border/80 p-3 dark:border-renovation-border">
-                <div className="font-medium text-zinc-900 dark:text-zinc-50">{d.name}</div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div className="font-medium text-foreground">{d.name}</div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-renovation-muted">
                   <div
                     className={`h-full rounded-full transition-all ${depotProgressColorClass(pct)}`}
                     style={{ width: `${pct}%` }}

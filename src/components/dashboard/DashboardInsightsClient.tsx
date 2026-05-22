@@ -18,10 +18,19 @@ export default function DashboardInsightsClient() {
     useRenovation();
 
   const insights = useMemo(
-    () => generateInsights(projects, tasks, projectExpenses, constructionDepotBalances),
+    () =>
+      generateInsights(
+        projects ?? [],
+        tasks ?? [],
+        projectExpenses ?? [],
+        constructionDepotBalances ?? []
+      ),
     [projects, tasks, projectExpenses, constructionDepotBalances]
   );
-  const upcoming = useMemo(() => getUpcomingTasks(projects, rooms, tasks, 10), [projects, rooms, tasks]);
+  const upcoming = useMemo(
+    () => getUpcomingTasks(projects ?? [], rooms ?? [], tasks ?? [], 10),
+    [projects, rooms, tasks]
+  );
 
   const nextUp = upcoming[0];
 
@@ -33,37 +42,35 @@ export default function DashboardInsightsClient() {
     <div className="space-y-6">
       <section
         data-tour="dashboard-hero"
-        className="motion-safe-fade-in relative overflow-hidden rounded-2xl border border-renovation-border bg-renovation-elevated p-6 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated sm:p-8"
+        className="motion-safe-fade-in rounded-2xl border border-renovation-border bg-renovation-elevated p-6 shadow-renovation-card outline-none dark:border dark:border-renovation-border dark:bg-renovation-elevated sm:p-8"
       >
-        <div
-          className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-renovation-accent/15 blur-3xl dark:bg-renovation-accent/10"
-          aria-hidden
-        />
-        <div className="relative">
-          <p className="text-xs font-semibold uppercase tracking-widest text-renovation-steel dark:text-renovation-accent">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
             {t("dashboard.heroEyebrow")}
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {t("dashboard.heroTitle")}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm text-renovation-concrete">{t("dashboard.heroSubtitle")}</p>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-renovation-concrete">
+            {t("dashboard.heroSubtitle")}
+          </p>
           {nextUp ? (
             <div className="mt-6 rounded-xl border border-renovation-border/80 bg-renovation-surface/80 px-4 py-3 dark:border-renovation-border dark:bg-renovation-muted/30">
-              <p className="text-xs font-medium text-renovation-concrete">{t("dashboard.nextUp")}</p>
-              <p className="mt-1 font-medium text-zinc-900 dark:text-zinc-100">{nextUp.title}</p>
+              <p className="text-xs text-renovation-concrete">{t("dashboard.nextUp")}</p>
+              <p className="mt-1 font-medium text-foreground">{nextUp.title}</p>
               <p className="mt-0.5 text-xs text-renovation-concrete">
                 {nextUp.projectName} → {nextUp.roomName} •{" "}
                 {t("dashboard.nextUpPriority", { priority: t(`task.priority.${nextUp.priority}`) })}
               </p>
             </div>
           ) : (
-            <p className="mt-6 text-sm text-renovation-concrete">{t("dashboard.noOpenTasksHero")}</p>
+            <p className="mt-6 text-sm leading-relaxed text-renovation-concrete">{t("dashboard.noOpenTasksHero")}</p>
           )}
         </div>
       </section>
 
       <section data-tour="dashboard-stats">
-        <h2 className="text-sm font-semibold text-renovation-steel dark:text-zinc-200">{t("dashboard.keyMetrics")}</h2>
+        <h2 className="text-base font-semibold text-foreground">{t("dashboard.keyMetrics")}</h2>
         <div className="mt-4">
           <DashboardStatGrid />
         </div>
@@ -75,19 +82,24 @@ export default function DashboardInsightsClient() {
       </div>
 
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("dashboard.upcomingTitle")}</h2>
+        <h2 className="text-base font-semibold text-foreground">{t("dashboard.upcomingTitle")}</h2>
         <p className="mt-1 text-xs text-renovation-concrete">{t("dashboard.upcomingHint")}</p>
         {upcoming.length === 0 ? (
-          <p className="mt-3 text-sm text-renovation-concrete">{t("dashboard.noOpenTasks")}</p>
+          <p className="mt-3 text-sm leading-relaxed text-renovation-concrete">{t("dashboard.noOpenTasks")}</p>
         ) : (
-          <ul className="mt-4 space-y-2">
-            {upcoming.map((u) => (
+          <ul className="mt-4 overflow-hidden rounded-xl bg-renovation-surface dark:bg-renovation-elevated">
+            {upcoming.map((u, index) => (
               <li
                 key={u.id}
-                className="flex flex-col gap-0.5 rounded-lg border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border"
+                className={[
+                  "flex flex-col gap-0.5 px-3 py-2.5 text-sm",
+                  index < upcoming.length - 1
+                    ? "border-b border-transparent dark:border-b dark:border-renovation-border"
+                    : "",
+                ].join(" ")}
               >
-                <div className="font-medium text-zinc-900 dark:text-zinc-100">{u.title}</div>
-                <div className="text-xs text-renovation-concrete">
+                <div className="font-medium text-foreground">{u.title}</div>
+                <div className="text-xs text-renovation-concrete dark:text-renovation-concrete">
                   {u.projectName} → {u.roomName} • {t(`task.priority.${u.priority}`)} • {t(`task.status.${u.status}`)}
                   {u.startDate ? ` • ${formatDisplayDate(u.startDate)}` : ""}
                   {u.durationDays > 0 ? ` • ${u.durationDays}d` : ""}
@@ -99,7 +111,7 @@ export default function DashboardInsightsClient() {
         <div className="mt-4">
           <Link
             href="/dashboard/planning"
-            className="text-sm font-medium text-renovation-steel underline decoration-renovation-accent/50 underline-offset-2 hover:decoration-renovation-accent dark:text-renovation-accent"
+            className="text-sm font-medium text-renovation-steel underline decoration-renovation-accent/50 underline-offset-2 hover:decoration-renovation-accent"
           >
             {t("nav.tabs.planning")}
           </Link>
@@ -107,10 +119,10 @@ export default function DashboardInsightsClient() {
       </section>
 
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t("dashboard.insightsTitle")}</h2>
+        <h2 className="text-base font-semibold text-foreground">{t("dashboard.insightsTitle")}</h2>
         <p className="mt-1 text-xs text-renovation-concrete">{t("dashboard.insightsHint")}</p>
         {insights.length === 0 ? (
-          <p className="mt-3 text-sm text-renovation-concrete">{t("dashboard.insightsEmpty")}</p>
+          <p className="mt-3 text-sm leading-relaxed text-renovation-concrete">{t("dashboard.insightsEmpty")}</p>
         ) : (
           <ul className="mt-4 space-y-2">
             {insights.map((item, i) => (
@@ -120,7 +132,7 @@ export default function DashboardInsightsClient() {
                   "rounded-lg border px-3 py-2 text-sm",
                   item.severity === "warning"
                     ? "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
-                    : "border-renovation-border bg-renovation-surface text-zinc-800 dark:border-renovation-border dark:bg-zinc-900/40 dark:text-zinc-200",
+                    : "border-renovation-border bg-renovation-surface text-foreground",
                 ].join(" ")}
               >
                 {t(item.messageKey, item.messageParams)}

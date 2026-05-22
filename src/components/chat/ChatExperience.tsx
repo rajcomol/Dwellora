@@ -57,7 +57,7 @@ export default function ChatExperience({ routeSuggestedProjectId, className }: C
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+          className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
         >
           {projects.length === 0 ? (
             <option value="">{t("chat.noProjectsOption")}</option>
@@ -72,14 +72,14 @@ export default function ChatExperience({ routeSuggestedProjectId, className }: C
         {routeId && !routeMatchesSelection ? (
           <button
             type="button"
-            className="mt-2 text-xs font-medium text-renovation-steel underline decoration-renovation-accent/50 underline-offset-2 hover:text-renovation-accent dark:text-zinc-300"
+            className="mt-2 text-xs font-medium text-renovation-steel underline decoration-renovation-accent/50 underline-offset-2 hover:text-renovation-accent dark:text-foreground"
             onClick={followRouteProject}
           >
             {t("chat.useProjectFromPage")}
           </button>
         ) : null}
         {routeId && routeMatchesSelection ? (
-          <p className="mt-2 text-xs text-zinc-500">{t("chat.projectFollowsPage")}</p>
+          <p className="mt-2 text-xs text-renovation-concrete">{t("chat.projectFollowsPage")}</p>
         ) : null}
       </div>
       <div>
@@ -91,7 +91,7 @@ export default function ChatExperience({ routeSuggestedProjectId, className }: C
               const v = e.target.value;
               setActiveThreadId(v === "new" ? "new" : v);
             }}
-            className="w-full flex-1 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full flex-1 rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm outline-none focus:border-renovation-steel dark:border-renovation-border dark:bg-renovation-elevated"
             disabled={!persistenceAvailable}
           >
             <option value="new">{t("chat.newConversation")}</option>
@@ -112,9 +112,9 @@ export default function ChatExperience({ routeSuggestedProjectId, className }: C
           </Button>
         </div>
         {!persistenceAvailable ? (
-          <p className="mt-2 text-xs text-zinc-500">{t("chat.persistHintOff")}</p>
+          <p className="mt-2 text-xs text-renovation-concrete">{t("chat.persistHintOff")}</p>
         ) : (
-          <p className="mt-2 text-xs text-zinc-500">{t("chat.persistHintOn")}</p>
+          <p className="mt-2 text-xs text-renovation-concrete">{t("chat.persistHintOn")}</p>
         )}
       </div>
     </div>
@@ -124,16 +124,16 @@ export default function ChatExperience({ routeSuggestedProjectId, className }: C
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div ref={listRef} className="min-h-0 flex-1 space-y-0 overflow-auto pr-1">
         {messages.length === 0 ? (
-          <div className="rounded-md border border-dashed border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+          <div className="rounded-md border border-dashed border-renovation-border bg-renovation-elevated p-6 text-sm text-renovation-concrete dark:border-renovation-border dark:bg-renovation-elevated">
             {t("chat.emptyThread")}
           </div>
         ) : (
           <>
             <ChatMessageList messages={messages} />
             {pending ? (
-              <div className="mt-3 flex items-center gap-2 border-t border-zinc-200 pt-3 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+              <div className="mt-3 flex items-center gap-2 border-t border-renovation-border pt-3 text-sm text-renovation-concrete dark:border-renovation-border">
                 <span
-                  className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-zinc-300 border-t-renovation-accent dark:border-zinc-600 dark:border-t-cyan-400"
+                  className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-renovation-border border-t-renovation-accent dark:border-renovation-border dark:border-t-renovation-accent"
                   aria-hidden
                 />
                 <span>{t("chat.sending")}</span>
@@ -165,11 +165,11 @@ export default function ChatExperience({ routeSuggestedProjectId, className }: C
   );
 
   const collapsedBar = (
-    <div className="mb-2 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/80">
-      <p className="min-w-0 truncate text-xs text-zinc-600 dark:text-zinc-400">{t("chat.collapsedHint")}</p>
+    <div className="mb-2 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 dark:border-renovation-border dark:bg-renovation-muted/80">
+      <p className="min-w-0 truncate text-xs text-renovation-concrete">{t("chat.collapsedHint")}</p>
       <button
         type="button"
-        className="shrink-0 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-renovation-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+        className="shrink-0 rounded-md border border-renovation-border bg-renovation-elevated px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-renovation-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-renovation-accent dark:border-renovation-border dark:bg-renovation-muted dark:text-foreground dark:hover:bg-renovation-muted"
         onClick={() => setSettingsOpen(true)}
       >
         {t("chat.showSettings")}

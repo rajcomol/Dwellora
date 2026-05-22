@@ -64,7 +64,7 @@ export default function HelpCenterClient() {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{t("help.pageTitle")}</h1>
+        <h1 className="text-2xl font-semibold text-foreground">{t("help.pageTitle")}</h1>
         <p className="text-sm text-renovation-concrete">{t("help.pageSubtitle")}</p>
       </header>
 
@@ -78,7 +78,7 @@ export default function HelpCenterClient() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("help.searchPlaceholder")}
-          className="w-full max-w-md rounded-xl border border-renovation-border bg-renovation-elevated px-4 py-2.5 text-sm text-zinc-900 shadow-sm outline-none ring-renovation-accent/30 placeholder:text-zinc-400 focus:border-renovation-accent focus:ring-2 dark:border-renovation-border dark:bg-zinc-900 dark:text-zinc-50"
+          className="w-full max-w-md rounded-xl border border-renovation-border bg-renovation-elevated px-4 py-2.5 text-sm text-foreground shadow-sm outline-none ring-renovation-accent/30 placeholder:text-renovation-concrete focus:border-renovation-accent focus:ring-2 dark:border-renovation-border dark:bg-renovation-muted dark:text-foreground"
         />
       </div>
 
@@ -102,7 +102,7 @@ export default function HelpCenterClient() {
                     >
                       <button
                         type="button"
-                        className="flex w-full items-start justify-between gap-3 rounded-xl px-4 py-4 text-left text-sm transition-colors hover:bg-renovation-muted/50 dark:hover:bg-zinc-900/50"
+                        className="flex w-full items-start justify-between gap-3 rounded-xl px-4 py-4 text-left text-sm transition-colors hover:bg-renovation-muted/50 dark:hover:bg-renovation-muted/50"
                         onClick={() => {
                           if (topicParam) return;
                           setExpandedId(open ? null : a.id);
@@ -110,7 +110,7 @@ export default function HelpCenterClient() {
                         aria-expanded={open}
                       >
                         <span>
-                          <span className="font-semibold text-zinc-900 dark:text-zinc-50">{t(a.title)}</span>
+                          <span className="font-semibold text-foreground">{t(a.title)}</span>
                           <span className="mt-1 block text-renovation-concrete">{t(a.summary)}</span>
                         </span>
                         <span className="shrink-0 text-xs font-medium text-renovation-steel dark:text-renovation-accent">
@@ -118,7 +118,7 @@ export default function HelpCenterClient() {
                         </span>
                       </button>
                       {open ? (
-                        <div className="border-t border-renovation-border px-4 pb-4 pt-3 text-sm leading-relaxed text-zinc-700 dark:border-renovation-border dark:text-zinc-200">
+                        <div className="border-t border-renovation-border px-4 pb-4 pt-3 text-sm leading-relaxed text-foreground dark:border-renovation-border">
                           <p className="whitespace-pre-line">{t(`help.article.${a.id}.body`)}</p>
                           <p className="mt-4 text-xs text-renovation-concrete">
                             <Link
