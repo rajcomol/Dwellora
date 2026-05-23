@@ -2,6 +2,7 @@
 
 import { DEFAULT_RENOVATION_PHASE, parseRenovationPhase } from "@/lib/renovation/phases";
 import { computeBouwdepotBalancesForProjects } from "@/lib/dashboard/bouwdepot";
+import { filterTasksForProjectId } from "@/lib/dashboard/projectBudget";
 import type {
   ExpenseDocument,
   ExpenseDocumentType,
@@ -64,6 +65,13 @@ async function resolveProjectIdForTaskInput(roomIds: ID[], projectId?: ID): Prom
     return String(roomRes.data.project_id);
   }
   return projectId ?? null;
+}
+
+async function validateRoomIdsBelongToProject(roomIds: ID[], projectId: ID): Promise<boolean> {
+  if (roomIds.length === 0) return true;
+  const res = await supabase.from("rooms").select("id,project_id").in("id", roomIds);
+  if (res.error || !res.data || res.data.length !== roomIds.length) return false;
+  return res.data.every((r) => String(r.project_id) === projectId);
 }
 
 const PROJECT_SELECT =
@@ -139,7 +147,7 @@ type RenovationActions = {
   updateProject: (input: UpdateProjectInput) => void;
   createRoom: (input: { name: string; projectId: ID }) => void;
   deleteRoom: (id: ID) => void;
-  createTask: (input: CreateTaskInput) => void;
+  createTask: (input: CreateTaskInput) => Promise<boolean>;
   updateTask: (input: UpdateTaskInput) => Promise<boolean>;
   deleteTask: (id: ID) => void;
   addTaskDependency: (taskId: ID, dependsOnTaskId: ID) => void;
@@ -878,24 +886,28 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     })();
   };
 
-  const createTask = (input: CreateTaskInput) => {
+  const createTask = async (input: CreateTaskInput): Promise<boolean> => {
     const trimmed = input.title.trim();
-    if (!trimmed) return;
-    if (input.estimatedCost !== null && !Number.isFinite(input.estimatedCost)) return;
-    if (!Number.isFinite(input.durationDays)) return;
+    if (!trimmed) return false;
+    if (input.estimatedCost !== null && !Number.isFinite(input.estimatedCost)) return false;
+    if (!Number.isFinite(input.durationDays)) return false;
     const roomIds = [...new Set(input.roomIds.filter(Boolean))];
 
     const actualCost = input.actualCost ?? 0;
-    if (!Number.isFinite(actualCost)) return;
+    if (!Number.isFinite(actualCost)) return false;
 
-    void (async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData.user) return;
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return false;
 
-      const resolvedProjectId = await resolveProjectIdForTaskInput(roomIds, input.projectId);
-      if (!resolvedProjectId) return;
+    const resolvedProjectId = await resolveProjectIdForTaskInput(roomIds, input.projectId);
+    if (!resolvedProjectId) return false;
 
-      let sortOrder = input.sortOrder;
+    if (!(await validateRoomIdsBelongToProject(roomIds, resolvedProjectId))) {
+      console.error("createTask: selected rooms do not belong to project", resolvedProjectId);
+      return false;
+    }
+
+    let sortOrder = input.sortOrder;
       if (sortOrder === undefined) {
         if (roomIds.length > 0) {
           const trOrd = await supabase.from("task_rooms").select("task_id").in("room_id", roomIds);
@@ -942,26 +954,33 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         funded_by_construction_depot: input.fundedByConstructionDepot === true,
       };
 
-      const res = await supabase.from("tasks").insert(insertRow).select(TASK_SELECT).single();
-      if (res.error || !res.data) return;
+    const res = await supabase.from("tasks").insert(insertRow).select(TASK_SELECT).single();
+    if (res.error || !res.data) {
+      console.error("createTask: tasks insert failed", res.error?.message);
+      return false;
+    }
 
-      const taskId = String(res.data.id);
-      if (roomIds.length > 0) {
-        const trIns = await supabase
-          .from("task_rooms")
-          .insert(roomIds.map((roomId) => ({ task_id: taskId, room_id: roomId })));
-        if (trIns.error) {
-          await supabase.from("tasks").delete().eq("id", taskId);
-          return;
+    const taskId = String(res.data.id);
+    if (roomIds.length > 0) {
+      const trIns = await supabase
+        .from("task_rooms")
+        .insert(roomIds.map((roomId) => ({ task_id: taskId, room_id: roomId })));
+      if (trIns.error) {
+        console.error("createTask: task_rooms insert failed", trIns.error.message);
+        const del = await supabase.from("tasks").delete().eq("id", taskId);
+        if (del.error) {
+          console.error("createTask: rollback task delete failed", del.error.message);
         }
+        return false;
       }
+    }
 
-      const nextTask = mapTask(res.data as Parameters<typeof mapTask>[0], roomIds);
+    const nextTask = mapTask(res.data as Parameters<typeof mapTask>[0], roomIds);
 
-      setState((prev) =>
-        withBouwdepotBalances({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] })
-      );
-    })();
+    setState((prev) =>
+      withBouwdepotBalances({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] })
+    );
+    return true;
   };
 
   const updateTask = async (input: UpdateTaskInput): Promise<boolean> => {
@@ -1037,12 +1056,22 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
 
+      const expDel = await supabase.from("project_expenses").delete().eq("task_id", id);
+      if (expDel.error) {
+        console.error("deleteTask: project_expenses delete failed", expDel.error.message);
+        return;
+      }
+
       const res = await supabase.from("tasks").delete().eq("id", id);
-      if (res.error) return;
+      if (res.error) {
+        console.error("deleteTask: tasks delete failed", res.error.message);
+        return;
+      }
       setState((prev) =>
         withBouwdepotBalances({
           ...prev,
           tasks: (prev.tasks ?? []).filter((t) => t.id !== id),
+          projectExpenses: (prev.projectExpenses ?? []).filter((e) => e.taskId !== id),
           taskDependencies: prev.taskDependencies.filter(
             (d) => d.taskId !== id && d.dependsOnTaskId !== id
           ),
@@ -1569,5 +1598,5 @@ export function taskBelongsToProject(tasks: Task[], rooms: Room[], projectId: ID
 
 export function filterTasksForProject(tasks: Task[], rooms: Room[], projectId: ID): Task[] {
   const roomIds = new Set((rooms ?? []).filter((r) => r.projectId === projectId).map((r) => r.id));
-  return (tasks ?? []).filter((t) => (t.roomIds ?? []).some((rid) => roomIds.has(rid)));
+  return filterTasksForProjectId(tasks ?? [], projectId, roomIds);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeProjectSpendOverview } from "@/lib/dashboard/projectBudget";
+import { computeProjectSpendOverview, looseExpensesForBudget } from "@/lib/dashboard/projectBudget";
 import { DEFAULT_RENOVATION_PHASE } from "@/lib/renovation/phases";
 import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
@@ -67,5 +67,23 @@ describe("computeProjectSpendOverview", () => {
     expect(overview.ownRemaining).toBe(7600);
     expect(overview.depotUsed).toBe(3600);
     expect(overview.depotRemaining).toBe(16400);
+  });
+
+  it("excludes expenses linked to a live task from loose spend (no double count)", () => {
+    const tasks = [task({ id: "t1", estimatedCost: 2000 })];
+    const overview = computeProjectSpendOverview(project, tasks, [
+      expense({ id: "e1", amount: 500, taskId: "t1" }),
+      expense({ id: "e2", amount: 300, taskId: null }),
+    ]);
+    expect(overview.totalSpent).toBe(2300);
+  });
+
+  it("treats only unlinked expenses as loose spend", () => {
+    const loose = looseExpensesForBudget([
+      expense({ id: "e1", amount: 500, taskId: "t1" }),
+      expense({ id: "e2", amount: 300, taskId: null }),
+    ]);
+    expect(loose).toHaveLength(1);
+    expect(loose[0]?.id).toBe("e2");
   });
 });

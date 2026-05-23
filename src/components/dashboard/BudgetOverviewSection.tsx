@@ -70,9 +70,15 @@ export default function BudgetOverviewSection() {
         emptyHint={t("bouwdepot.noProjectTotalWarning")}
       />
 
-      <article className="flex flex-col rounded-xl border border-renovation-border bg-renovation-muted/50 p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-muted/30">
+      <article
+        data-testid="budget-total-spent"
+        className="flex flex-col rounded-xl border border-renovation-border bg-renovation-muted/50 p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-muted/30"
+      >
         <h3 className="text-sm font-semibold text-foreground">{t("dashboard.budget.totalSpent")}</h3>
-        <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        <p
+          data-testid="budget-total-spent-amount"
+          className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-foreground"
+        >
           {formatCurrency(overview.totalSpent)}
         </p>
         <p className="mt-1 text-xs text-renovation-concrete">

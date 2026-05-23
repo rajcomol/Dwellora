@@ -1,3 +1,4 @@
+import { looseExpensesForBudget } from "@/lib/dashboard/projectBudget";
 import { sumEstimatedCostsUnique, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
 import type { Project, ProjectExpense, Room, Task } from "@/lib/renovation/types";
 
@@ -37,7 +38,10 @@ export function projectBudgetSummary(
 ) {
   const est = sumEstimatedCostsUnique(tasksInProject);
   const actTasks = tasksInProject.reduce((s, t) => s + (Number.isFinite(t.actualCost) ? t.actualCost : 0), 0);
-  const actLoose = expensesInProject.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+  const actLoose = looseExpensesForBudget(expensesInProject, tasksInProject).reduce(
+    (s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0),
+    0
+  );
   const act = actTasks + actLoose;
   return {
     budget: project.totalBudget,

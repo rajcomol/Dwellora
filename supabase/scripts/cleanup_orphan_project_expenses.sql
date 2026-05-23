@@ -1,0 +1,8 @@
+-- =============================================================================
+-- Wees-uitgaven opschonen — gebruik het volledige script:
+--
+--   supabase/scripts/prod_cleanup_orphan_project_expenses.sql
+--
+-- Dat bestand doet in één run: controle, tellingen, preview, DELETE en verificatie.
+-- Geschikt voor staging en productie (idempotent).
+-- =============================================================================

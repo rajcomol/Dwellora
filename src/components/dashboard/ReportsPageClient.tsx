@@ -8,6 +8,7 @@ import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
+import { filterTasksForProjectId, looseExpensesForBudget } from "@/lib/dashboard/projectBudget";
 import { sumEstimatedCostsUnique } from "@/lib/dashboard/taskCosts";
 import { aggregateSpendByRoom, projectBudgetSummary } from "@/lib/dashboard/reports";
 
@@ -37,7 +38,7 @@ export default function ReportsPageClient() {
     if (projectFilter === "all") return tasks;
     const ids = roomIdsByProject.get(projectFilter);
     if (!ids) return [];
-    return tasks.filter((tk) => tk.roomIds.some((rid) => ids.has(rid)));
+    return filterTasksForProjectId(tasks, projectFilter, ids);
   }, [tasks, projectFilter, roomIdsByProject]);
 
   const filteredRooms = useMemo(() => {
@@ -59,7 +60,10 @@ export default function ReportsPageClient() {
   const totals = useMemo(() => {
     const est = sumEstimatedCostsUnique(filteredTasks);
     const actTasks = filteredTasks.reduce((s, tk) => s + tk.actualCost, 0);
-    const actLoose = filteredExpenses.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+    const actLoose = looseExpensesForBudget(filteredExpenses, filteredTasks).reduce(
+      (s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0),
+      0
+    );
     const act = actTasks + actLoose;
     const budget =
       projectFilter === "all"

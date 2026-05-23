@@ -829,7 +829,7 @@ function RoomCard({
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
     fundedByConstructionDepot?: boolean;
-  }) => void;
+  }) => Promise<boolean>;
   onUpdateTask: (input: {
     id: ID;
     title?: string;
@@ -951,52 +951,59 @@ function RoomCard({
         className="mt-4 flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
-          const parsed = taskFormFieldsSchema.safeParse({
-            title,
-            roomIds: newTaskRoomIds,
-            estimatedCost,
-            actualCost,
-            durationDays,
-            description,
-            startDate,
-            status,
-            priority,
-            renovationPhase: newTaskPhase,
-            assignedRosterId: newTaskAssignee,
-          });
-          if (!parsed.success) {
-            setError(taskFormZodMessage(t, parsed.error));
-            return;
-          }
-          const d = parsed.data;
-          onCreateTask({
-            title: d.title,
-            projectId: room.projectId,
-            roomIds: d.roomIds,
-            status: d.status,
-            estimatedCost: d.estimatedCost,
-            actualCost: d.actualCost,
-            durationDays: d.durationDays,
-            priority: d.priority,
-            description: d.description.trim(),
-            startDate: d.startDate.trim() || null,
-            assignedRosterId: d.assignedRosterId.trim() || null,
-            renovationPhase: d.renovationPhase,
-            fundedByConstructionDepot: newTaskFundedByDepot,
-          });
-          setTitle("");
-          setStatus("todo");
-          setEstimatedCost("");
-          setActualCost("");
-          setDurationDays("");
-          setPriority("medium");
-          setDescription("");
-          setStartDate("");
-          setNewTaskAssignee("");
-          setNewTaskPhase(DEFAULT_RENOVATION_PHASE);
-          setNewTaskRoomIds([room.id]);
-          setNewTaskFundedByDepot(false);
-          setError(null);
+          void (async () => {
+            const parsed = taskFormFieldsSchema.safeParse({
+              title,
+              roomIds: newTaskRoomIds,
+              estimatedCost,
+              actualCost,
+              durationDays,
+              description,
+              startDate,
+              status,
+              priority,
+              renovationPhase: newTaskPhase,
+              assignedRosterId: newTaskAssignee,
+            });
+            if (!parsed.success) {
+              setError(taskFormZodMessage(t, parsed.error));
+              return;
+            }
+            const d = parsed.data;
+            const roomIds = [...new Set([room.id, ...d.roomIds])];
+            const ok = await onCreateTask({
+              title: d.title,
+              projectId: room.projectId,
+              roomIds,
+              status: d.status,
+              estimatedCost: d.estimatedCost,
+              actualCost: d.actualCost,
+              durationDays: d.durationDays,
+              priority: d.priority,
+              description: d.description.trim(),
+              startDate: d.startDate.trim() || null,
+              assignedRosterId: d.assignedRosterId.trim() || null,
+              renovationPhase: d.renovationPhase,
+              fundedByConstructionDepot: newTaskFundedByDepot,
+            });
+            if (!ok) {
+              setError(t("projectDetail.taskSaveError"));
+              return;
+            }
+            setTitle("");
+            setStatus("todo");
+            setEstimatedCost("");
+            setActualCost("");
+            setDurationDays("");
+            setPriority("medium");
+            setDescription("");
+            setStartDate("");
+            setNewTaskAssignee("");
+            setNewTaskPhase(DEFAULT_RENOVATION_PHASE);
+            setNewTaskRoomIds([room.id]);
+            setNewTaskFundedByDepot(false);
+            setError(null);
+          })();
         }}
       >
         <div className="grid gap-3 sm:grid-cols-2">

@@ -133,17 +133,23 @@ export default function RoomDetailPageClient({ roomId }: Props) {
             return;
           }
           setError(null);
-          createTask({
-            title: trimmed,
-            projectId: room.projectId,
-            roomIds: [room.id],
-            status: "todo",
-            estimatedCost: null,
-            durationDays: 1,
-            priority: "medium",
-            renovationPhase: DEFAULT_RENOVATION_PHASE,
-          });
-          setTitle("");
+          void (async () => {
+            const ok = await createTask({
+              title: trimmed,
+              projectId: room.projectId,
+              roomIds: [room.id],
+              status: "todo",
+              estimatedCost: null,
+              durationDays: 1,
+              priority: "medium",
+              renovationPhase: DEFAULT_RENOVATION_PHASE,
+            });
+            if (!ok) {
+              setError(t("projectDetail.taskSaveError"));
+              return;
+            }
+            setTitle("");
+          })();
         }}
       >
         <h2 className="text-sm font-semibold">{t("projectDetail.addTask")}</h2>

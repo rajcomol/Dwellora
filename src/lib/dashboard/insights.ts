@@ -1,3 +1,4 @@
+import { looseExpensesForBudget } from "@/lib/dashboard/projectBudget";
 import { sumEstimatedCostsUnique, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
 import type { Project, ProjectConstructionDepotBalance, ProjectExpense, Task } from "@/lib/renovation/types";
 
@@ -32,7 +33,7 @@ export function computeMetrics(
     (sum, t) => sum + (Number.isFinite(t.actualCost) ? t.actualCost : 0),
     0
   );
-  const totalLooseExpenses = sumExpenseAmounts(projectExpenses);
+  const totalLooseExpenses = sumExpenseAmounts(looseExpensesForBudget(projectExpenses, tasks));
   const totalActualRecordedSpend = totalActualFromTasks + totalLooseExpenses;
   const budgetGap = totalProjectBudget - totalEstimatedTaskCosts;
   const estimateVsActualGap = totalEstimatedTaskCosts - totalActualRecordedSpend;
@@ -75,7 +76,7 @@ export function generateInsights(
   const hasAnyProjectWithoutBudget = projects.some((p) => p.totalBudget <= 0);
   const totalEstimated = sumEstimatedCostsUnique(tasks);
   const totalActualTasks = tasks.reduce((s, t) => s + (Number.isFinite(t.actualCost) ? t.actualCost : 0), 0);
-  const totalLoose = sumExpenseAmounts(projectExpenses);
+  const totalLoose = sumExpenseAmounts(looseExpensesForBudget(projectExpenses, tasks));
   const totalActualAll = totalActualTasks + totalLoose;
 
   for (const d of depotBalances) {

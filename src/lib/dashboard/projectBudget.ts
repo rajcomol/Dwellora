@@ -2,6 +2,11 @@ import { taskBouwdepotChargeAmount } from "@/lib/dashboard/bouwdepot";
 import { sumEstimatedCostsUnique, taskChargeAmount, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
 import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
+/** Losse projectuitgaven voor budget (niet gekoppeld aan een taak; voorkomt dubbeltelling). */
+export function looseExpensesForBudget(expenses: ProjectExpense[], _tasks?: Task[]): ProjectExpense[] {
+  return expenses.filter((e) => !e.taskId);
+}
+
 /** Bedrag dat een taak tegen eigen geld telt (niet uit bouwdepot). */
 export function taskOwnMoneyChargeAmount(task: Task): number {
   if (task.fundedByConstructionDepot) return 0;
@@ -12,6 +17,10 @@ function sumOwnMoneyExpenseUsed(expenses: ProjectExpense[]): number {
   return expenses
     .filter((e) => !e.fundedByConstructionDepot)
     .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+}
+
+function sumExpenseAmounts(expenses: ProjectExpense[]): number {
+  return expenses.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
 }
 
 export type ProjectBudgetBreakdown = {
@@ -100,20 +109,18 @@ export function computeProjectSpendOverview(
 ): ProjectSpendOverview {
   const { own, depot, total } = projectMoney(project);
   const projectExpenses = expenses.filter((e) => e.projectId === project.id);
+  const budgetExpenses = looseExpensesForBudget(projectExpenses, tasks);
   const taskSpent = tasks.reduce((s, t) => s + taskChargeAmount(t), 0);
-  const looseSpent = projectExpenses.reduce(
-    (s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0),
-    0
-  );
+  const looseSpent = sumExpenseAmounts(budgetExpenses);
   const totalSpent = taskSpent + looseSpent;
   const estimatedTasksTotal = sumEstimatedCostsUnique(tasks);
   const ownTaskUsed = tasks.reduce((s, t) => s + taskOwnMoneyChargeAmount(t), 0);
-  const ownExpenseUsed = sumOwnMoneyExpenseUsed(projectExpenses);
+  const ownExpenseUsed = sumOwnMoneyExpenseUsed(budgetExpenses);
   const ownUsedTotal = ownTaskUsed + ownExpenseUsed;
   const ownRemaining = own - ownUsedTotal;
 
   const depotTaskUsed = tasks.reduce((s, t) => s + taskBouwdepotChargeAmount(t), 0);
-  const depotExpenseUsed = projectExpenses
+  const depotExpenseUsed = budgetExpenses
     .filter((e) => e.fundedByConstructionDepot)
     .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
   const depotUsedTotal = depotTaskUsed + depotExpenseUsed;
