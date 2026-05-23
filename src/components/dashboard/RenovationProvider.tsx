@@ -938,44 +938,86 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         input.assignedRosterId
       );
 
-      const insertRow = {
-        project_id: resolvedProjectId,
-        title: trimmed,
-        renovation_phase: input.renovationPhase ?? DEFAULT_RENOVATION_PHASE,
-        status: input.status,
-        estimated_cost: input.estimatedCost,
-        actual_cost: actualCost,
-        duration_days: input.durationDays,
-        priority: input.priority,
-        description: (input.description ?? "").trim(),
-        sort_order: sortOrder,
-        start_date: input.startDate?.trim() || null,
-        assigned_roster_id: assignedRosterId,
-        funded_by_construction_depot: input.fundedByConstructionDepot === true,
-      };
+      const renovationPhase = input.renovationPhase ?? DEFAULT_RENOVATION_PHASE;
 
-    const res = await supabase.from("tasks").insert(insertRow).select(TASK_SELECT).single();
-    if (res.error || !res.data) {
-      console.error("createTask: tasks insert failed", res.error?.message);
-      return false;
-    }
+      const rpcRes = await supabase.rpc("create_project_task", {
+        p_project_id: resolvedProjectId,
+        p_title: trimmed,
+        p_renovation_phase: renovationPhase,
+        p_status: input.status,
+        p_estimated_cost: input.estimatedCost,
+        p_actual_cost: actualCost,
+        p_duration_days: input.durationDays,
+        p_priority: input.priority,
+        p_description: (input.description ?? "").trim(),
+        p_sort_order: sortOrder ?? 0,
+        p_start_date: input.startDate?.trim() || null,
+        p_assigned_roster_id: assignedRosterId,
+        p_funded_by_construction_depot: input.fundedByConstructionDepot === true,
+        p_room_ids: roomIds,
+      });
 
-    const taskId = String(res.data.id);
-    if (roomIds.length > 0) {
-      const trIns = await supabase
-        .from("task_rooms")
-        .insert(roomIds.map((roomId) => ({ task_id: taskId, room_id: roomId })));
-      if (trIns.error) {
-        console.error("createTask: task_rooms insert failed", trIns.error.message);
-        const del = await supabase.from("tasks").delete().eq("id", taskId);
-        if (del.error) {
-          console.error("createTask: rollback task delete failed", del.error.message);
-        }
+      let taskRow: Parameters<typeof mapTask>[0] | null = null;
+
+      if (!rpcRes.error && rpcRes.data) {
+        const raw = rpcRes.data as Parameters<typeof mapTask>[0] | Parameters<typeof mapTask>[0][];
+        taskRow = (Array.isArray(raw) ? raw[0] : raw) ?? null;
+      } else if (
+        rpcRes.error &&
+        rpcRes.error.code !== "PGRST202" &&
+        rpcRes.error.code !== "42883"
+      ) {
+        console.error("createTask: create_project_task rpc failed", rpcRes.error.message);
         return false;
       }
-    }
 
-    const nextTask = mapTask(res.data as Parameters<typeof mapTask>[0], roomIds);
+      if (!taskRow) {
+        const taskId = crypto.randomUUID();
+        const insertRow = {
+          id: taskId,
+          project_id: resolvedProjectId,
+          title: trimmed,
+          renovation_phase: renovationPhase,
+          status: input.status,
+          estimated_cost: input.estimatedCost,
+          actual_cost: actualCost,
+          duration_days: input.durationDays,
+          priority: input.priority,
+          description: (input.description ?? "").trim(),
+          sort_order: sortOrder,
+          start_date: input.startDate?.trim() || null,
+          assigned_roster_id: assignedRosterId,
+          funded_by_construction_depot: input.fundedByConstructionDepot === true,
+        };
+
+        const ins = await supabase.from("tasks").insert(insertRow);
+        if (ins.error) {
+          console.error("createTask: tasks insert failed", ins.error.message, {
+            projectId: resolvedProjectId,
+            roomIds,
+          });
+          return false;
+        }
+
+        if (roomIds.length > 0) {
+          const trIns = await supabase
+            .from("task_rooms")
+            .insert(roomIds.map((roomId) => ({ task_id: taskId, room_id: roomId })));
+          if (trIns.error) {
+            console.error("createTask: task_rooms insert failed", trIns.error.message);
+            await supabase.from("tasks").delete().eq("id", taskId);
+            return false;
+          }
+        }
+
+        taskRow = insertRow;
+      }
+
+      if (!taskRow) {
+        return false;
+      }
+
+    const nextTask = mapTask(taskRow, roomIds);
 
     setState((prev) =>
       withBouwdepotBalances({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] })

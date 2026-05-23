@@ -62,7 +62,7 @@ DROP POLICY IF EXISTS "tasks_delete_via_room" ON public.tasks;
 
 CREATE POLICY "tasks_select_via_room" ON public.tasks
   FOR SELECT TO authenticated
-  USING (public.user_has_task_access(id));
+  USING (public.user_has_task_access(tasks.id));
 
 CREATE POLICY "tasks_insert_via_room" ON public.tasks
   FOR INSERT TO authenticated
@@ -70,12 +70,12 @@ CREATE POLICY "tasks_insert_via_room" ON public.tasks
 
 CREATE POLICY "tasks_update_via_room" ON public.tasks
   FOR UPDATE TO authenticated
-  USING (public.user_has_task_access(id))
-  WITH CHECK (public.user_has_task_access(id));
+  USING (public.user_has_task_access(tasks.id))
+  WITH CHECK (public.user_has_task_access(tasks.id));
 
 CREATE POLICY "tasks_delete_via_room" ON public.tasks
   FOR DELETE TO authenticated
-  USING (public.user_has_task_access(id));
+  USING (public.user_has_task_access(tasks.id));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.tasks TO authenticated;
 
