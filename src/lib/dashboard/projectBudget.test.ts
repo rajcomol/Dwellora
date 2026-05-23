@@ -67,6 +67,17 @@ describe("computeProjectSpendOverview", () => {
     expect(overview.ownRemaining).toBe(7600);
     expect(overview.depotUsed).toBe(3600);
     expect(overview.depotRemaining).toBe(16400);
+    expect(overview.remainingBudget).toBe(30000 - 1000);
+  });
+
+  it("remaining budget uses actual task costs plus loose expenses only", () => {
+    const overview = computeProjectSpendOverview(
+      project,
+      [task({ id: "t1", estimatedCost: 5000, actualCost: 2000 })],
+      [expense({ id: "e1", amount: 1500, taskId: null })]
+    );
+    expect(overview.totalSpent).toBe(3500);
+    expect(overview.remainingBudget).toBe(30000 - 2000 - 1500);
   });
 
   it("excludes expenses linked to a live task from loose spend (no double count)", () => {

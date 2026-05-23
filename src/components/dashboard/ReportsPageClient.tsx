@@ -132,7 +132,8 @@ export default function ReportsPageClient() {
             const p = projects.find((x) => x.id === projectFilter);
             if (!p) return null;
             const pRooms = rooms.filter((r) => r.projectId === p.id);
-            const pTasks = tasks.filter((tk) => tk.roomIds.some((rid) => pRooms.some((r) => r.id === rid)));
+            const pRoomIds = new Set(pRooms.map((r) => r.id));
+            const pTasks = filterTasksForProjectId(tasks, p.id, pRoomIds);
             const pExp = projectExpenses.filter((e) => e.projectId === p.id);
             const s = projectBudgetSummary(p, pTasks, pExp);
             return (
@@ -211,7 +212,7 @@ export default function ReportsPageClient() {
           )}
         </Card>
 
-        <Card>
+        <Card data-testid="reports-by-room">
           <h2 className="text-base font-semibold">{t("reports.byRoom")}</h2>
           <p className="mt-1 text-xs text-renovation-concrete">{t("reports.byRoomHint")}</p>
           {byRoom.length === 0 ? (

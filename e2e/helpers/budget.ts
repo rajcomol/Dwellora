@@ -8,3 +8,9 @@ export async function expectBudgetTotalSpent(page: Page, amount: number): Promis
     timeout: 60_000,
   });
 }
+
+export async function expectBudgetRemaining(page: Page, amount: number): Promise<void> {
+  const stat = page.getByTestId("budget-remaining-stat");
+  await expect(stat).toBeVisible({ timeout: 60_000 });
+  await expect(stat).toContainText(formatCurrency(amount), { timeout: 60_000 });
+}

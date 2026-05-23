@@ -52,6 +52,19 @@ describe("aggregateSpendByRoom", () => {
     expect(k?.estimated).toBe(150);
     expect(k?.actual).toBe(120);
   });
+
+  it("includes rooms without tasks with zero totals", () => {
+    const rooms: Room[] = [
+      { id: "r1", name: "Keuken", projectId: "p1" },
+      { id: "r2", name: "Hal", projectId: "p1" },
+    ];
+    const rows = aggregateSpendByRoom([task({ roomIds: ["r1"], estimatedCost: 100 })], rooms);
+    expect(rows).toHaveLength(2);
+    const hall = rows.find((r) => r.roomId === "r2");
+    expect(hall?.taskCount).toBe(0);
+    expect(hall?.estimated).toBe(0);
+    expect(hall?.actual).toBe(0);
+  });
 });
 
 describe("projectBudgetSummary", () => {

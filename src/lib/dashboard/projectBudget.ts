@@ -98,6 +98,8 @@ export type ProjectSpendOverview = {
   depotUsedPct: number;
   totalBudget: number;
   totalSpent: number;
+  /** Totaal budget minus werkelijke kosten taken en losse uitgaven. */
+  remainingBudget: number;
   estimatedTasksTotal: number;
   spentVsBudgetPct: number;
 };
@@ -111,6 +113,10 @@ export function computeProjectSpendOverview(
   const projectExpenses = expenses.filter((e) => e.projectId === project.id);
   const budgetExpenses = looseExpensesForBudget(projectExpenses, tasks);
   const taskSpent = tasks.reduce((s, t) => s + taskChargeAmount(t), 0);
+  const actualTaskSpent = tasks.reduce(
+    (s, t) => s + (Number.isFinite(t.actualCost) ? t.actualCost : 0),
+    0
+  );
   const looseSpent = sumExpenseAmounts(budgetExpenses);
   const totalSpent = taskSpent + looseSpent;
   const estimatedTasksTotal = sumEstimatedCostsUnique(tasks);
@@ -137,6 +143,7 @@ export function computeProjectSpendOverview(
     depotUsedPct: depot > 0 ? Math.min(100, (depotUsedTotal / depot) * 100) : 0,
     totalBudget: total,
     totalSpent,
+    remainingBudget: total - actualTaskSpent - looseSpent,
     estimatedTasksTotal,
     spentVsBudgetPct: total > 0 ? Math.min(100, (totalSpent / total) * 100) : 0,
   };

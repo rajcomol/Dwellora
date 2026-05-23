@@ -11,24 +11,31 @@ export type RoomSpend = {
 };
 
 export function aggregateSpendByRoom(tasks: Task[], rooms: Room[]): RoomSpend[] {
-  const roomName = new Map(rooms.map((r) => [r.id, r.name]));
   const map = new Map<string, { estimated: number; actual: number; taskCount: number }>();
+  for (const r of rooms) {
+    map.set(r.id, { estimated: 0, actual: 0, taskCount: 0 });
+  }
   for (const t of tasks) {
     for (const roomId of t.roomIds) {
-      const cur = map.get(roomId) ?? { estimated: 0, actual: 0, taskCount: 0 };
+      if (!map.has(roomId)) continue;
+      const cur = map.get(roomId)!;
       cur.estimated += taskEstimatedAmount(t);
       cur.actual += Number.isFinite(t.actualCost) ? t.actualCost : 0;
       cur.taskCount += 1;
-      map.set(roomId, cur);
     }
   }
-  return [...map.entries()]
-    .map(([roomId, v]) => ({
-      roomId,
-      roomName: roomName.get(roomId) ?? roomId,
-      ...v,
-    }))
-    .sort((a, b) => b.estimated + b.actual - (a.estimated + a.actual));
+  return rooms
+    .map((r) => {
+      const v = map.get(r.id) ?? { estimated: 0, actual: 0, taskCount: 0 };
+      return {
+        roomId: r.id,
+        roomName: r.name,
+        estimated: v.estimated,
+        actual: v.actual,
+        taskCount: v.taskCount,
+      };
+    })
+    .sort((a, b) => a.roomName.localeCompare(b.roomName, "nl"));
 }
 
 export function projectBudgetSummary(

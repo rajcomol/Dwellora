@@ -5,17 +5,30 @@ import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
 import {
-  computeProjectBudgetBreakdown,
+  computeProjectSpendOverview,
   daysUntilKeyHandover,
   filterTasksForProjectId,
 } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
-import type { Project, Task } from "@/lib/renovation/types";
+import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
-function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function StatCard({
+  label,
+  value,
+  hint,
+  testId,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  testId?: string;
+}) {
   return (
-    <div className="rounded-xl bg-renovation-surface p-4 dark:border dark:border-renovation-border dark:bg-renovation-elevated">
+    <div
+      data-testid={testId}
+      className="rounded-xl bg-renovation-surface p-4 dark:border dark:border-renovation-border dark:bg-renovation-elevated"
+    >
       <div className="text-xs text-renovation-concrete">{label}</div>
       <div className="mt-2 font-semibold tabular-nums text-foreground">{value}</div>
       {hint ? <div className="mt-1 text-xs text-renovation-concrete">{hint}</div> : null}
@@ -23,9 +36,15 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
   );
 }
 
-function statsForProject(project: Project, tasks: Task[], roomIds: Set<string>, t: (k: string, p?: Record<string, string | number>) => string) {
+function statsForProject(
+  project: Project,
+  tasks: Task[],
+  expenses: ProjectExpense[],
+  roomIds: Set<string>,
+  t: (k: string, p?: Record<string, string | number>) => string
+) {
   const filtered = filterTasksForProjectId(tasks, project.id, roomIds);
-  const breakdown = computeProjectBudgetBreakdown(project, filtered);
+  const overview = computeProjectSpendOverview(project, filtered, expenses);
   const total = filtered.length;
   const done = filtered.filter((tk) => tk.status === "done").length;
   const days = daysUntilKeyHandover(project.expectedKeyHandover);
@@ -41,8 +60,8 @@ function statsForProject(project: Project, tasks: Task[], roomIds: Set<string>, 
 
   return {
     tasks: t("dashboard.stats.tasksValue", { done, total }),
-    budget: formatCurrency(breakdown.remainingBudget),
-    depot: formatCurrency(breakdown.depotRemaining),
+    budget: formatCurrency(overview.remainingBudget),
+    depot: formatCurrency(overview.depotRemaining),
     key: keyLabel,
     keyHint,
   };
@@ -51,7 +70,7 @@ function statsForProject(project: Project, tasks: Task[], roomIds: Set<string>, 
 export default function DashboardStatGrid() {
   const { t } = useI18n();
   const { selectedProject } = useSelectedProject();
-  const { projects, rooms, tasks } = useRenovation();
+  const { projects, rooms, tasks, projectExpenses } = useRenovation();
 
   const roomIdsByProject = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -66,7 +85,7 @@ export default function DashboardStatGrid() {
   const display = useMemo(() => {
     if (selectedProject) {
       const roomIds = roomIdsByProject.get(selectedProject.id) ?? new Set();
-      return statsForProject(selectedProject, tasks, roomIds, t);
+      return statsForProject(selectedProject, tasks, projectExpenses, roomIds, t);
     }
     if (projects.length === 0) {
       return {
@@ -79,13 +98,17 @@ export default function DashboardStatGrid() {
     }
     const first = projects[0]!;
     const roomIds = roomIdsByProject.get(first.id) ?? new Set();
-    return statsForProject(first, tasks, roomIds, t);
-  }, [selectedProject, projects, tasks, roomIdsByProject, t]);
+    return statsForProject(first, tasks, projectExpenses, roomIds, t);
+  }, [selectedProject, projects, tasks, projectExpenses, roomIdsByProject, t]);
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <StatCard label={t("dashboard.stats.tasks")} value={display.tasks} />
-      <StatCard label={t("dashboard.stats.budgetRemaining")} value={display.budget} />
+      <StatCard
+        label={t("dashboard.stats.budgetRemaining")}
+        value={display.budget}
+        testId="budget-remaining-stat"
+      />
       <StatCard label={t("dashboard.stats.depotRemaining")} value={display.depot} />
       <StatCard label={t("dashboard.stats.keyDate")} value={display.key} hint={display.keyHint} />
     </div>
