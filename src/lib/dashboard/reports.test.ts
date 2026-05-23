@@ -18,7 +18,7 @@ function task(partial: Partial<Task>): Task {
     sortOrder: 0,
     startDate: null,
     assignedRosterId: null,
-    constructionDepotId: null,
+    fundedByConstructionDepot: false,
     renovationPhase: DEFAULT_RENOVATION_PHASE,
     ...partial,
   };
@@ -66,6 +66,7 @@ describe("projectBudgetSummary", () => {
         notes: "",
         createdAt: "",
         taskId: null,
+        fundedByConstructionDepot: false,
       },
     ];
     const s = projectBudgetSummary(sampleProject, [task({ actualCost: 50 })], expenses);

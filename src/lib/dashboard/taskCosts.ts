@@ -4,6 +4,12 @@ export function taskEstimatedAmount(task: Task): number {
   return task.estimatedCost != null && Number.isFinite(task.estimatedCost) ? task.estimatedCost : 0;
 }
 
+/** Werkelijke kosten indien ingevuld (> 0), anders geschatte kosten. */
+export function taskChargeAmount(task: Task): number {
+  if (Number.isFinite(task.actualCost) && task.actualCost > 0) return task.actualCost;
+  return taskEstimatedAmount(task);
+}
+
 /** Sum estimated costs once per task (for project-level totals). */
 export function sumEstimatedCostsUnique(tasks: Task[]): number {
   const seen = new Set<string>();

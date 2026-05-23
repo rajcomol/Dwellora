@@ -7,6 +7,8 @@ const sampleProject: Project = {
   id: "p1",
   name: "Test",
   totalBudget: 1000,
+  ownContribution: 1000,
+  constructionDepotTotal: null,
   address: "",
   expectedKeyHandover: null,
   notes: "",
@@ -17,7 +19,7 @@ const sampleTask = (overrides: Partial<Task> = {}): Task => ({
   projectId: "p1",
   title: "A",
   roomIds: ["r1"],
-  constructionDepotId: null,
+  fundedByConstructionDepot: false,
   status: "todo",
   estimatedCost: 100,
   actualCost: 40,
@@ -51,6 +53,7 @@ describe("computeMetrics", () => {
         spentOn: "2025-03-01",
         notes: "",
         createdAt: "2025-03-01T12:00:00Z",
+        fundedByConstructionDepot: false,
       },
     ]);
     expect(m.totalLooseExpenses).toBe(40);

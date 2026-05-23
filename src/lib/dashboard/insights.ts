@@ -1,5 +1,5 @@
 import { sumEstimatedCostsUnique, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
-import type { ConstructionDepotBalance, Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { Project, ProjectConstructionDepotBalance, ProjectExpense, Task } from "@/lib/renovation/types";
 
 export type DashboardMetrics = {
   totalProjectBudget: number;
@@ -66,7 +66,8 @@ export function generateInsights(
   projects: Project[],
   tasks: Task[],
   projectExpenses: ProjectExpense[] = [],
-  depotBalances: ConstructionDepotBalance[] = []
+  depotBalances: ProjectConstructionDepotBalance[] = [],
+  projectNameById: Map<string, string> = new Map()
 ): InsightItem[] {
   const insights: InsightItem[] = [];
 
@@ -78,11 +79,11 @@ export function generateInsights(
   const totalActualAll = totalActualTasks + totalLoose;
 
   for (const d of depotBalances) {
-    if (d.remainingEstimated < 0) {
+    if (d.remainingAmount < 0) {
       insights.push({
         severity: "warning",
         messageKey: "insights.depotOverBudget",
-        messageParams: { name: d.name },
+        messageParams: { name: projectNameById.get(d.projectId) ?? "—" },
       });
     }
   }

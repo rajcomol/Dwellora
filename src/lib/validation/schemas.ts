@@ -136,10 +136,6 @@ export const projectUpdateFormSchema = z.object({
   notes: z.string(),
 });
 
-export const constructionDepotNameSchema = z.object({
-  name: z.string().trim().min(1),
-});
-
 export const expenseLineFormSchema = z.object({
   title: z.string().trim().min(1),
   amount: z
@@ -193,14 +189,6 @@ export const rosterEntryFormSchema = z.object({
 
 export const roomNameFormSchema = z.object({
   name: z.string().trim().min(1),
-});
-
-export const constructionDepotFormSchema = z.object({
-  name: z.string().trim().min(1),
-  totalAmount: z
-    .string()
-    .transform((s) => (s.trim() === "" ? NaN : Number.parseFloat(s)))
-    .pipe(z.number().finite().min(0)),
 });
 
 export const chatComposerMessageSchema = z

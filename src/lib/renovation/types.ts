@@ -47,24 +47,16 @@ export interface Task {
   startDate: string | null;
   /** project_team_roster row for this project, or null */
   assignedRosterId: ID | null;
-  /** Optional construction depot (bouwdepot) funding this task */
-  constructionDepotId: ID | null;
+  /** Kosten van deze taak tellen mee voor het project-bouwdepot */
+  fundedByConstructionDepot: boolean;
 }
 
-export interface ConstructionDepot {
-  id: ID;
+/** Bouwdepot-saldo per project (financieringsbron, geen uitgave). */
+export interface ProjectConstructionDepotBalance {
   projectId: ID;
-  name: string;
   totalAmount: number;
-  createdAt: string;
-  userId: ID;
-}
-
-export interface ConstructionDepotBalance extends ConstructionDepot {
-  spentEstimated: number;
-  /** Project-level bouwdepot cap */
-  projectDepotTotal: number;
-  remainingEstimated: number;
+  usedAmount: number;
+  remainingAmount: number;
   percentageUsed: number;
   linkedTaskCount: number;
 }
@@ -100,6 +92,8 @@ export interface ProjectExpense {
   createdAt: string;
   /** Taak waar deze kosten bij horen, indien van toepassing */
   taskId: ID | null;
+  /** Bedrag telt mee voor het project-bouwdepot */
+  fundedByConstructionDepot: boolean;
 }
 
 export interface TaskDependency {
@@ -137,8 +131,7 @@ export interface RenovationState {
   projects: Project[];
   rooms: Room[];
   tasks: Task[];
-  constructionDepots: ConstructionDepot[];
-  constructionDepotBalances: ConstructionDepotBalance[];
+  projectConstructionDepotBalances: ProjectConstructionDepotBalance[];
   projectExpenses: ProjectExpense[];
   expenseDocuments: ExpenseDocument[];
   taskDependencies: TaskDependency[];

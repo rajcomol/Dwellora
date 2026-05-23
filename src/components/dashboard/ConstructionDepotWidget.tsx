@@ -5,14 +5,18 @@ import { useMemo } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
 import { formatCurrency } from "@/lib/format/currency";
+import { depotProgressColorClass } from "@/lib/dashboard/projectBudget";
 
 export default function ConstructionDepotWidget() {
   const { t } = useI18n();
-  const { projects, constructionDepotBalances } = useRenovation();
+  const { projects, projectConstructionDepotBalances } = useRenovation();
 
   const active = useMemo(
-    () => constructionDepotBalances.filter((d) => d.totalAmount > 0 || d.linkedTaskCount > 0),
-    [constructionDepotBalances]
+    () =>
+      projectConstructionDepotBalances.filter(
+        (b) => b.totalAmount > 0 || b.linkedTaskCount > 0
+      ),
+    [projectConstructionDepotBalances]
   );
 
   const projectNameById = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects]);
@@ -21,28 +25,21 @@ export default function ConstructionDepotWidget() {
 
   return (
     <section>
-      <h2 className="text-base font-semibold text-foreground">
-        {t("constructionDepot.dashboardTitle")}
-      </h2>
+      <h2 className="text-base font-semibold text-foreground">{t("constructionDepot.dashboardTitle")}</h2>
       <p className="mt-1 text-xs text-renovation-concrete">{t("constructionDepot.dashboardHint")}</p>
       <ul className="mt-4 space-y-3">
-        {active.map((d) => {
-          const pct = d.totalAmount > 0 ? Math.min(100, (d.spentEstimated / d.totalAmount) * 100) : 0;
-          const over = d.remainingEstimated < 0;
+        {active.map((b) => {
+          const pct = b.totalAmount > 0 ? Math.min(100, b.percentageUsed) : 0;
+          const over = b.remainingAmount < 0;
           return (
             <li
-              key={d.id}
+              key={b.projectId}
               className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <div className="font-medium text-foreground">{d.name}</div>
-                  <div className="mt-0.5 text-xs text-renovation-concrete">
-                    {projectNameById.get(d.projectId) ?? "—"}
-                  </div>
-                </div>
+                <div className="font-medium text-foreground">{projectNameById.get(b.projectId) ?? "—"}</div>
                 <Link
-                  href={`/dashboard/projects/${d.projectId}#bouwdepots`}
+                  href={`/dashboard/bouwdepot?project=${b.projectId}`}
                   className="text-xs font-medium text-renovation-steel hover:underline dark:text-renovation-accent"
                 >
                   {t("constructionDepot.viewProject")}
@@ -50,26 +47,21 @@ export default function ConstructionDepotWidget() {
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-renovation-muted">
                 <div
-                  className={[
-                    "h-full rounded-full transition-all",
-                    over ? "bg-red-500" : "bg-renovation-accent",
-                  ].join(" ")}
-                  style={{ width: `${Math.min(100, pct)}%` }}
+                  className={`h-full rounded-full transition-all ${over ? "bg-red-500" : depotProgressColorClass(pct)}`}
+                  style={{ width: `${pct}%` }}
                 />
               </div>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-renovation-concrete">
                 <span>
-                  {t("constructionDepot.spent")}: {formatCurrency(d.spentEstimated)}
+                  {t("constructionDepot.used")}: {formatCurrency(b.usedAmount)}
                 </span>
                 <span>
                   {t("constructionDepot.remaining")}:{" "}
                   <span className={over ? "font-medium text-red-600 dark:text-red-400" : ""}>
-                    {formatCurrency(d.remainingEstimated)}
+                    {formatCurrency(b.remainingAmount)}
                   </span>
                 </span>
-                <span>
-                  {t("constructionDepot.ofTotal", { total: formatCurrency(d.totalAmount) })}
-                </span>
+                <span>{t("constructionDepot.ofTotal", { total: formatCurrency(b.totalAmount) })}</span>
               </div>
             </li>
           );

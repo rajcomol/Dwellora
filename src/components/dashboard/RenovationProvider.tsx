@@ -1,9 +1,8 @@
 "use client";
 
 import { DEFAULT_RENOVATION_PHASE, parseRenovationPhase } from "@/lib/renovation/phases";
+import { computeBouwdepotBalancesForProjects } from "@/lib/dashboard/bouwdepot";
 import type {
-  ConstructionDepot,
-  ConstructionDepotBalance,
   ExpenseDocument,
   ExpenseDocumentType,
   ID,
@@ -29,7 +28,7 @@ const EXPENSE_DOCUMENTS_BUCKET = "expense_documents";
 const MAX_EXPENSE_DOC_BYTES = 10 * 1024 * 1024;
 
 const TASK_SELECT =
-  "id,project_id,title,renovation_phase,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date,assigned_roster_id,construction_depot_id";
+  "id,project_id,title,renovation_phase,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date,assigned_roster_id,funded_by_construction_depot";
 
 /** Ensures roster row belongs to the same project as the task. */
 async function resolveAssignedRosterIdForProject(
@@ -115,7 +114,7 @@ type CreateTaskInput = {
   startDate?: string | null;
   assignedRosterId?: ID | null;
   renovationPhase?: RenovationPhase;
-  constructionDepotId?: ID | null;
+  fundedByConstructionDepot?: boolean;
 };
 
 type UpdateTaskInput = {
@@ -132,7 +131,7 @@ type UpdateTaskInput = {
   roomIds?: ID[];
   assignedRosterId?: ID | null;
   renovationPhase?: RenovationPhase;
-  constructionDepotId?: ID | null;
+  fundedByConstructionDepot?: boolean;
 };
 
 type RenovationActions = {
@@ -166,6 +165,7 @@ type RenovationActions = {
     spentOn?: string | null;
     notes?: string;
     taskId?: ID | null;
+    fundedByConstructionDepot?: boolean;
   }) => void;
   updateProjectExpense: (input: {
     id: ID;
@@ -182,9 +182,6 @@ type RenovationActions = {
     documentType: ExpenseDocumentType
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   removeExpenseDocument: (id: ID) => void;
-  createConstructionDepot: (input: { projectId: ID; name: string }) => void;
-  updateConstructionDepot: (input: { id: ID; name?: string; totalAmount?: number }) => void;
-  deleteConstructionDepot: (id: ID) => void;
 };
 
 type RenovationContextValue = RenovationState &
@@ -259,7 +256,7 @@ function mapTask(
     start_date?: unknown;
     assigned_roster_id?: unknown;
     renovation_phase?: unknown;
-    construction_depot_id?: unknown;
+    funded_by_construction_depot?: unknown;
   },
   roomIds: ID[]
 ): Task {
@@ -269,7 +266,7 @@ function mapTask(
 
   const sd = row.start_date;
   const ar = row.assigned_roster_id;
-  const cd = row.construction_depot_id;
+  const funded = row.funded_by_construction_depot;
   return {
     id: String(row.id),
     projectId: String(row.project_id ?? ""),
@@ -291,67 +288,18 @@ function mapTask(
     sortOrder: typeof row.sort_order === "number" ? row.sort_order : Number(row.sort_order ?? 0) || 0,
     startDate: sd == null || sd === "" ? null : String(sd),
     assignedRosterId: ar == null || ar === "" ? null : String(ar),
-    constructionDepotId: cd == null || cd === "" ? null : String(cd),
+    fundedByConstructionDepot: funded === true || funded === "true",
   };
 }
 
-function mapConstructionDepot(row: {
-  id: unknown;
-  project_id: unknown;
-  name: unknown;
-  total_amount: unknown;
-  created_at?: unknown;
-  user_id: unknown;
-}): ConstructionDepot {
+function withBouwdepotBalances(state: RenovationState): RenovationState {
   return {
-    id: String(row.id),
-    projectId: String(row.project_id),
-    name: String(row.name ?? ""),
-    totalAmount:
-      typeof row.total_amount === "number"
-        ? row.total_amount
-        : Number.parseFloat(String(row.total_amount ?? "0")) || 0,
-    createdAt: String(row.created_at ?? ""),
-    userId: String(row.user_id),
-  };
-}
-
-function mapConstructionDepotBalance(row: {
-  id: unknown;
-  project_id: unknown;
-  name: unknown;
-  total_amount: unknown;
-  created_at?: unknown;
-  user_id: unknown;
-  spent_estimated?: unknown;
-  project_depot_total?: unknown;
-  remaining_estimated?: unknown;
-  percentage_used?: unknown;
-  linked_task_count?: unknown;
-}): ConstructionDepotBalance {
-  const base = mapConstructionDepot(row);
-  return {
-    ...base,
-    spentEstimated:
-      typeof row.spent_estimated === "number"
-        ? row.spent_estimated
-        : Number.parseFloat(String(row.spent_estimated ?? "0")) || 0,
-    projectDepotTotal:
-      typeof row.project_depot_total === "number"
-        ? row.project_depot_total
-        : Number.parseFloat(String(row.project_depot_total ?? "0")) || 0,
-    remainingEstimated:
-      typeof row.remaining_estimated === "number"
-        ? row.remaining_estimated
-        : Number.parseFloat(String(row.remaining_estimated ?? "0")) || 0,
-    percentageUsed:
-      typeof row.percentage_used === "number"
-        ? row.percentage_used
-        : Number.parseFloat(String(row.percentage_used ?? "0")) || 0,
-    linkedTaskCount:
-      typeof row.linked_task_count === "number"
-        ? row.linked_task_count
-        : Number.parseInt(String(row.linked_task_count ?? "0"), 10) || 0,
+    ...state,
+    projectConstructionDepotBalances: computeBouwdepotBalancesForProjects(
+      state.projects,
+      state.tasks,
+      state.projectExpenses
+    ),
   };
 }
 
@@ -376,9 +324,11 @@ function mapExpense(row: {
   notes?: unknown;
   created_at?: unknown;
   task_id?: unknown;
+  funded_by_construction_depot?: unknown;
 }): ProjectExpense {
   const so = row.spent_on;
   const tid = row.task_id;
+  const funded = row.funded_by_construction_depot;
   return {
     id: String(row.id),
     projectId: String(row.project_id),
@@ -389,6 +339,7 @@ function mapExpense(row: {
     notes: String(row.notes ?? ""),
     createdAt: String(row.created_at ?? ""),
     taskId: tid == null || tid === "" ? null : String(tid),
+    fundedByConstructionDepot: funded === true || funded === "true",
   };
 }
 
@@ -495,8 +446,7 @@ function emptyRenovationState(): RenovationState {
     projects: [],
     rooms: [],
     tasks: [],
-    constructionDepots: [],
-    constructionDepotBalances: [],
+    projectConstructionDepotBalances: [],
     projectExpenses: [],
     expenseDocuments: [],
     taskDependencies: [],
@@ -508,12 +458,11 @@ function emptyRenovationState(): RenovationState {
 
 /** Ensures context consumers never see undefined arrays (avoids `.map` crashes). */
 function normalizeRenovationState(state: RenovationState): RenovationState {
-  return {
+  const base: RenovationState = {
     projects: state.projects ?? [],
     rooms: state.rooms ?? [],
     tasks: state.tasks ?? [],
-    constructionDepots: state.constructionDepots ?? [],
-    constructionDepotBalances: state.constructionDepotBalances ?? [],
+    projectConstructionDepotBalances: state.projectConstructionDepotBalances ?? [],
     projectExpenses: state.projectExpenses ?? [],
     expenseDocuments: state.expenseDocuments ?? [],
     taskDependencies: state.taskDependencies ?? [],
@@ -521,6 +470,7 @@ function normalizeRenovationState(state: RenovationState): RenovationState {
     checklistItems: state.checklistItems ?? [],
     teamRoster: state.teamRoster ?? [],
   };
+  return withBouwdepotBalances(base);
 }
 
 export function RenovationProvider({ children }: { children: ReactNode }) {
@@ -675,18 +625,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       const ext = await Promise.all([
         supabase
-          .from("construction_depots")
-          .select("id,project_id,name,total_amount,created_at,user_id")
-          .in("project_id", projectIds),
-        supabase
-          .from("construction_depot_balances")
-          .select(
-            "id,project_id,name,total_amount,created_at,user_id,spent_estimated,project_depot_total,remaining_estimated,percentage_used,linked_task_count"
-          )
-          .in("project_id", projectIds),
-        supabase
           .from("project_expenses")
-          .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
+          .select("id,project_id,title,amount,spent_on,notes,created_at,task_id,funded_by_construction_depot")
           .in("project_id", projectIds),
         supabase
           .from("expense_documents")
@@ -712,13 +652,10 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
 
-      const [depotsRes, depotBalancesRes, expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] =
-        ext;
+      const [expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] = ext;
       const logExt = (label: string, err: { message: string } | null) => {
         if (err) console.warn(`Renovation extension load (${label}):`, err.message);
       };
-      logExt("construction_depots", depotsRes.error);
-      logExt("construction_depot_balances", depotBalancesRes.error);
       logExt("project_expenses", expensesRes.error);
       logExt("expense_documents", expenseDocsRes.error);
       logExt("task_dependencies", depsRes.error);
@@ -726,25 +663,20 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       logExt("checklist", checklistRes.error);
       logExt("team_roster", rosterRes.error);
 
-      setState({
-        projects: mergedProjects.map((r) => mapProject(r as Parameters<typeof mapProject>[0])),
+      const loadedProjects = mergedProjects.map((r) => mapProject(r as Parameters<typeof mapProject>[0]));
+      const loadedTasks = mergedTaskRows.map((r) => {
+        const id = String(r.id);
+        return mapTask(r as Parameters<typeof mapTask>[0], roomIdsByTask.get(id) ?? []);
+      });
+
+      setState(
+        withBouwdepotBalances({
+        projects: loadedProjects,
         rooms: (roomsRes.data ?? []).map((r) =>
           mapRoom(r as { id: unknown; name: unknown; project_id: unknown })
         ),
-        tasks: mergedTaskRows.map((r) => {
-          const id = String(r.id);
-          return mapTask(r as Parameters<typeof mapTask>[0], roomIdsByTask.get(id) ?? []);
-        }),
-        constructionDepots: depotsRes.error
-          ? []
-          : (depotsRes.data ?? []).map((r) =>
-              mapConstructionDepot(r as Parameters<typeof mapConstructionDepot>[0])
-            ),
-        constructionDepotBalances: depotBalancesRes.error
-          ? []
-          : (depotBalancesRes.data ?? []).map((r) =>
-              mapConstructionDepotBalance(r as Parameters<typeof mapConstructionDepotBalance>[0])
-            ),
+        tasks: loadedTasks,
+        projectConstructionDepotBalances: [],
         projectExpenses: expensesRes.error
           ? []
           : (expensesRes.data ?? []).map((r) => mapExpense(r as Parameters<typeof mapExpense>[0])),
@@ -767,7 +699,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         teamRoster: rosterRes.error
           ? []
           : (rosterRes.data ?? []).map((r) => mapRoster(r as Parameters<typeof mapRoster>[0])),
-      });
+        })
+      );
       } finally {
         if (!cancelled) setIsRenovationDataReady(true);
       }
@@ -778,29 +711,6 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [sessionUserId, sessionResolved]);
-
-  const reloadDepotBalances = () => {
-    setState((prev) => {
-      void (async () => {
-        const projectIds = prev.projects.map((p) => p.id);
-        if (projectIds.length === 0) return;
-        const res = await supabase
-          .from("construction_depot_balances")
-          .select(
-            "id,project_id,name,total_amount,created_at,user_id,spent_estimated,project_depot_total,remaining_estimated,percentage_used,linked_task_count"
-          )
-          .in("project_id", projectIds);
-        if (res.error) return;
-        setState((p2) => ({
-          ...p2,
-          constructionDepotBalances: (res.data ?? []).map((r) =>
-            mapConstructionDepotBalance(r as Parameters<typeof mapConstructionDepotBalance>[0])
-          ),
-        }));
-      })();
-      return prev;
-    });
-  };
 
   const createProject = (input: CreateProjectInput) => {
     const trimmed = input.name.trim();
@@ -831,7 +741,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (res.error || !res.data) return;
-      setState((prev) => ({ ...prev, projects: [...prev.projects, mapProject(res.data)] }));
+      setState((prev) =>
+        withBouwdepotBalances({ ...prev, projects: [...prev.projects, mapProject(res.data)] })
+      );
     })();
   };
 
@@ -876,10 +788,12 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       if (res.error || !res.data) return;
       const next = mapProject(res.data);
-      setState((prev) => ({
-        ...prev,
-        projects: prev.projects.map((p) => (p.id === next.id ? next : p)),
-      }));
+      setState((prev) =>
+        withBouwdepotBalances({
+          ...prev,
+          projects: prev.projects.map((p) => (p.id === next.id ? next : p)),
+        })
+      );
     })();
   };
 
@@ -1025,7 +939,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         sort_order: sortOrder,
         start_date: input.startDate?.trim() || null,
         assigned_roster_id: assignedRosterId,
-        construction_depot_id: null,
+        funded_by_construction_depot: input.fundedByConstructionDepot === true,
       };
 
       const res = await supabase.from("tasks").insert(insertRow).select(TASK_SELECT).single();
@@ -1042,22 +956,11 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      let nextTask = mapTask(res.data as Parameters<typeof mapTask>[0], roomIds);
+      const nextTask = mapTask(res.data as Parameters<typeof mapTask>[0], roomIds);
 
-      if (input.constructionDepotId) {
-        const depPatch = await supabase
-          .from("tasks")
-          .update({ construction_depot_id: input.constructionDepotId })
-          .eq("id", taskId)
-          .select(TASK_SELECT)
-          .single();
-        if (!depPatch.error && depPatch.data) {
-          nextTask = mapTask(depPatch.data as Parameters<typeof mapTask>[0], roomIds);
-        }
-      }
-
-      setState((prev) => ({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] }));
-      reloadDepotBalances();
+      setState((prev) =>
+        withBouwdepotBalances({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] })
+      );
     })();
   };
 
@@ -1084,8 +987,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
     if (input.startDate !== undefined) patch.start_date = input.startDate?.trim() || null;
     if (input.renovationPhase !== undefined) patch.renovation_phase = input.renovationPhase;
-    if (input.constructionDepotId !== undefined) {
-      patch.construction_depot_id = input.constructionDepotId || null;
+    if (input.fundedByConstructionDepot !== undefined) {
+      patch.funded_by_construction_depot = input.fundedByConstructionDepot;
     }
     if (input.assignedRosterId !== undefined) {
       patch.assigned_roster_id = await resolveAssignedRosterIdForProject(
@@ -1120,11 +1023,12 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     if (fresh.error || !fresh.data) return false;
 
     const next = mapTask(fresh.data as Parameters<typeof mapTask>[0], effectiveRoomIds);
-    setState((prev) => ({
-      ...prev,
-      tasks: (prev.tasks ?? []).map((tk) => (tk.id === next.id ? next : tk)),
-    }));
-    reloadDepotBalances();
+    setState((prev) =>
+      withBouwdepotBalances({
+        ...prev,
+        tasks: (prev.tasks ?? []).map((tk) => (tk.id === next.id ? next : tk)),
+      })
+    );
     return true;
   };
 
@@ -1135,13 +1039,16 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
       const res = await supabase.from("tasks").delete().eq("id", id);
       if (res.error) return;
-      setState((prev) => ({
-        ...prev,
-        tasks: (prev.tasks ?? []).filter((t) => t.id !== id),
-        taskDependencies: prev.taskDependencies.filter((d) => d.taskId !== id && d.dependsOnTaskId !== id),
-        taskAttachments: prev.taskAttachments.filter((a) => a.taskId !== id),
-      }));
-      reloadDepotBalances();
+      setState((prev) =>
+        withBouwdepotBalances({
+          ...prev,
+          tasks: (prev.tasks ?? []).filter((t) => t.id !== id),
+          taskDependencies: prev.taskDependencies.filter(
+            (d) => d.taskId !== id && d.dependsOnTaskId !== id
+          ),
+          taskAttachments: prev.taskAttachments.filter((a) => a.taskId !== id),
+        })
+      );
     })();
   };
 
@@ -1399,6 +1306,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     spentOn?: string | null;
     notes?: string;
     taskId?: ID | null;
+    fundedByConstructionDepot?: boolean;
   }) => {
     const title = input.title.trim();
     if (!title) return;
@@ -1419,15 +1327,18 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           spent_on: input.spentOn?.trim() || null,
           notes: (input.notes ?? "").trim(),
           task_id: taskId,
+          funded_by_construction_depot: input.fundedByConstructionDepot === true,
         })
-        .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
+        .select("id,project_id,title,amount,spent_on,notes,created_at,task_id,funded_by_construction_depot")
         .single();
 
       if (res.error || !res.data) return;
-      setState((prev) => ({
-        ...prev,
-        projectExpenses: [...(prev.projectExpenses ?? []), mapExpense(res.data)],
-      }));
+      setState((prev) =>
+        withBouwdepotBalances({
+          ...prev,
+          projectExpenses: [...(prev.projectExpenses ?? []), mapExpense(res.data)],
+        })
+      );
     })();
   };
 
@@ -1562,82 +1473,6 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   };
 
-  const createConstructionDepot = (input: { projectId: ID; name: string }) => {
-    const trimmed = input.name.trim();
-    if (!trimmed) return;
-
-    void (async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const uid = authData.user?.id;
-      if (!uid) return;
-
-      const res = await supabase
-        .from("construction_depots")
-        .insert({
-          project_id: input.projectId,
-          name: trimmed,
-          total_amount: 0,
-          user_id: uid,
-        })
-        .select("id,project_id,name,total_amount,created_at,user_id")
-        .single();
-
-      if (res.error || !res.data) return;
-      const depot = mapConstructionDepot(res.data);
-      setState((prev) => ({
-        ...prev,
-        constructionDepots: [...prev.constructionDepots, depot],
-      }));
-      reloadDepotBalances();
-    })();
-  };
-
-  const updateConstructionDepot = (input: { id: ID; name?: string; totalAmount?: number }) => {
-    void (async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData.user) return;
-
-      const patch: Record<string, unknown> = {};
-      if (input.name !== undefined) patch.name = input.name.trim();
-      if (input.totalAmount !== undefined) patch.total_amount = input.totalAmount;
-      if (Object.keys(patch).length === 0) return;
-
-      const res = await supabase
-        .from("construction_depots")
-        .update(patch)
-        .eq("id", input.id)
-        .select("id,project_id,name,total_amount,created_at,user_id")
-        .single();
-
-      if (res.error || !res.data) return;
-      const next = mapConstructionDepot(res.data);
-      setState((prev) => ({
-        ...prev,
-        constructionDepots: prev.constructionDepots.map((d) => (d.id === next.id ? next : d)),
-      }));
-      reloadDepotBalances();
-    })();
-  };
-
-  const deleteConstructionDepot = (id: ID) => {
-    void (async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData.user) return;
-
-      const res = await supabase.from("construction_depots").delete().eq("id", id);
-      if (res.error) return;
-
-      setState((prev) => ({
-        ...prev,
-        constructionDepots: prev.constructionDepots.filter((d) => d.id !== id),
-        constructionDepotBalances: prev.constructionDepotBalances.filter((d) => d.id !== id),
-        tasks: (prev.tasks ?? []).map((t) =>
-          t.constructionDepotId === id ? { ...t, constructionDepotId: null } : t
-        ),
-      }));
-    })();
-  };
-
   const removeExpenseDocument = (id: ID) => {
     void (async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -1683,9 +1518,6 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     deleteProjectExpense,
     uploadExpenseDocument,
     removeExpenseDocument,
-    createConstructionDepot,
-    updateConstructionDepot,
-    deleteConstructionDepot,
   };
 
   return <RenovationContext.Provider value={value}>{children}</RenovationContext.Provider>;
@@ -1698,8 +1530,7 @@ export function useRenovation() {
     projects,
     rooms,
     tasks,
-    constructionDepots,
-    constructionDepotBalances,
+    projectConstructionDepotBalances,
     projectExpenses,
     expenseDocuments,
     taskDependencies,
@@ -1713,8 +1544,7 @@ export function useRenovation() {
     projects: projects ?? [],
     rooms: rooms ?? [],
     tasks: tasks ?? [],
-    constructionDepots: constructionDepots ?? [],
-    constructionDepotBalances: constructionDepotBalances ?? [],
+    projectConstructionDepotBalances: projectConstructionDepotBalances ?? [],
     projectExpenses: projectExpenses ?? [],
     expenseDocuments: expenseDocuments ?? [],
     taskDependencies: taskDependencies ?? [],

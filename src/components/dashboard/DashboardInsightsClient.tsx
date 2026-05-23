@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import BouwdepotDashboardCard from "@/components/dashboard/BouwdepotDashboardCard";
-import BudgetBreakdownCard from "@/components/dashboard/BudgetBreakdownCard";
+import BudgetOverviewSection from "@/components/dashboard/BudgetOverviewSection";
 import DashboardStatGrid from "@/components/dashboard/DashboardStatGrid";
+import LooseExpensesSection from "@/components/dashboard/LooseExpensesSection";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
@@ -14,19 +14,19 @@ import { formatDisplayDate } from "@/lib/format/dateDisplay";
 
 export default function DashboardInsightsClient() {
   const { t } = useI18n();
-  const { projects, rooms, tasks, projectExpenses, constructionDepotBalances, isRenovationDataReady } =
+  const { projects, rooms, tasks, projectExpenses, projectConstructionDepotBalances, isRenovationDataReady } =
     useRenovation();
 
-  const insights = useMemo(
-    () =>
-      generateInsights(
-        projects ?? [],
-        tasks ?? [],
-        projectExpenses ?? [],
-        constructionDepotBalances ?? []
-      ),
-    [projects, tasks, projectExpenses, constructionDepotBalances]
-  );
+  const insights = useMemo(() => {
+    const projectNameById = new Map((projects ?? []).map((p) => [p.id, p.name]));
+    return generateInsights(
+      projects ?? [],
+      tasks ?? [],
+      projectExpenses ?? [],
+      projectConstructionDepotBalances ?? [],
+      projectNameById
+    );
+  }, [projects, tasks, projectExpenses, projectConstructionDepotBalances]);
   const upcoming = useMemo(
     () => getUpcomingTasks(projects ?? [], rooms ?? [], tasks ?? [], 10),
     [projects, rooms, tasks]
@@ -76,10 +76,11 @@ export default function DashboardInsightsClient() {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BudgetBreakdownCard />
-        <BouwdepotDashboardCard />
-      </div>
+      <section data-tour="dashboard-budget">
+        <BudgetOverviewSection />
+      </section>
+
+      <LooseExpensesSection />
 
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
         <h2 className="text-base font-semibold text-foreground">{t("dashboard.upcomingTitle")}</h2>

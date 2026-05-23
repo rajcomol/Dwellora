@@ -1,5 +1,18 @@
-import { taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
-import type { Project, Task } from "@/lib/renovation/types";
+import { taskBouwdepotChargeAmount } from "@/lib/dashboard/bouwdepot";
+import { sumEstimatedCostsUnique, taskChargeAmount, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
+import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
+
+/** Bedrag dat een taak tegen eigen geld telt (niet uit bouwdepot). */
+export function taskOwnMoneyChargeAmount(task: Task): number {
+  if (task.fundedByConstructionDepot) return 0;
+  return taskChargeAmount(task);
+}
+
+function sumOwnMoneyExpenseUsed(expenses: ProjectExpense[]): number {
+  return expenses
+    .filter((e) => !e.fundedByConstructionDepot)
+    .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+}
 
 export type ProjectBudgetBreakdown = {
   ownContribution: number;
@@ -36,9 +49,7 @@ export function computeProjectBudgetBreakdown(project: Project, tasks: Task[]): 
   const spentDone = tasks
     .filter((t) => t.status === "done")
     .reduce((s, t) => s + taskEstimatedAmount(t), 0);
-  const depotSpentTotal = tasks
-    .filter((t) => t.constructionDepotId != null)
-    .reduce((s, t) => s + taskEstimatedAmount(t), 0);
+  const depotSpentTotal = tasks.reduce((s, t) => s + taskBouwdepotChargeAmount(t), 0);
 
   return {
     ownContribution: own,
@@ -65,4 +76,61 @@ export function depotProgressColorClass(percentage: number): string {
   if (percentage >= 90) return "bg-red-500";
   if (percentage >= 70) return "bg-amber-500";
   return "bg-emerald-500";
+}
+
+export type ProjectSpendOverview = {
+  ownTotal: number;
+  ownUsed: number;
+  ownRemaining: number;
+  ownUsedPct: number;
+  depotTotal: number;
+  depotUsed: number;
+  depotRemaining: number;
+  depotUsedPct: number;
+  totalBudget: number;
+  totalSpent: number;
+  estimatedTasksTotal: number;
+  spentVsBudgetPct: number;
+};
+
+export function computeProjectSpendOverview(
+  project: Project,
+  tasks: Task[],
+  expenses: ProjectExpense[] = []
+): ProjectSpendOverview {
+  const { own, depot, total } = projectMoney(project);
+  const projectExpenses = expenses.filter((e) => e.projectId === project.id);
+  const taskSpent = tasks.reduce((s, t) => s + taskChargeAmount(t), 0);
+  const looseSpent = projectExpenses.reduce(
+    (s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0),
+    0
+  );
+  const totalSpent = taskSpent + looseSpent;
+  const estimatedTasksTotal = sumEstimatedCostsUnique(tasks);
+  const ownTaskUsed = tasks.reduce((s, t) => s + taskOwnMoneyChargeAmount(t), 0);
+  const ownExpenseUsed = sumOwnMoneyExpenseUsed(projectExpenses);
+  const ownUsedTotal = ownTaskUsed + ownExpenseUsed;
+  const ownRemaining = own - ownUsedTotal;
+
+  const depotTaskUsed = tasks.reduce((s, t) => s + taskBouwdepotChargeAmount(t), 0);
+  const depotExpenseUsed = projectExpenses
+    .filter((e) => e.fundedByConstructionDepot)
+    .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+  const depotUsedTotal = depotTaskUsed + depotExpenseUsed;
+  const depotRemaining = depot - depotUsedTotal;
+
+  return {
+    ownTotal: own,
+    ownUsed: ownUsedTotal,
+    ownRemaining,
+    ownUsedPct: own > 0 ? Math.min(100, (ownUsedTotal / own) * 100) : 0,
+    depotTotal: depot,
+    depotUsed: depotUsedTotal,
+    depotRemaining,
+    depotUsedPct: depot > 0 ? Math.min(100, (depotUsedTotal / depot) * 100) : 0,
+    totalBudget: total,
+    totalSpent,
+    estimatedTasksTotal,
+    spentVsBudgetPct: total > 0 ? Math.min(100, (totalSpent / total) * 100) : 0,
+  };
 }

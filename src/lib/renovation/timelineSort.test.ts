@@ -16,7 +16,7 @@ function task(partial: Partial<Task> & Pick<Task, "id" | "title">): Task {
     sortOrder: 0,
     startDate: null,
     assignedRosterId: null,
-    constructionDepotId: null,
+    fundedByConstructionDepot: false,
     renovationPhase: DEFAULT_RENOVATION_PHASE,
     ...partial,
   };

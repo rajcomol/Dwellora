@@ -56,15 +56,17 @@
     "totalReadOnly": "Totaal budget"
   },
   "bouwdepot": {
-    "cardTitle": "Bouwdepots",
-    "cardHint": "Voortgang t.o.v. het projecttotaal bouwdepot.",
-    "newDepot": "+ Nieuw depot",
-    "viewAll": "Alle bouwdepots beheren",
-    "createModalTitle": "Nieuw bouwdepot",
-    "createModalHint": "Alleen een naam; het budget staat op projectniveau.",
-    "pageSubtitle": "Depots en koppelingen voor {{name}}.",
+    "cardTitle": "Bouwdepot",
+    "cardHint": "Financieringsbron van de bank — geen uitgave. Voortgang t.o.v. het projecttotaal.",
+    "viewAll": "Bouwdepot beheren",
+    "pageSubtitle": "Bouwdepot en gekoppelde taken voor {{name}}.",
     "noProjectTotalWarning": "Stel een bouwdepot-totaal in bij projectinstellingen.",
     "editBudgetSettings": "Budget aanpassen",
+    "linkedTasksTitle": "Gekoppelde taken",
+    "linkedTasksHint": "Taken waarvan de kosten meetellen tegen het bouwdepot (werkelijk of geschat).",
+    "noLinkedTasks": "Nog geen taken gekoppeld aan het bouwdepot.",
+    "manageInProject": "Taken koppelen in projectoverzicht",
+    "linkedTaskCount": "{{count}} gekoppelde taken",
     "progress": {
       "usedOfTotal": "{{spent}} gebruikt van {{total}}"
     }
@@ -248,6 +250,26 @@
     "noOpenTasksHero": "Geen open taken — mooi werk. Voeg taken toe in een project om hier suggesties te zien.",
     "keyMetrics": "Kerncijfers",
     "keyMetricsHint": "Over al je projecten heen.",
+    "budget": {
+      "ownSubtitle": "Eigen inbreng",
+      "manage": "Beheren",
+      "noOwnWarning": "Stel eigen geld in bij projectinstellingen of via Financiën.",
+      "totalSpent": "Totaal besteed",
+      "spentOfEstimated": "Waarvan {{amount}} nog geschatte kosten"
+    },
+    "looseExpenses": {
+      "title": "Losse uitgaven",
+      "addButton": "+ Uitgave toevoegen",
+      "empty": "Nog geen losse uitgaven toegevoegd.",
+      "viewAll": "Alle uitgaven bekijken →",
+      "addTitle": "Uitgave toevoegen",
+      "labelDescription": "Omschrijving",
+      "labelAmount": "Bedrag",
+      "labelDate": "Datum",
+      "labelNotes": "Notities",
+      "fundedByDepot": "Declareren uit bouwdepot",
+      "formError": "Vul een omschrijving en een geldig bedrag in."
+    },
     "metricTotalProjectBudget": "Totaal projectbudget",
     "metricTotalProjectBudgetHint": "Som van alle projectbudgetten",
     "metricTotalEstimatedTaskCosts": "Totaal geschatte taakkosten",
@@ -429,23 +451,13 @@
     "projectEstimatedTotal": "Geschat projecttotaal: {{amount}}"
   },
   "constructionDepot": {
-    "dashboardTitle": "Bouwdepots",
-    "dashboardHint": "Voortgang van je bouwdepots over alle projecten.",
-    "viewProject": "Bekijk project",
-    "spent": "Uitgegeven",
+    "dashboardTitle": "Bouwdepot",
+    "dashboardHint": "Voortgang van het bouwdepot per project.",
+    "viewProject": "Bekijk bouwdepot",
+    "used": "Gebruikt",
     "remaining": "Resterend",
     "ofTotal": "van {{total}}",
-    "sectionTitle": "Bouwdepots",
-    "sectionHint": "Beheer bouwdepots en koppel taken aan een depot voor kostenbewaking.",
-    "noDepots": "Nog geen bouwdepots. Maak er een aan om kosten te reserveren.",
-    "deleteConfirm": "Dit bouwdepot verwijderen? Gekoppelde taken worden losgekoppeld.",
-    "nameLabel": "Naam",
-    "totalAmountLabel": "Totaalbedrag",
-    "create": "Bouwdepot aanmaken",
-    "formError": "Vul een naam en een geldig bedrag in.",
-    "totalLabel": "totaal",
-    "taskSelectLabel": "Kosten uit bouwdepot",
-    "taskSelectNone": "— Geen bouwdepot"
+    "taskFundedLabel": "Kosten uit bouwdepot"
   },
   "renovationPhase": {
     "slopen": "Slopen",
@@ -657,7 +669,7 @@
     "actualExceedsEstimated": "Werkelijke kosten overschrijden de totale schattingen op taken. Controleer schattingen of noteer eenmalige kosten.",
     "noProjectBudget": "Eén of meer projecten hebben geen totaalbudget (€0). Vul een realistisch budget per project in om gaten te volgen.",
     "estimatedExceedsBudget": "Geschatte taakkosten overschrijden het totale projectbudget. Bekijk scope, offertes of verhoog het budget voordat je vastlegt.",
-    "depotOverBudget": "Bouwdepot «{{name}}» is overschreden op basis van gekoppelde taakschattingen.",
+    "depotOverBudget": "Bouwdepot van project «{{name}}» is overschreden op basis van gekoppelde taken.",
     "missingDuration": "Aantal taken zonder ingestelde duur (0 dagen): {{count}}.",
     "highTodo": "Aantal hoge-prioriteit taken dat nog op “te doen” staat: {{count}}. Plan of prioriteer ze.",
     "allClear": "Geen grote aandachtspunten. Houd schattingen en losse uitgaven bij naarmate het project verloopt.",
