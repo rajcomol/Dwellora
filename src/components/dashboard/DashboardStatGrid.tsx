@@ -8,10 +8,12 @@ import {
   computeProjectSpendOverview,
   daysUntilKeyHandover,
   filterTasksForProjectId,
+  projectMoney,
 } from "@/lib/dashboard/projectBudget";
+import { computeDeclaratieTotals } from "@/lib/dashboard/bouwdepotDeclaraties";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
-import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { BouwdepotDeclaratie, Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 function StatCard({
   label,
@@ -40,11 +42,14 @@ function statsForProject(
   project: Project,
   tasks: Task[],
   expenses: ProjectExpense[],
+  declaraties: BouwdepotDeclaratie[],
   roomIds: Set<string>,
   t: (k: string, p?: Record<string, string | number>) => string
 ) {
   const filtered = filterTasksForProjectId(tasks, project.id, roomIds);
   const overview = computeProjectSpendOverview(project, filtered, expenses);
+  const declTotals = computeDeclaratieTotals(declaraties, project.id);
+  const depotRemaining = projectMoney(project).depot - declTotals.totaalUitbetaald;
   const total = filtered.length;
   const done = filtered.filter((tk) => tk.status === "done").length;
   const days = daysUntilKeyHandover(project.expectedKeyHandover);
@@ -61,7 +66,7 @@ function statsForProject(
   return {
     tasks: t("dashboard.stats.tasksValue", { done, total }),
     budget: formatCurrency(overview.remainingBudget),
-    depot: formatCurrency(overview.depotRemaining),
+    depot: formatCurrency(depotRemaining),
     key: keyLabel,
     keyHint,
   };
@@ -70,7 +75,7 @@ function statsForProject(
 export default function DashboardStatGrid() {
   const { t } = useI18n();
   const { selectedProject } = useSelectedProject();
-  const { projects, rooms, tasks, projectExpenses } = useRenovation();
+  const { projects, rooms, tasks, projectExpenses, declaraties } = useRenovation();
 
   const roomIdsByProject = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -85,7 +90,7 @@ export default function DashboardStatGrid() {
   const display = useMemo(() => {
     if (selectedProject) {
       const roomIds = roomIdsByProject.get(selectedProject.id) ?? new Set();
-      return statsForProject(selectedProject, tasks, projectExpenses, roomIds, t);
+      return statsForProject(selectedProject, tasks, projectExpenses, declaraties ?? [], roomIds, t);
     }
     if (projects.length === 0) {
       return {
@@ -98,8 +103,8 @@ export default function DashboardStatGrid() {
     }
     const first = projects[0]!;
     const roomIds = roomIdsByProject.get(first.id) ?? new Set();
-    return statsForProject(first, tasks, projectExpenses, roomIds, t);
-  }, [selectedProject, projects, tasks, projectExpenses, roomIdsByProject, t]);
+    return statsForProject(first, tasks, projectExpenses, declaraties ?? [], roomIds, t);
+  }, [selectedProject, projects, tasks, projectExpenses, declaraties, roomIdsByProject, t]);
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

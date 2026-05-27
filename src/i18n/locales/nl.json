@@ -71,6 +71,36 @@
       "usedOfTotal": "{{spent}} gebruikt van {{total}}"
     }
   },
+  "bouwdepotDeclaraties": {
+    "sectionTitle": "Bouwdepot declaraties",
+    "sectionHint": "Dien kosten in bij de bank en volg uitbetalingen.",
+    "statTotal": "Totaal depot",
+    "statDeclared": "Gedeclareerd",
+    "statRemaining": "Resterend",
+    "empty": "Nog geen declaraties.",
+    "addButton": "+ Declaratie toevoegen",
+    "addTitle": "Declaratie toevoegen",
+    "editTitle": "Declaratie bewerken",
+    "labelDescription": "Omschrijving",
+    "labelAmount": "Bedrag",
+    "labelSubmittedOn": "Ingediend op",
+    "labelStatus": "Status",
+    "labelPaidOn": "Uitbetaald op",
+    "labelTask": "Koppelen aan taak",
+    "labelNotes": "Notities",
+    "noTask": "Geen taak",
+    "submittedOn": "Ingediend op {{date}}",
+    "declaredOfTotal": "{{declared}} gedeclareerd van {{total}}",
+    "manageLink": "Declaraties beheren →",
+    "formError": "Controleer de ingevulde velden.",
+    "saveError": "Declaratie kon niet worden opgeslagen.",
+    "status": {
+      "open": "Open",
+      "ingediend": "Ingediend",
+      "uitbetaling_verwacht": "Uitbetaling verwacht",
+      "uitbetaald": "Uitbetaald"
+    }
+  },
   "tasks": {
     "subtitleProject": "Taken voor {{name}}",
     "empty": "Geen taken in dit project.",
@@ -457,7 +487,8 @@
     "used": "Gebruikt",
     "remaining": "Resterend",
     "ofTotal": "van {{total}}",
-    "taskFundedLabel": "Kosten uit bouwdepot"
+    "taskFundedLabel": "Declareren uit bouwdepot",
+    "taskDeclaratieHint": "Er wordt een declaratie aangemaakt die je kunt indienen via Instellingen > Bouwdepot"
   },
   "renovationPhase": {
     "slopen": "Slopen",

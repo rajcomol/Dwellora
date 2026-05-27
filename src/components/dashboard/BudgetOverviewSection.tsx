@@ -1,21 +1,23 @@
 "use client";
 
 import { useMemo } from "react";
+import BouwdepotDeclaratieCard from "@/components/dashboard/BouwdepotDeclaratieCard";
 import BudgetSourceCard from "@/components/dashboard/BudgetSourceCard";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
+import { computeDeclaratieTotals } from "@/lib/dashboard/bouwdepotDeclaraties";
 import {
   computeProjectSpendOverview,
   filterTasksForProjectId,
+  projectMoney,
 } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
-import { appendProjectQuery } from "@/components/layout/tab-nav-config";
 
 export default function BudgetOverviewSection() {
   const { t } = useI18n();
   const { selectedProject, selectedProjectId } = useSelectedProject();
-  const { projects, rooms, tasks, projectExpenses } = useRenovation();
+  const { projects, rooms, tasks, projectExpenses, declaraties } = useRenovation();
 
   const project = selectedProject ?? projects[0] ?? null;
   const projectId = selectedProjectId ?? project?.id ?? null;
@@ -27,6 +29,16 @@ export default function BudgetOverviewSection() {
     const expenses = projectExpenses.filter((e) => e.projectId === project.id);
     return computeProjectSpendOverview(project, filteredTasks, expenses);
   }, [project, rooms, tasks, projectExpenses]);
+
+  const declaratieOverview = useMemo(() => {
+    if (!project) return null;
+    const depotTotal = projectMoney(project).depot;
+    const totals = computeDeclaratieTotals(declaraties ?? [], project.id);
+    const declared = totals.totaalUitbetaald;
+    const remaining = depotTotal - declared;
+    const declaredPct = depotTotal > 0 ? (declared / depotTotal) * 100 : 0;
+    return { depotTotal, declared, remaining, declaredPct };
+  }, [project, declaraties]);
 
   if (!project || !overview) {
     return (
@@ -46,7 +58,7 @@ export default function BudgetOverviewSection() {
   }
 
   const financesHref = projectId ? `/dashboard/projects/${projectId}/finances` : null;
-  const bouwdepotHref = projectId ? appendProjectQuery("/dashboard/bouwdepot", projectId) : null;
+  const declaratiesHref = projectId ? `/dashboard/projects/${projectId}/settings` : null;
 
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -60,13 +72,12 @@ export default function BudgetOverviewSection() {
         emptyHint={t("dashboard.budget.noOwnWarning")}
       />
 
-      <BudgetSourceCard
-        title={t("bouwdepot.cardTitle")}
-        total={overview.depotTotal}
-        used={overview.depotUsed}
-        remaining={overview.depotRemaining}
-        usedPct={overview.depotUsedPct}
-        manageHref={bouwdepotHref}
+      <BouwdepotDeclaratieCard
+        total={declaratieOverview?.depotTotal ?? 0}
+        declared={declaratieOverview?.declared ?? 0}
+        remaining={declaratieOverview?.remaining ?? 0}
+        declaredPct={declaratieOverview?.declaredPct ?? 0}
+        manageHref={declaratiesHref}
         emptyHint={t("bouwdepot.noProjectTotalWarning")}
       />
 

@@ -420,6 +420,9 @@ function TaskEditor({
             />
             {t("constructionDepot.taskFundedLabel")}
           </label>
+          {fundedByConstructionDepot ? (
+            <p className="text-xs text-renovation-concrete">{t("constructionDepot.taskDeclaratieHint")}</p>
+          ) : null}
           <div>
             <label htmlFor={`task-edit-${task.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
               {t("projectDetail.description")}
@@ -1103,6 +1106,9 @@ function RoomCard({
           />
           {t("constructionDepot.taskFundedLabel")}
         </label>
+        {newTaskFundedByDepot ? (
+          <p className="text-xs text-renovation-concrete">{t("constructionDepot.taskDeclaratieHint")}</p>
+        ) : null}
         <div>
           <label htmlFor={`new-task-${room.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
             {t("projectDetail.description")}

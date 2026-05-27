@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import AccountSettingsContent from "@/components/settings/AccountSettingsContent";
 import ProjectSettingsForm from "@/components/settings/ProjectSettingsForm";
+import BouwdepotDeclaratiesSection from "@/components/settings/BouwdepotDeclaratiesSection";
 import SettingsSubtabNav, { type SettingsTab } from "@/components/settings/SettingsSubtabNav";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
@@ -88,7 +89,7 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
   }
 
   return (
-    <div className={`mx-auto max-w-2xl space-y-6 ${SETTINGS_FORM_FIELD_CLASS}`}>
+    <div className={`mx-auto max-w-3xl space-y-6 ${SETTINGS_FORM_FIELD_CLASS}`}>
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.tabs.settings")}</h1>
         {project ? (
@@ -109,7 +110,10 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
       ) : null}
 
       {activeTab === "project" && hasProject && projectId ? (
-        <ProjectSettingsForm projectId={projectId} />
+        <>
+          <ProjectSettingsForm projectId={projectId} />
+          <BouwdepotDeclaratiesSection projectId={projectId} />
+        </>
       ) : null}
 
       {activeTab === "account" ? (

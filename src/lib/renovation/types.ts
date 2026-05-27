@@ -51,6 +51,32 @@ export interface Task {
   fundedByConstructionDepot: boolean;
 }
 
+export type BouwdepotDeclaratieStatus = "open" | "ingediend" | "uitbetaling_verwacht" | "uitbetaald";
+
+/** Declaratie bij bank voor terugbetaling uit bouwdepot. */
+export interface BouwdepotDeclaratie {
+  id: ID;
+  projectId: ID;
+  userId: ID;
+  omschrijving: string;
+  bedrag: number;
+  status: BouwdepotDeclaratieStatus;
+  /** ISO date (YYYY-MM-DD) or null */
+  ingediendOp: string | null;
+  /** ISO date (YYYY-MM-DD) or null */
+  uitbetaaldOp: string | null;
+  taakId: ID | null;
+  notities: string;
+  aangemaaktOp: string;
+  bijgewerktOp: string;
+}
+
+export interface BouwdepotDeclaratieTotals {
+  totaalUitbetaald: number;
+  totaalIngediend: number;
+  totaalOpen: number;
+}
+
 /** Bouwdepot-saldo per project (financieringsbron, geen uitgave). */
 export interface ProjectConstructionDepotBalance {
   projectId: ID;
@@ -131,6 +157,7 @@ export interface RenovationState {
   projects: Project[];
   rooms: Room[];
   tasks: Task[];
+  declaraties: BouwdepotDeclaratie[];
   projectConstructionDepotBalances: ProjectConstructionDepotBalance[];
   projectExpenses: ProjectExpense[];
   expenseDocuments: ExpenseDocument[];

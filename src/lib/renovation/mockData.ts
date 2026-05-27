@@ -82,6 +82,7 @@ export const initialRenovationState: RenovationState = {
       fundedByConstructionDepot: false,
     },
   ],
+  declaraties: [],
   projectConstructionDepotBalances: [],
   projectExpenses: [],
   expenseDocuments: [],

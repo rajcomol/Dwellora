@@ -2,8 +2,12 @@
 
 import { DEFAULT_RENOVATION_PHASE, parseRenovationPhase } from "@/lib/renovation/phases";
 import { computeBouwdepotBalancesForProjects } from "@/lib/dashboard/bouwdepot";
+import { computeDeclaratieTotals } from "@/lib/dashboard/bouwdepotDeclaraties";
 import { filterTasksForProjectId } from "@/lib/dashboard/projectBudget";
 import type {
+  BouwdepotDeclaratie,
+  BouwdepotDeclaratieStatus,
+  BouwdepotDeclaratieTotals,
   ExpenseDocument,
   ExpenseDocumentType,
   ID,
@@ -76,6 +80,9 @@ async function validateRoomIdsBelongToProject(roomIds: ID[], projectId: ID): Pro
 
 const PROJECT_SELECT =
   "id,name,total_budget,own_contribution,construction_depot_total,address,expected_key_handover,notes,created_at";
+
+const DECLARATIE_SELECT =
+  "id,project_id,user_id,omschrijving,bedrag,status,ingediend_op,uitbetaald_op,taak_id,notities,aangemaakt_op,bijgewerkt_op";
 
 function parseNumericNullable(value: unknown): number | null {
   if (value == null || value === "") return null;
@@ -190,6 +197,31 @@ type RenovationActions = {
     documentType: ExpenseDocumentType
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   removeExpenseDocument: (id: ID) => void;
+  loadDeclaraties: (projectId: ID) => Promise<void>;
+  createDeclaratie: (input: {
+    projectId: ID;
+    omschrijving: string;
+    bedrag: number;
+    status?: BouwdepotDeclaratieStatus;
+    ingediendOp?: string | null;
+    uitbetaaldOp?: string | null;
+    taakId?: ID | null;
+    notities?: string;
+  }) => Promise<ID | null>;
+  updateDeclaratie: (
+    id: ID,
+    data: {
+      omschrijving?: string;
+      bedrag?: number;
+      status?: BouwdepotDeclaratieStatus;
+      ingediendOp?: string | null;
+      uitbetaaldOp?: string | null;
+      taakId?: ID | null;
+      notities?: string;
+    }
+  ) => Promise<boolean>;
+  deleteDeclaratie: (id: ID) => Promise<boolean>;
+  getDeclaratieTotals: (projectId: ID) => BouwdepotDeclaratieTotals;
 };
 
 type RenovationContextValue = RenovationState &
@@ -202,6 +234,55 @@ const RenovationContext = createContext<RenovationContextValue | undefined>(unde
 
 function isTaskStatus(value: unknown): value is TaskStatus {
   return value === "todo" || value === "doing" || value === "done";
+}
+
+function isDeclaratieStatus(value: unknown): value is BouwdepotDeclaratieStatus {
+  return (
+    value === "open" ||
+    value === "ingediend" ||
+    value === "uitbetaling_verwacht" ||
+    value === "uitbetaald"
+  );
+}
+
+function mapDeclaratie(row: {
+  id: unknown;
+  project_id: unknown;
+  user_id: unknown;
+  omschrijving: unknown;
+  bedrag: unknown;
+  status: unknown;
+  ingediend_op?: unknown;
+  uitbetaald_op?: unknown;
+  taak_id?: unknown;
+  notities?: unknown;
+  aangemaakt_op?: unknown;
+  bijgewerkt_op?: unknown;
+}): BouwdepotDeclaratie {
+  const io = row.ingediend_op;
+  const uo = row.uitbetaald_op;
+  const tid = row.taak_id;
+  const statusRaw = row.status;
+  return {
+    id: String(row.id),
+    projectId: String(row.project_id),
+    userId: String(row.user_id),
+    omschrijving: String(row.omschrijving ?? ""),
+    bedrag:
+      typeof row.bedrag === "number" ? row.bedrag : Number.parseFloat(String(row.bedrag ?? "0")) || 0,
+    status: isDeclaratieStatus(statusRaw) ? statusRaw : "open",
+    ingediendOp: io == null || io === "" ? null : String(io),
+    uitbetaaldOp: uo == null || uo === "" ? null : String(uo),
+    taakId: tid == null || tid === "" ? null : String(tid),
+    notities: String(row.notities ?? ""),
+    aangemaaktOp: String(row.aangemaakt_op ?? ""),
+    bijgewerktOp: String(row.bijgewerkt_op ?? ""),
+  };
+}
+
+function taskDeclaratieBedrag(task: Task): number {
+  if (Number.isFinite(task.actualCost) && task.actualCost > 0) return task.actualCost;
+  return task.estimatedCost != null && Number.isFinite(task.estimatedCost) ? task.estimatedCost : 0;
 }
 
 function mapProject(row: {
@@ -454,6 +535,7 @@ function emptyRenovationState(): RenovationState {
     projects: [],
     rooms: [],
     tasks: [],
+    declaraties: [],
     projectConstructionDepotBalances: [],
     projectExpenses: [],
     expenseDocuments: [],
@@ -470,6 +552,7 @@ function normalizeRenovationState(state: RenovationState): RenovationState {
     projects: state.projects ?? [],
     rooms: state.rooms ?? [],
     tasks: state.tasks ?? [],
+    declaraties: state.declaraties ?? [],
     projectConstructionDepotBalances: state.projectConstructionDepotBalances ?? [],
     projectExpenses: state.projectExpenses ?? [],
     expenseDocuments: state.expenseDocuments ?? [],
@@ -656,11 +739,12 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           .from("project_team_roster")
           .select("id,project_id,display_name,email,role_hint,sort_order")
           .in("project_id", projectIds),
+        supabase.from("bouwdepot_declaraties").select(DECLARATIE_SELECT).in("project_id", projectIds),
       ]);
 
       if (cancelled) return;
 
-      const [expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes] = ext;
+      const [expensesRes, expenseDocsRes, depsRes, attRes, checklistRes, rosterRes, declaratiesRes] = ext;
       const logExt = (label: string, err: { message: string } | null) => {
         if (err) console.warn(`Renovation extension load (${label}):`, err.message);
       };
@@ -670,6 +754,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       logExt("task_attachments", attRes.error);
       logExt("checklist", checklistRes.error);
       logExt("team_roster", rosterRes.error);
+      logExt("bouwdepot_declaraties", declaratiesRes.error);
 
       const loadedProjects = mergedProjects.map((r) => mapProject(r as Parameters<typeof mapProject>[0]));
       const loadedTasks = mergedTaskRows.map((r) => {
@@ -684,6 +769,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           mapRoom(r as { id: unknown; name: unknown; project_id: unknown })
         ),
         tasks: loadedTasks,
+        declaraties: declaratiesRes.error
+          ? []
+          : (declaratiesRes.data ?? []).map((r) => mapDeclaratie(r as Parameters<typeof mapDeclaratie>[0])),
         projectConstructionDepotBalances: [],
         projectExpenses: expensesRes.error
           ? []
@@ -1029,6 +1117,32 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     setState((prev) =>
       withBouwdepotBalances({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] })
     );
+
+    if (input.fundedByConstructionDepot === true) {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      if (uid) {
+        const ins = await supabase
+          .from("bouwdepot_declaraties")
+          .insert({
+            project_id: resolvedProjectId,
+            user_id: uid,
+            omschrijving: trimmed,
+            bedrag: taskDeclaratieBedrag(nextTask),
+            status: "open",
+            taak_id: nextTask.id,
+          })
+          .select(DECLARATIE_SELECT)
+          .single();
+        if (!ins.error && ins.data) {
+          setState((prev) => ({
+            ...prev,
+            declaraties: [...(prev.declaraties ?? []), mapDeclaratie(ins.data)],
+          }));
+        }
+      }
+    }
+
     return true;
   };
 
@@ -1097,6 +1211,35 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         tasks: (prev.tasks ?? []).map((tk) => (tk.id === next.id ? next : tk)),
       })
     );
+
+    const shouldCreateDeclaratie =
+      input.fundedByConstructionDepot === true &&
+      !(state.declaraties ?? []).some((d) => d.taakId === next.id);
+    if (shouldCreateDeclaratie) {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      if (uid) {
+        const ins = await supabase
+          .from("bouwdepot_declaraties")
+          .insert({
+            project_id: next.projectId,
+            user_id: uid,
+            omschrijving: next.title,
+            bedrag: taskDeclaratieBedrag(next),
+            status: "open",
+            taak_id: next.id,
+          })
+          .select(DECLARATIE_SELECT)
+          .single();
+        if (!ins.error && ins.data) {
+          setState((prev) => ({
+            ...prev,
+            declaraties: [...(prev.declaraties ?? []), mapDeclaratie(ins.data)],
+          }));
+        }
+      }
+    }
+
     return true;
   };
 
@@ -1571,6 +1714,143 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const loadDeclaraties = async (projectId: ID): Promise<void> => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return;
+
+    const res = await supabase
+      .from("bouwdepot_declaraties")
+      .select(DECLARATIE_SELECT)
+      .eq("project_id", projectId);
+
+    if (res.error) {
+      console.warn("loadDeclaraties failed", res.error.message);
+      return;
+    }
+
+    const loaded = (res.data ?? []).map((r) => mapDeclaratie(r as Parameters<typeof mapDeclaratie>[0]));
+    setState((prev) => ({
+      ...prev,
+      declaraties: [
+        ...(prev.declaraties ?? []).filter((d) => d.projectId !== projectId),
+        ...loaded,
+      ],
+    }));
+  };
+
+  const createDeclaratie = async (input: {
+    projectId: ID;
+    omschrijving: string;
+    bedrag: number;
+    status?: BouwdepotDeclaratieStatus;
+    ingediendOp?: string | null;
+    uitbetaaldOp?: string | null;
+    taakId?: ID | null;
+    notities?: string;
+  }): Promise<ID | null> => {
+    const omschrijving = input.omschrijving.trim();
+    if (!omschrijving) return null;
+    if (!Number.isFinite(input.bedrag) || input.bedrag < 0) return null;
+
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData.user?.id;
+    if (!uid) return null;
+
+    let taakId: ID | null = null;
+    if (input.taakId) {
+      taakId = await resolveTaskIdForProjectExpense(input.projectId, input.taakId);
+    }
+
+    const status = input.status ?? "open";
+    const res = await supabase
+      .from("bouwdepot_declaraties")
+      .insert({
+        project_id: input.projectId,
+        user_id: uid,
+        omschrijving,
+        bedrag: input.bedrag,
+        status,
+        ingediend_op: input.ingediendOp?.trim() || null,
+        uitbetaald_op: input.uitbetaaldOp?.trim() || null,
+        taak_id: taakId,
+        notities: (input.notities ?? "").trim(),
+      })
+      .select(DECLARATIE_SELECT)
+      .single();
+
+    if (res.error || !res.data) return null;
+    const next = mapDeclaratie(res.data);
+    setState((prev) => ({
+      ...prev,
+      declaraties: [...(prev.declaraties ?? []), next],
+    }));
+    return next.id;
+  };
+
+  const updateDeclaratie = async (
+    id: ID,
+    data: {
+      omschrijving?: string;
+      bedrag?: number;
+      status?: BouwdepotDeclaratieStatus;
+      ingediendOp?: string | null;
+      uitbetaaldOp?: string | null;
+      taakId?: ID | null;
+      notities?: string;
+    }
+  ): Promise<boolean> => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return false;
+
+    const existing = (state.declaraties ?? []).find((d) => d.id === id);
+    if (!existing) return false;
+
+    const patch: Record<string, unknown> = {};
+    if (data.omschrijving !== undefined) patch.omschrijving = data.omschrijving.trim();
+    if (data.bedrag !== undefined) patch.bedrag = data.bedrag;
+    if (data.status !== undefined) patch.status = data.status;
+    if (data.ingediendOp !== undefined) patch.ingediend_op = data.ingediendOp?.trim() || null;
+    if (data.uitbetaaldOp !== undefined) patch.uitbetaald_op = data.uitbetaaldOp?.trim() || null;
+    if (data.notities !== undefined) patch.notities = data.notities.trim();
+    if (data.taakId !== undefined) {
+      patch.taak_id = data.taakId
+        ? await resolveTaskIdForProjectExpense(existing.projectId, data.taakId)
+        : null;
+    }
+    if (Object.keys(patch).length === 0) return true;
+
+    const res = await supabase
+      .from("bouwdepot_declaraties")
+      .update(patch)
+      .eq("id", id)
+      .select(DECLARATIE_SELECT)
+      .single();
+
+    if (res.error || !res.data) return false;
+    const next = mapDeclaratie(res.data);
+    setState((prev) => ({
+      ...prev,
+      declaraties: (prev.declaraties ?? []).map((d) => (d.id === next.id ? next : d)),
+    }));
+    return true;
+  };
+
+  const deleteDeclaratie = async (id: ID): Promise<boolean> => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return false;
+
+    const res = await supabase.from("bouwdepot_declaraties").delete().eq("id", id);
+    if (res.error) return false;
+    setState((prev) => ({
+      ...prev,
+      declaraties: (prev.declaraties ?? []).filter((d) => d.id !== id),
+    }));
+    return true;
+  };
+
+  const getDeclaratieTotals = (projectId: ID): BouwdepotDeclaratieTotals =>
+    computeDeclaratieTotals(state.declaraties ?? [], projectId);
+
   const value: RenovationContextValue = {
     ...normalizeRenovationState(state),
     isRenovationDataReady,
@@ -1596,6 +1876,11 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     deleteProjectExpense,
     uploadExpenseDocument,
     removeExpenseDocument,
+    loadDeclaraties,
+    createDeclaratie,
+    updateDeclaratie,
+    deleteDeclaratie,
+    getDeclaratieTotals,
   };
 
   return <RenovationContext.Provider value={value}>{children}</RenovationContext.Provider>;
@@ -1608,6 +1893,7 @@ export function useRenovation() {
     projects,
     rooms,
     tasks,
+    declaraties,
     projectConstructionDepotBalances,
     projectExpenses,
     expenseDocuments,
@@ -1622,6 +1908,7 @@ export function useRenovation() {
     projects: projects ?? [],
     rooms: rooms ?? [],
     tasks: tasks ?? [],
+    declaraties: declaraties ?? [],
     projectConstructionDepotBalances: projectConstructionDepotBalances ?? [],
     projectExpenses: projectExpenses ?? [],
     expenseDocuments: expenseDocuments ?? [],
