@@ -87,6 +87,7 @@ export default function AddLooseExpenseModal({ project, open, onClose }: Props) 
       <div
         role="dialog"
         aria-modal="true"
+        aria-label="Uitgave toevoegen"
         aria-labelledby="add-loose-expense-title"
         className="relative z-10 w-full max-w-md rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated"
       >

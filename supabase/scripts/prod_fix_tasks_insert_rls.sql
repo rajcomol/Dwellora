@@ -23,12 +23,12 @@ FROM pg_policies
 WHERE schemaname = 'public' AND tablename = 'tasks'
 ORDER BY policyname;
 
--- STAP 1 — Access helpers
+-- STAP 1 — Access helpers (SECURITY DEFINER: no RLS recursion)
 CREATE OR REPLACE FUNCTION public.user_has_project_access(pid uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
-SECURITY INVOKER
+SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT EXISTS (
@@ -51,17 +51,10 @@ CREATE OR REPLACE FUNCTION public.user_has_task_access(tid uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
-SECURITY INVOKER
+SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1
-    FROM public.task_rooms tr
-    JOIN public.rooms r ON r.id = tr.room_id
-    WHERE tr.task_id = tid
-      AND public.user_has_project_access(r.project_id)
-  )
-  OR EXISTS (
     SELECT 1
     FROM public.tasks t
     WHERE t.id = tid
@@ -80,7 +73,7 @@ DROP POLICY IF EXISTS "tasks_delete_via_room" ON public.tasks;
 
 CREATE POLICY "tasks_select_via_room" ON public.tasks
   FOR SELECT TO authenticated
-  USING (public.user_has_task_access(tasks.id));
+  USING (public.user_has_project_access(project_id));
 
 CREATE POLICY "tasks_insert_via_room" ON public.tasks
   FOR INSERT TO authenticated
@@ -88,12 +81,12 @@ CREATE POLICY "tasks_insert_via_room" ON public.tasks
 
 CREATE POLICY "tasks_update_via_room" ON public.tasks
   FOR UPDATE TO authenticated
-  USING (public.user_has_task_access(tasks.id))
-  WITH CHECK (public.user_has_task_access(tasks.id));
+  USING (public.user_has_project_access(project_id))
+  WITH CHECK (public.user_has_project_access(project_id));
 
 CREATE POLICY "tasks_delete_via_room" ON public.tasks
   FOR DELETE TO authenticated
-  USING (public.user_has_task_access(tasks.id));
+  USING (public.user_has_project_access(project_id));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.tasks TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.task_rooms TO authenticated;

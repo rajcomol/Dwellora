@@ -40,7 +40,7 @@ export default function PlanningTaskList({ tasks, roomNameById, onTaskClick }: P
   }
 
   return (
-    <ul className="space-y-3">
+    <ul data-testid="planning-task-list" className="space-y-3">
       {sorted.map((tk) => {
         const primaryRoom = tk.roomIds[0];
         const roomLabel =

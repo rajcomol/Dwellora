@@ -888,7 +888,8 @@ function RoomCard({
   }
 
   return (
-    <Card>
+    <div data-testid="project-room-card" data-room-name={room.name}>
+      <Card>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold">{room.name}</div>
@@ -1176,7 +1177,8 @@ function RoomCard({
 
         {error ? <div className="text-xs text-red-600 dark:text-red-400">{error}</div> : null}
       </form>
-    </Card>
+      </Card>
+    </div>
   );
 }
 

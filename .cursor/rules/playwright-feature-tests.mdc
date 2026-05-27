@@ -1,0 +1,12 @@
+---
+description: Require Playwright coverage for user-facing features
+alwaysApply: true
+---
+
+# Playwright Coverage
+
+- For every new user-facing feature or regression fix, add or update a Playwright test in `tests/e2e/`.
+- Start from `tests/e2e/TEMPLATE.spec.ts` when creating a new feature spec.
+- Reuse shared helpers from `tests/e2e/helpers/` before duplicating setup logic.
+- Prefer stable locators such as labels, roles, and `data-testid` hooks over brittle CSS selectors.
+- If a feature intentionally ships without Playwright coverage, explain why in the final handoff.

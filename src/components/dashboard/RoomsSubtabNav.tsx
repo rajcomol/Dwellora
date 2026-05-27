@@ -26,10 +26,20 @@ export default function RoomsSubtabNav({ activeTab, onTabChange }: Props) {
       className="flex flex-wrap gap-2 border-b border-renovation-border pb-3 dark:border-renovation-border"
       aria-label={t("rooms.subnavAria")}
     >
-      <button type="button" className={subtabClass(activeTab === "rooms")} onClick={() => onTabChange("rooms")}>
+      <button
+        type="button"
+        data-testid="nav-tab-ruimtes"
+        className={subtabClass(activeTab === "rooms")}
+        onClick={() => onTabChange("rooms")}
+      >
         {t("rooms.tabRooms")}
       </button>
-      <button type="button" className={subtabClass(activeTab === "overzicht")} onClick={() => onTabChange("overzicht")}>
+      <button
+        type="button"
+        data-testid="nav-tab-projectoverzicht"
+        className={subtabClass(activeTab === "overzicht")}
+        onClick={() => onTabChange("overzicht")}
+      >
         {t("rooms.tabOverview")}
       </button>
     </nav>

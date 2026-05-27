@@ -39,7 +39,10 @@ export default function LooseExpensesSection() {
 
   return (
     <>
-      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
+      <section
+        data-testid="loose-expenses-section"
+        className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold text-foreground">{t("dashboard.looseExpenses.title")}</h2>
           <button

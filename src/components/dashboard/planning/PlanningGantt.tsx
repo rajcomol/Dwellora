@@ -129,7 +129,10 @@ export default function PlanningGantt({ linkedTasks, looseTasks, roomNameById, o
   );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-renovation-border bg-renovation-elevated shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated">
+    <div
+      data-testid="planning-gantt"
+      className="overflow-hidden rounded-xl border border-renovation-border bg-renovation-elevated shadow-renovation-card dark:border-renovation-border dark:bg-renovation-elevated"
+    >
       <div className="overflow-x-auto">
         <div className="min-w-[640px]">
           <div className="flex border-b border-renovation-border bg-renovation-muted/50 dark:border-renovation-border dark:bg-renovation-muted/30">

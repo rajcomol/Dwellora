@@ -43,6 +43,7 @@ export default function BottomNav() {
         })}
         <button
           type="button"
+          data-testid="bottom-nav-more"
           className="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium text-renovation-concrete"
           onClick={() => setMoreOpen(true)}
         >

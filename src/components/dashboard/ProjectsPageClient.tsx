@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
+import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { ProjectsPageSkeleton } from "@/components/ui/Skeleton";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -14,6 +15,7 @@ import { projectCreateFormSchema } from "@/lib/validation/schemas";
 export default function ProjectsPageClient() {
   const { t } = useI18n();
   const { projects, createProject, isRenovationDataReady } = useRenovation();
+  const { setSelectedProjectId } = useSelectedProject();
   const [name, setName] = useState("");
   const [ownContribution, setOwnContribution] = useState("");
   const [constructionDepotTotal, setConstructionDepotTotal] = useState("");
@@ -52,7 +54,7 @@ export default function ProjectsPageClient() {
 
         <form
           className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             const parsed = projectCreateFormSchema.safeParse({
               name,
@@ -76,21 +78,27 @@ export default function ProjectsPageClient() {
               return;
             }
             const d = parsed.data;
-            createProject({
-              name: d.name,
-              ownContribution: d.ownContribution,
-              constructionDepotTotal: d.constructionDepotTotal,
-              address: d.address.trim(),
-              expectedKeyHandover: d.expectedKeyHandover.trim() || null,
-              notes: d.notes.trim(),
-            });
-            setName("");
-            setOwnContribution("");
-            setConstructionDepotTotal("");
-            setAddress("");
-            setExpectedKeyHandover("");
-            setNotes("");
-            setError(null);
+            try {
+              const projectId = await createProject({
+                name: d.name,
+                ownContribution: d.ownContribution,
+                constructionDepotTotal: d.constructionDepotTotal,
+                address: d.address.trim(),
+                expectedKeyHandover: d.expectedKeyHandover.trim() || null,
+                notes: d.notes.trim(),
+              });
+              await new Promise((resolve) => window.setTimeout(resolve, 100));
+              setSelectedProjectId(projectId);
+              setName("");
+              setOwnContribution("");
+              setConstructionDepotTotal("");
+              setAddress("");
+              setExpectedKeyHandover("");
+              setNotes("");
+              setError(null);
+            } catch {
+              setError(t("validation.generic"));
+            }
           }}
         >
           <div className="flex-1 space-y-3">
@@ -187,28 +195,30 @@ export default function ProjectsPageClient() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {sortedProjects.map((project) => (
-              <Card key={project.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold">{project.name}</div>
-                    <div className="mt-1 text-xs text-renovation-concrete">
-                      {t("projects.budgetLabel")}: {formatCurrency(project.totalBudget)}
-                      {project.expectedKeyHandover
-                        ? ` • ${t("projects.keyLabel")}: ${formatDisplayDate(project.expectedKeyHandover)}`
-                        : ""}
+              <div key={project.id} data-testid="project-card" data-project-id={project.id}>
+                <Card>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold">{project.name}</div>
+                      <div className="mt-1 text-xs text-renovation-concrete">
+                        {t("projects.budgetLabel")}: {formatCurrency(project.totalBudget)}
+                        {project.expectedKeyHandover
+                          ? ` • ${t("projects.keyLabel")}: ${formatDisplayDate(project.expectedKeyHandover)}`
+                          : ""}
+                      </div>
+                      {project.address ? (
+                        <div className="mt-1 text-xs text-renovation-concrete line-clamp-2">{project.address}</div>
+                      ) : null}
                     </div>
-                    {project.address ? (
-                      <div className="mt-1 text-xs text-renovation-concrete line-clamp-2">{project.address}</div>
-                    ) : null}
+                    <Link
+                      href={`/dashboard/projects/${project.id}`}
+                      className="rounded-md bg-renovation-accent px-3 py-2 text-xs font-medium text-white hover:bg-renovation-steel"
+                    >
+                      {t("projects.openProject")}
+                    </Link>
                   </div>
-                  <Link
-                    href={`/dashboard/projects/${project.id}`}
-                    className="rounded-md bg-renovation-accent px-3 py-2 text-xs font-medium text-white hover:bg-renovation-steel"
-                  >
-                    {t("projects.openProject")}
-                  </Link>
-                </div>
-              </Card>
+                </Card>
+              </div>
             ))}
           </div>
         )}

@@ -86,6 +86,7 @@ export default function ReportsPageClient() {
         <div className="sm:w-64">
           <label className="mb-1 block text-xs text-renovation-concrete">{t("reports.scope")}</label>
           <select
+            data-testid="reports-bereik-select"
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
             className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"

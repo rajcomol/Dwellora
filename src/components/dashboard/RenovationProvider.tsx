@@ -143,7 +143,7 @@ type UpdateTaskInput = {
 };
 
 type RenovationActions = {
-  createProject: (input: CreateProjectInput) => void;
+  createProject: (input: CreateProjectInput) => Promise<ID>;
   updateProject: (input: UpdateProjectInput) => void;
   createRoom: (input: { name: string; projectId: ID }) => void;
   deleteRoom: (id: ID) => void;
@@ -720,39 +720,44 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionUserId, sessionResolved]);
 
-  const createProject = (input: CreateProjectInput) => {
+  const createProject = async (input: CreateProjectInput): Promise<ID> => {
     const trimmed = input.name.trim();
-    if (!trimmed) return;
+    if (!trimmed) throw new Error("Project name is required");
 
-    void (async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const uid = authData.user?.id;
-      if (!uid) return;
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData.user?.id;
+    if (!uid) throw new Error("User not authenticated");
 
-      const own = input.ownContribution ?? null;
-      const depot = input.constructionDepotTotal ?? null;
-      const row = {
-        name: trimmed,
-        own_contribution: own,
-        construction_depot_total: depot,
-        total_budget: computeTotalBudget(own, depot),
-        user_id: uid,
-        address: (input.address ?? "").trim(),
-        expected_key_handover: input.expectedKeyHandover?.trim() || null,
-        notes: (input.notes ?? "").trim(),
-      };
+    const own = input.ownContribution ?? null;
+    const depot = input.constructionDepotTotal ?? null;
+    const row = {
+      name: trimmed,
+      own_contribution: own,
+      construction_depot_total: depot,
+      total_budget: computeTotalBudget(own, depot),
+      user_id: uid,
+      address: (input.address ?? "").trim(),
+      expected_key_handover: input.expectedKeyHandover?.trim() || null,
+      notes: (input.notes ?? "").trim(),
+    };
 
-      const res = await supabase
-        .from("projects")
-        .insert(row)
-        .select(PROJECT_SELECT)
-        .single();
+    const res = await supabase.from("projects").insert(row).select(PROJECT_SELECT).single();
 
-      if (res.error || !res.data) return;
-      setState((prev) =>
-        withBouwdepotBalances({ ...prev, projects: [...prev.projects, mapProject(res.data)] })
-      );
-    })();
+    if (res.error || !res.data) {
+      throw res.error ?? new Error("Failed to create project");
+    }
+
+    const nextProject = mapProject(res.data);
+    setState((prev) =>
+      withBouwdepotBalances({
+        ...prev,
+        projects: prev.projects.some((project) => project.id === nextProject.id)
+          ? prev.projects.map((project) => (project.id === nextProject.id ? nextProject : project))
+          : [...prev.projects, nextProject],
+      })
+    );
+
+    return nextProject.id;
   };
 
   const updateProject = (input: UpdateProjectInput) => {
@@ -958,15 +963,17 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       });
 
       let taskRow: Parameters<typeof mapTask>[0] | null = null;
+      const rpcErrorMessage = rpcRes.error?.message ?? "";
+      const canFallbackToDirectInsert =
+        !rpcRes.error ||
+        rpcRes.error.code === "PGRST202" ||
+        rpcRes.error.code === "42883" ||
+        /is of type .* but expression is of type text/i.test(rpcErrorMessage);
 
       if (!rpcRes.error && rpcRes.data) {
         const raw = rpcRes.data as Parameters<typeof mapTask>[0] | Parameters<typeof mapTask>[0][];
         taskRow = (Array.isArray(raw) ? raw[0] : raw) ?? null;
-      } else if (
-        rpcRes.error &&
-        rpcRes.error.code !== "PGRST202" &&
-        rpcRes.error.code !== "42883"
-      ) {
+      } else if (rpcRes.error && !canFallbackToDirectInsert) {
         console.error("createTask: create_project_task rpc failed", rpcRes.error.message);
         return false;
       }

@@ -29,6 +29,7 @@ export function SelectedProjectProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const { projects, isRenovationDataReady } = useRenovation();
   const [storedId, setStoredId] = useState<ID | null>(null);
+  const [requestedId, setRequestedId] = useState<ID | null>(null);
 
   useEffect(() => {
     try {
@@ -40,12 +41,25 @@ export function SelectedProjectProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const queryId = searchParams.get("project");
+  useEffect(() => {
+    if (!requestedId) return;
+    if (projects.some((project) => project.id === requestedId)) {
+      setRequestedId(null);
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      setRequestedId((current) => (current === requestedId ? null : current));
+    }, 5_000);
+    return () => window.clearTimeout(timeoutId);
+  }, [projects, requestedId]);
+
   const selectedProjectId = useMemo(() => {
     if (queryId && projects.some((p) => p.id === queryId)) return queryId;
     if (storedId && projects.some((p) => p.id === storedId)) return storedId;
+    if (requestedId && (requestedId === queryId || requestedId === storedId)) return requestedId;
     if (isRenovationDataReady && projects.length === 1) return projects[0]!.id;
     return null;
-  }, [queryId, storedId, projects, isRenovationDataReady]);
+  }, [queryId, storedId, requestedId, projects, isRenovationDataReady]);
 
   const selectedProject = useMemo(
     () => projects.find((p) => p.id === selectedProjectId) ?? null,
@@ -61,6 +75,7 @@ export function SelectedProjectProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
       setStoredId(id);
+      setRequestedId(id);
 
       const params = new URLSearchParams(searchParams.toString());
       if (id) params.set("project", id);

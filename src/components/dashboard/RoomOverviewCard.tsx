@@ -48,6 +48,7 @@ export default function RoomOverviewCard({
   return (
     <Link
       href={href}
+      data-testid="rooms-overview-card"
       className="flex flex-col rounded-xl bg-renovation-surface p-4 transition-shadow hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
