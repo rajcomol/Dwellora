@@ -103,18 +103,31 @@ export async function openPlanningPage(page: Page): Promise<void> {
 }
 
 export async function openReportsPage(page: Page): Promise<void> {
-  if (await clickNavLink(page, "Rapporten", "**/reports**")) return;
+  if (await clickNavLink(page, "Financiën", "**/finances**")) {
+    await page.getByTestId("finances-tab-rapporten").click();
+    await page.waitForURL(/\/dashboard\/finances.*tab=rapporten/, { timeout: 60_000 });
+    await settleAfterNavigation(page);
+    return;
+  }
   const moreButton = page.getByTestId("bottom-nav-more");
   if (await moreButton.isVisible().catch(() => false)) {
     await page.evaluate(() => window.scrollTo(0, 0));
     await moreButton.click({ force: true });
-    const reportsLink = page.getByRole("dialog").getByRole("link", { name: "Rapporten", exact: true });
-    await reportsLink.click({ force: true });
-    await page.waitForURL("**/reports**", { timeout: 60_000 });
+    const financesLink = page.getByRole("dialog").getByRole("link", { name: "Financiën", exact: true });
+    await financesLink.click({ force: true });
+    await page.waitForURL("**/finances**", { timeout: 60_000 });
+    await settleAfterNavigation(page);
+    await page.getByTestId("finances-tab-rapporten").click();
+    await page.waitForURL(/\/dashboard\/finances.*tab=rapporten/, { timeout: 60_000 });
     await settleAfterNavigation(page);
     return;
   }
-  await gotoProjectPath(page, "/dashboard/reports", "**/reports**");
+  await gotoProjectPath(page, "/dashboard/finances?tab=rapporten", "**/finances**");
+}
+
+export async function openFinancesPage(page: Page): Promise<void> {
+  if (await clickNavLink(page, "Financiën", "**/finances**")) return;
+  await gotoProjectPath(page, "/dashboard/finances", "**/finances**");
 }
 
 export async function createProject(

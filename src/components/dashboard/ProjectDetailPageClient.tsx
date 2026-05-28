@@ -602,7 +602,7 @@ function TaskEditor({
                 ))}
               </ul>
               <Link
-                href={`/dashboard/projects/${projectId}/finances`}
+                href={`/dashboard/finances?tab=uitgaven&project=${projectId}`}
                 className="mt-2 inline-block text-xs font-medium text-renovation-steel underline dark:text-renovation-accent"
               >
                 {t("projectDetail.linkedExpensesFinancesLink")}
@@ -784,7 +784,7 @@ function ProjectFinancesSummarySection({
           </p>
         </div>
         <Link
-          href={`/dashboard/projects/${projectId}/finances`}
+          href={`/dashboard/finances?tab=uitgaven&project=${projectId}`}
           className="inline-flex shrink-0 rounded-lg bg-renovation-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
         >
           {t("finances.goToFinances")}

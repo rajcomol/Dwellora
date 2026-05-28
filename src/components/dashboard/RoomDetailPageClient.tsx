@@ -170,6 +170,12 @@ export default function RoomDetailPageClient({ roomId }: Props) {
         >
           {t("rooms.fullProjectView")}
         </Link>
+        <Link
+          href={`/dashboard/finances?tab=overzicht&project=${encodeURIComponent(room.projectId)}&room_id=${encodeURIComponent(room.id)}`}
+          className="text-sm font-medium text-renovation-steel underline dark:text-renovation-accent"
+        >
+          {t("rooms.detail.viewRoomFinances")}
+        </Link>
         <button
           type="button"
           className="text-sm font-medium text-red-600 hover:underline dark:text-red-400"

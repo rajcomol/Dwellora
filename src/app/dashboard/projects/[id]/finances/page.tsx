@@ -1,4 +1,4 @@
-import ProjectFinancesPageClient from "@/components/finances/ProjectFinancesPageClient";
+import { redirect } from "next/navigation";
 
 export default async function ProjectFinancesRoute({
   params,
@@ -7,5 +7,8 @@ export default async function ProjectFinancesRoute({
 }) {
   const { id: idParam } = await params;
   const projectId = Array.isArray(idParam) ? idParam[0] : idParam;
-  return <ProjectFinancesPageClient projectId={projectId ?? ""} />;
+  const qs = new URLSearchParams();
+  if (projectId) qs.set("project", projectId);
+  qs.set("tab", "uitgaven");
+  redirect(`/dashboard/finances?${qs.toString()}`);
 }

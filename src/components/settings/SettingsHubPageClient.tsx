@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import AccountSettingsContent from "@/components/settings/AccountSettingsContent";
 import ProjectSettingsForm from "@/components/settings/ProjectSettingsForm";
-import BouwdepotDeclaratiesSection from "@/components/settings/BouwdepotDeclaratiesSection";
 import SettingsSubtabNav, { type SettingsTab } from "@/components/settings/SettingsSubtabNav";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
@@ -110,10 +109,7 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
       ) : null}
 
       {activeTab === "project" && hasProject && projectId ? (
-        <>
-          <ProjectSettingsForm projectId={projectId} />
-          <BouwdepotDeclaratiesSection projectId={projectId} />
-        </>
+        <ProjectSettingsForm projectId={projectId} />
       ) : null}
 
       {activeTab === "account" ? (

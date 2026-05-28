@@ -20,16 +20,16 @@
     "dashboard": "Dashboard",
     "projects": "Projecten",
     "planning": "Planning",
+    "finances": "Financiën",
     "documents": "Offertes",
     "settings": "Instellingen",
-    "reports": "Rapporten",
     "account": "Account",
     "tabs": {
       "dashboard": "Dashboard",
       "planning": "Planning",
+      "finances": "Financiën",
       "quotes": "Offertes",
       "rooms": "Ruimtes",
-      "reports": "Rapporten",
       "settings": "Instellingen"
     }
   },
@@ -128,7 +128,8 @@
     },
     "detail": {
       "back": "Terug naar ruimtes",
-      "notFound": "Ruimte niet gevonden."
+      "notFound": "Ruimte niet gevonden.",
+      "viewRoomFinances": "Bekijk kosten voor deze ruimte →"
     }
   },
   "projectSettings": {
@@ -147,6 +148,15 @@
   "finances": {
     "title": "Financiën",
     "subtitle": "Uitgaven, bonnetjes en facturen voor dit project.",
+    "subnavAria": "Financiën secties",
+    "tabs": {
+      "overview": "Overzicht",
+      "declarations": "Declaraties",
+      "expenses": "Uitgaven",
+      "reports": "Rapporten"
+    },
+    "roomSummaryTitle": "Samenvatting per ruimte",
+    "roomSummaryHint": "Aantal taken en kosten per ruimte.",
     "totalRecorded": "Totaal geregistreerd",
     "expenseCount": "{{count}} uitgaven",
     "documentCount": "{{count}} bewijsstukken",

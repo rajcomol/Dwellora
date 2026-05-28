@@ -2,8 +2,8 @@ import { expect, type Page } from "@playwright/test";
 import { formatCurrency } from "../../../src/lib/format/currency";
 import { gotoProjectPath } from "./dashboard";
 
-export async function openProjectSettings(page: Page, projectId: string): Promise<void> {
-  await gotoProjectPath(page, `/dashboard/projects/${projectId}/settings`, /\/settings/);
+export async function openDeclaratiesTab(page: Page, projectId: string): Promise<void> {
+  await gotoProjectPath(page, `/dashboard/finances?tab=declaraties&project=${projectId}`, /\/finances/);
   await expect(page.getByTestId("bouwdepot-declaraties-section")).toBeVisible({ timeout: 60_000 });
 }
 

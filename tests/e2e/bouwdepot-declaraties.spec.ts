@@ -4,7 +4,7 @@ import {
   createDeclaratie,
   expectBouwdepotDeclaratieRemaining,
   expectDeclaratieRemaining,
-  openProjectSettings,
+  openDeclaratiesTab,
   updateDeclaratieStatus,
 } from "./helpers/bouwdepotDeclaraties";
 import { createProjectAndSelect, openDashboard, uniqueName } from "./helpers/dashboard";
@@ -31,7 +31,7 @@ test.describe("bouwdepot declaraties", () => {
     const projectId = url.searchParams.get("project");
     if (!projectId) throw new Error("Missing project id after create");
 
-    await openProjectSettings(page, projectId);
+    await openDeclaratiesTab(page, projectId);
     await expectDeclaratieRemaining(page, depotTotal);
 
     await createDeclaratie(page, { omschrijving: declTitle, bedrag: String(declAmount), status: "open" });

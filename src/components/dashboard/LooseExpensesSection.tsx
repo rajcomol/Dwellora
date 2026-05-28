@@ -34,8 +34,8 @@ export default function LooseExpensesSection() {
   }
 
   const financesHref = selectedProjectId
-    ? `/dashboard/projects/${selectedProjectId}/finances`
-    : `/dashboard/projects/${project.id}/finances`;
+    ? `/dashboard/finances?tab=uitgaven&project=${selectedProjectId}`
+    : `/dashboard/finances?tab=uitgaven&project=${project.id}`;
 
   return (
     <>

@@ -1,6 +1,18 @@
-import ReportsPageClient from "@/components/dashboard/ReportsPageClient";
+import { redirect } from "next/navigation";
 
-export default function DashboardReportsPage() {
-  return <ReportsPageClient />;
+export default async function DashboardReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const params = new URLSearchParams();
+  const project = sp.project;
+  const projectId = Array.isArray(project) ? project[0] : project;
+  if (projectId && typeof projectId === "string") {
+    params.set("project", projectId);
+  }
+  params.set("tab", "rapporten");
+  redirect(`/dashboard/finances?${params.toString()}`);
 }
 

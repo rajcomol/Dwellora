@@ -12,7 +12,7 @@ import { filterTasksForProjectId, looseExpensesForBudget } from "@/lib/dashboard
 import { sumEstimatedCostsUnique } from "@/lib/dashboard/taskCosts";
 import { aggregateSpendByRoom, projectBudgetSummary } from "@/lib/dashboard/reports";
 
-export default function ReportsPageClient() {
+export default function ReportsPageClient({ embedded = false }: { embedded?: boolean }) {
   const { t } = useI18n();
   const { projects, rooms, tasks, projectExpenses, isRenovationDataReady } = useRenovation();
   const { selectedProjectId } = useSelectedProject();
@@ -80,7 +80,11 @@ export default function ReportsPageClient() {
     <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("reports.title")}</h1>
+          {embedded ? (
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">{t("reports.title")}</h2>
+          ) : (
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("reports.title")}</h1>
+          )}
           <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("reports.subtitle")}</p>
         </div>
         <div className="sm:w-64">

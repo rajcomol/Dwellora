@@ -22,8 +22,8 @@ export function matchQuotes(path: string) {
   return path.startsWith("/dashboard/quotes");
 }
 
-export function matchReports(path: string) {
-  return path.startsWith("/dashboard/reports");
+export function matchFinances(path: string) {
+  return path.startsWith("/dashboard/finances");
 }
 
 export function matchSettings(path: string) {
@@ -37,8 +37,8 @@ export const TAB_NAV_ITEMS: TabNavItem[] = [
   { href: "/dashboard", labelKey: "nav.tabs.dashboard", match: matchDashboard, primaryMobile: true },
   { href: "/dashboard/rooms", labelKey: "nav.tabs.rooms", match: matchRooms, primaryMobile: true },
   { href: "/dashboard/planning", labelKey: "nav.tabs.planning", match: matchPlanning, primaryMobile: true },
+  { href: "/dashboard/finances", labelKey: "nav.tabs.finances", match: matchFinances, primaryMobile: true },
   { href: "/dashboard/quotes", labelKey: "nav.tabs.quotes", match: matchQuotes },
-  { href: "/dashboard/reports", labelKey: "nav.tabs.reports", match: matchReports },
   { href: "/dashboard/settings", labelKey: "nav.tabs.settings", match: matchSettings },
 ];
 
