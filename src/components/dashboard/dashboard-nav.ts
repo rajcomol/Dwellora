@@ -8,10 +8,15 @@ export function matchPlanningNav(p: string) {
   return /\/dashboard\/projects\/[^/]+\/planning/.test(p);
 }
 
+export function matchPlannerNav(p: string) {
+  return p === "/dashboard/planner" || p.startsWith("/dashboard/planner/");
+}
+
 export const DASHBOARD_NAV_DEFS = [
   { href: "/dashboard", labelKey: "nav.dashboard", match: (p: string) => p === "/dashboard" || p === "/dashboard/" },
   { href: "/dashboard/projects", labelKey: "nav.projects", match: matchProjectsNav },
   { href: "/dashboard/planning", labelKey: "nav.planning", match: matchPlanningNav },
+  { href: "/dashboard/planner", labelKey: "nav.tabs.planner", match: matchPlannerNav },
   { href: "/dashboard/finances", labelKey: "nav.finances", match: (p: string) => p.startsWith("/dashboard/finances") },
   { href: "/dashboard/quotes", labelKey: "nav.documents", match: (p: string) => p.startsWith("/dashboard/quotes") },
   { href: "/dashboard/settings", labelKey: "nav.settings", match: (p: string) => p.startsWith("/dashboard/settings") },

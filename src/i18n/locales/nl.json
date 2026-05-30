@@ -27,10 +27,51 @@
     "tabs": {
       "dashboard": "Dashboard",
       "planning": "Planning",
+      "planner": "3D Planner",
       "finances": "Financiën",
       "quotes": "Offertes",
       "rooms": "Ruimtes",
       "settings": "Instellingen"
+    }
+  },
+  "planner": {
+    "title": "3D Planner",
+    "subtitle": "Visualiseer je droomkamer fotorealistisch met AI.",
+    "subtitleProject": "AI-kamervisualisatie voor {{name}}.",
+    "chooseProject": "Kies eerst een project om de 3D Planner te gebruiken.",
+    "namePlaceholder": "Naam van de kamer",
+    "save": "Kamer opslaan",
+    "saving": "Opslaan…",
+    "saved": "Kamer opgeslagd.",
+    "visual": {
+      "uploadTitle": "Foto's (optioneel)",
+      "currentPhotos": "Huidige kamer",
+      "currentPhotosHint": "Foto's van de bestaande ruimte helpen de AI de kamer te begrijpen.",
+      "inspirationPhotos": "Inspiratie",
+      "inspirationPhotosHint": "Inspiratiefoto's geven de AI een stijlreferentie.",
+      "uploadCta": "Klik om te uploaden of sleep hierheen",
+      "removeImage": "Verwijderen",
+      "presetsLabel": "Stijl",
+      "describeLabel": "Beschrijving",
+      "describePlaceholder": "Beschrijf je droomkamer... Bijvoorbeeld: moderne woonkamer met licht eiken vloer, witte muren, grote ramen, minimalistische Scandinavische stijl, zachte bank in lichtgrijs, veel natuurlijk licht",
+      "describeRequired": "Schrijf eerst een beschrijving van je kamer.",
+      "roomTypeLabel": "Kamertype",
+      "generate": "Visualiseer mijn kamer",
+      "generating": "AI genereert jouw droomkamer…",
+      "generatingHint": "Dit kan een halve minuut duren. We maken meerdere renders en een 360°-view.",
+      "error": "Visualisatie mislukt. Probeer het opnieuw.",
+      "viewerEmpty": "Beschrijf je kamer en klik op 'Visualiseer mijn kamer' om fotorealistische renders te genereren.",
+      "noRenders": "Nog geen renders.",
+      "view360": "360° weergave",
+      "download": "Download",
+      "close": "Sluiten",
+      "prev": "Vorige render",
+      "next": "Volgende render",
+      "labels": {
+        "overzicht": "Overzicht",
+        "hoek": "Hoekperspectief",
+        "detail": "Detailweergave"
+      }
     }
   },
   "layout": {

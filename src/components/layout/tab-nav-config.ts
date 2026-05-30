@@ -14,6 +14,10 @@ export function matchPlanning(path: string) {
   return path === "/dashboard/planning" || path.startsWith("/dashboard/planning/");
 }
 
+export function matchPlanner(path: string) {
+  return path === "/dashboard/planner" || path.startsWith("/dashboard/planner/");
+}
+
 export function matchRooms(path: string) {
   return path === "/dashboard/rooms" || path.startsWith("/dashboard/rooms/");
 }
@@ -37,6 +41,7 @@ export const TAB_NAV_ITEMS: TabNavItem[] = [
   { href: "/dashboard", labelKey: "nav.tabs.dashboard", match: matchDashboard, primaryMobile: true },
   { href: "/dashboard/rooms", labelKey: "nav.tabs.rooms", match: matchRooms, primaryMobile: true },
   { href: "/dashboard/planning", labelKey: "nav.tabs.planning", match: matchPlanning, primaryMobile: true },
+  { href: "/dashboard/planner", labelKey: "nav.tabs.planner", match: matchPlanner },
   { href: "/dashboard/finances", labelKey: "nav.tabs.finances", match: matchFinances, primaryMobile: true },
   { href: "/dashboard/quotes", labelKey: "nav.tabs.quotes", match: matchQuotes },
   { href: "/dashboard/settings", labelKey: "nav.tabs.settings", match: matchSettings },
