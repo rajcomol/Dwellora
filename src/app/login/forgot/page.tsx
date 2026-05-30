@@ -11,24 +11,20 @@ export const metadata: Metadata = {
 
 function ForgotFallback() {
   return (
-    <div className="login-auth-glass rounded-[2rem] p-8 sm:p-10" aria-busy="true">
-      <div className="h-6 w-3/4 animate-pulse rounded bg-white/10" />
-      <div className="mt-4 h-4 w-full animate-pulse rounded bg-white/10" />
-      <div className="mt-8 h-10 w-full animate-pulse border-b border-amber-200/15 bg-transparent" />
-      <div className="mt-8 h-12 w-full animate-pulse rounded-full bg-amber-200/15" />
+    <div aria-busy="true">
+      <div className="h-8 w-48 animate-pulse rounded bg-stone-200" />
+      <div className="mt-3 h-4 w-full animate-pulse rounded bg-stone-200" />
+      <div className="mt-7 space-y-5">
+        <div className="h-[42px] w-full animate-pulse rounded-[8px] bg-stone-200" />
+        <div className="h-[46px] w-full animate-pulse rounded-[8px] bg-amber-200" />
+      </div>
     </div>
   );
 }
 
 export default function ForgotPasswordPage() {
   return (
-    <LoginScreenChrome
-      belowLogo={
-        <p className="text-sm leading-relaxed tracking-wide text-white/90 drop-shadow-[0_2px_14px_rgb(8_6_4/0.55)]">
-          {nl.login.forgotLead}
-        </p>
-      }
-    >
+    <LoginScreenChrome>
       <Suspense fallback={<ForgotFallback />}>
         <ForgotPasswordForm />
       </Suspense>

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import LoginScreenChrome from "@/components/auth/LoginScreenChrome";
+import { authStyles } from "@/components/auth/auth-styles";
 import { useI18n } from "@/i18n/provider";
 import { supabase } from "@/lib/supabase/client";
 
@@ -89,16 +90,16 @@ function InviteAcceptInner() {
 
   if (!resolvedToken) {
     return (
-      <div className="space-y-4 text-center">
-        <p className="text-sm text-red-200">{t("inviteAccept.missingToken")}</p>
-        <p className="text-xs text-renovation-concrete">{t("inviteAccept.needLogin")}</p>
+      <div className="space-y-3 text-center">
+        <p className="text-sm text-red-700">{t("inviteAccept.missingToken")}</p>
+        <p className="text-xs text-[#78716c]">{t("inviteAccept.needLogin")}</p>
       </div>
     );
   }
 
   if (status === "idle" || status === "redirect_login" || status === "working") {
     return (
-      <p className="text-center text-sm text-foreground">
+      <p className="text-center text-sm text-[#57534e]">
         {status === "idle" || status === "redirect_login" ? t("common.loading") : t("inviteAccept.accepting")}
       </p>
     );
@@ -106,16 +107,16 @@ function InviteAcceptInner() {
 
   if (status === "err") {
     return (
-      <div className="space-y-4 text-center">
-        <p className="text-sm text-red-200">{message ?? t("inviteAccept.error")}</p>
+      <div className="space-y-3 text-center">
+        <p className="text-sm text-red-700">{message ?? t("inviteAccept.error")}</p>
         {errHint === "needLogin" ? (
-          <p className="text-xs text-renovation-concrete">{t("inviteAccept.needLogin")}</p>
+          <p className="text-xs text-[#78716c]">{t("inviteAccept.needLogin")}</p>
         ) : null}
         {errHint === "wrongAccount" ? (
-          <p className="text-xs text-renovation-concrete">{t("inviteAccept.hintWrongAccount")}</p>
+          <p className="text-xs text-[#78716c]">{t("inviteAccept.hintWrongAccount")}</p>
         ) : null}
         {errHint === "openInBrowser" ? (
-          <p className="text-xs text-renovation-concrete">{t("inviteAccept.hintOpenInBrowser")}</p>
+          <p className="text-xs text-[#78716c]">{t("inviteAccept.hintOpenInBrowser")}</p>
         ) : null}
       </div>
     );
@@ -123,11 +124,11 @@ function InviteAcceptInner() {
 
   return (
     <div className="space-y-4 text-center">
-      <p className="text-sm text-emerald-100">{t("inviteAccept.success")}</p>
+      <p className="text-sm text-emerald-700">{t("inviteAccept.success")}</p>
       {projectId ? (
         <button
           type="button"
-          className="rounded-full bg-cyan-400 px-6 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
+          className={authStyles.button}
           onClick={() => router.replace(`/dashboard/projects/${projectId}`)}
         >
           {t("inviteAccept.goToProject")}
@@ -135,7 +136,7 @@ function InviteAcceptInner() {
       ) : (
         <button
           type="button"
-          className="rounded-full bg-cyan-400 px-6 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
+          className={authStyles.button}
           onClick={() => router.replace("/dashboard")}
         >
           {t("inviteAccept.goToDashboard")}
@@ -152,13 +153,8 @@ function Fallback() {
 export default function InviteAcceptPage() {
   const { t } = useI18n();
   return (
-    <LoginScreenChrome
-      belowLogo={
-        <p className="text-sm leading-relaxed tracking-wide text-white/90 drop-shadow-[0_2px_14px_rgb(8_6_4/0.55)]">
-          {t("inviteAccept.title")}
-        </p>
-      }
-    >
+    <LoginScreenChrome>
+      <h1 className="mb-6 text-[1.5rem] font-medium text-[#1c1917]">{t("inviteAccept.title")}</h1>
       <Suspense fallback={<Fallback />}>
         <InviteAcceptInner />
       </Suspense>

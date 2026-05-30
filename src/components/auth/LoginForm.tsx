@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import RecoveryPasswordForm from "@/components/auth/RecoveryPasswordForm";
-import { LockIcon, MailIcon } from "@/components/auth/login-icons";
+import { authStyles } from "@/components/auth/auth-styles";
 import { useI18n } from "@/i18n/provider";
 import { parseTokenFromInviteNext } from "@/lib/invite/next-path";
 import { loginCredentialsZodMessage } from "@/lib/validation/loginZodMessage";
@@ -128,26 +128,21 @@ export default function LoginForm() {
     window.location.assign("/login");
   }
 
-  const authCardShell = "login-auth-glass rounded-[2rem] p-8 sm:p-10";
-  const underlineWrap =
-    "flex items-end gap-3 border-b border-amber-200/20 pb-2 transition-colors focus-within:border-amber-300/50";
-  const inputClass =
-    "min-h-[2.75rem] flex-1 border-0 bg-transparent text-sm text-zinc-50 outline-none ring-0 placeholder:text-zinc-500 focus:ring-0";
-
   if (recoveryMode) {
     return <RecoveryPasswordForm redirectTo={safeNextPath(nextParam)} />;
   }
 
   return (
-    <div className={authCardShell}>
-      <h2 className="mb-8 text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/90">{t("login.cardHeading")}</h2>
+    <div>
+      <h1 className="text-[1.5rem] font-medium text-[#1c1917]">{t("login.welcomeTitle")}</h1>
+      <p className="mt-1 text-sm text-[#78716c]">{t("login.loginSubtitle")}</p>
 
       {inviteFlow && !user ? (
-        <div className="mb-6 rounded-xl border border-cyan-400/25 bg-cyan-950/35 px-4 py-3 text-sm leading-relaxed text-cyan-50/95">
+        <div className="mt-6 rounded-lg border border-[#e8dfd0] bg-[#fbf7ef] px-4 py-3 text-sm leading-relaxed text-[#57534e]">
           <p>{t("login.inviteBanner")}</p>
           <Link
             href={registerHref}
-            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full border border-cyan-300/35 bg-cyan-500/20 text-sm font-semibold text-cyan-50 transition-colors hover:bg-cyan-500/30 sm:w-auto sm:min-w-[12rem] sm:px-6"
+            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-[8px] bg-[#d97706] px-5 text-sm font-medium text-white transition-colors hover:bg-[#b45309]"
           >
             {t("login.inviteCreateAccountCta")}
           </Link>
@@ -155,88 +150,73 @@ export default function LoginForm() {
       ) : null}
 
       {user ? (
-        <div className="space-y-6">
-          <p className="text-sm text-zinc-300">
+        <div className="mt-7 space-y-5">
+          <p className="text-sm text-[#57534e]">
             {t("login.signedInAs")}{" "}
-            <span className="font-medium text-white">{user.email}</span>
+            <span className="font-medium text-[#1c1917]">{user.email}</span>
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <div className="flex flex-col gap-3">
+            {nextParam?.includes("/invite/accept") ? (
+              <Link href={nextParam} className={authStyles.button}>
+                {t("login.continueToInvite")}
+              </Link>
+            ) : (
+              <Link href="/dashboard" className={authStyles.button}>
+                {t("login.goToDashboard")}
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => void handleSignOut()}
               disabled={busy}
-              className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-transparent px-5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center rounded-[8px] border-[0.5px] border-[#e8dfd0] bg-white text-sm font-medium text-[#57534e] transition-colors hover:bg-[#f5f0e8] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {t("login.signOutButton")}
             </button>
-            {nextParam?.includes("/invite/accept") ? (
-              <Link
-                href={nextParam}
-                className="inline-flex h-11 items-center justify-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950 transition-opacity hover:bg-amber-300"
-              >
-                {t("login.continueToInvite")}
-              </Link>
-            ) : (
-              <Link
-                href="/dashboard"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950 transition-opacity hover:bg-amber-300"
-              >
-                {t("login.goToDashboard")}
-              </Link>
-            )}
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="mt-7 space-y-5">
           <div>
-            <label htmlFor="login-email" className="mb-2 block text-xs font-medium text-zinc-400">
+            <label htmlFor="login-email" className={authStyles.label}>
               {t("login.email")}
             </label>
-            <div className={underlineWrap}>
-              <MailIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-              <input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                placeholder={t("login.placeholderEmail")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-              />
-            </div>
+            <input
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              placeholder={t("login.placeholderEmail")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={authStyles.input}
+            />
           </div>
           <div>
-            <label htmlFor="login-password" className="mb-2 block text-xs font-medium text-zinc-400">
+            <label htmlFor="login-password" className={authStyles.label}>
               {t("login.password")}
             </label>
-            <div className={underlineWrap}>
-              <LockIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-              <input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={inputClass}
-              />
-            </div>
+            <input
+              id="login-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={authStyles.input}
+            />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-400">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-[#57534e]">
               <input
                 id="login-remember"
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-white/30 bg-zinc-900/80 text-zinc-300 focus:ring-2 focus:ring-white/30"
+                className="h-4 w-4 rounded border-[#d6cdbd] accent-[#d97706]"
               />
               <span>{t("login.rememberMe")}</span>
             </label>
-            <Link
-              href={forgotHref}
-              className="text-sm italic text-zinc-400 underline-offset-2 transition-colors hover:text-zinc-200 hover:underline"
-            >
+            <Link href={forgotHref} className={authStyles.link}>
               {t("login.forgotPassword")}
             </Link>
           </div>
@@ -245,17 +225,14 @@ export default function LoginForm() {
             type="button"
             onClick={() => void handleSignIn()}
             disabled={busy}
-            className="flex h-12 w-full items-center justify-center rounded-full bg-amber-400 text-sm font-semibold uppercase tracking-wide text-stone-950 transition-opacity hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className={authStyles.button}
           >
             {busy ? t("login.pleaseWait") : t("login.signInButton")}
           </button>
 
-          <p className="text-center text-sm text-zinc-500">
-            <span className="text-zinc-500">{t("login.signUpPrompt")} </span>
-            <Link
-              href={registerHref}
-              className="font-medium text-zinc-300 underline-offset-2 transition-colors hover:text-white hover:underline"
-            >
+          <p className="text-center text-sm text-[#78716c]">
+            <span>{t("login.signUpPrompt")} </span>
+            <Link href={registerHref} className={authStyles.link}>
               {t("login.signUpLink")}
             </Link>
           </p>
@@ -263,15 +240,7 @@ export default function LoginForm() {
       )}
 
       {message ? (
-        <div
-          role="alert"
-          className={[
-            "mt-8 rounded-xl border px-3.5 py-3 text-sm leading-snug",
-            message.type === "error"
-              ? "border-[rgba(248,113,113,0.45)] bg-[rgba(69,10,10,0.55)] text-red-50 backdrop-blur-[10px]"
-              : "border-[rgba(52,211,153,0.4)] bg-[rgba(6,78,59,0.5)] text-emerald-50 backdrop-blur-[10px]",
-          ].join(" ")}
-        >
+        <div role="alert" className={authStyles.alert(message.type)}>
           {message.text}
         </div>
       ) : null}

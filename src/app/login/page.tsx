@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 
 function LoginFormFallback() {
   return (
-    <div className="login-auth-glass rounded-[2rem] p-8 sm:p-10" aria-busy="true">
-      <div className="mx-auto h-9 w-48 animate-pulse rounded-md bg-white/10" />
-      <div className="mt-4 h-4 w-full max-w-sm animate-pulse rounded bg-white/10" />
-      <div className="mt-8 space-y-6">
-        <div className="h-10 w-full animate-pulse rounded-none border-b border-amber-200/15 bg-transparent" />
-        <div className="h-10 w-full animate-pulse rounded-none border-b border-amber-200/15 bg-transparent" />
-        <div className="h-12 w-full animate-pulse rounded-full bg-amber-200/15" />
+    <div aria-busy="true">
+      <div className="h-8 w-40 animate-pulse rounded bg-stone-200" />
+      <div className="mt-3 h-4 w-56 animate-pulse rounded bg-stone-200" />
+      <div className="mt-7 space-y-5">
+        <div className="h-[42px] w-full animate-pulse rounded-[8px] bg-stone-200" />
+        <div className="h-[42px] w-full animate-pulse rounded-[8px] bg-stone-200" />
+        <div className="h-[46px] w-full animate-pulse rounded-[8px] bg-amber-200" />
       </div>
     </div>
   );

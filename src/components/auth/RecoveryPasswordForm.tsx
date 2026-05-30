@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LockIcon } from "@/components/auth/login-icons";
+import { authStyles } from "@/components/auth/auth-styles";
 import { useI18n } from "@/i18n/provider";
 import { signUpFormZodMessage } from "@/lib/validation/loginZodMessage";
 import { updatePasswordFormSchema } from "@/lib/validation/schemas";
@@ -38,71 +38,46 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
     }, 800);
   }
 
-  const authCardShell = "login-auth-glass rounded-[2rem] p-8 sm:p-10";
-  const underlineWrap =
-    "flex items-end gap-3 border-b border-amber-200/20 pb-2 transition-colors focus-within:border-amber-300/50";
-  const inputClass =
-    "min-h-[2.75rem] flex-1 border-0 bg-transparent text-sm text-zinc-50 outline-none ring-0 placeholder:text-zinc-500 focus:ring-0";
-
   return (
-    <div className={authCardShell}>
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/90">{t("login.recoveryCardHeading")}</h2>
-      <p className="mb-8 text-sm text-zinc-400">{t("login.recoveryDescription")}</p>
+    <div>
+      <h1 className="text-[1.5rem] font-medium text-[#1c1917]">{t("login.recoveryCardHeading")}</h1>
+      <p className="mt-1 text-sm text-[#78716c]">{t("login.recoveryDescription")}</p>
 
-      <div className="space-y-6">
+      <div className="mt-7 space-y-5">
         <div>
-          <label htmlFor="recovery-password" className="mb-2 block text-xs font-medium text-zinc-400">
+          <label htmlFor="recovery-password" className={authStyles.label}>
             {t("login.password")}
           </label>
-          <div className={underlineWrap}>
-            <LockIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-            <input
-              id="recovery-password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          <input
+            id="recovery-password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={authStyles.input}
+          />
         </div>
         <div>
-          <label htmlFor="recovery-confirm" className="mb-2 block text-xs font-medium text-zinc-400">
+          <label htmlFor="recovery-confirm" className={authStyles.label}>
             {t("login.confirmPassword")}
           </label>
-          <div className={underlineWrap}>
-            <LockIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-            <input
-              id="recovery-confirm"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          <input
+            id="recovery-confirm"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={authStyles.input}
+          />
         </div>
 
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
-          disabled={busy}
-          className="flex h-12 w-full items-center justify-center rounded-full bg-amber-400 text-sm font-semibold uppercase tracking-wide text-stone-950 transition-opacity hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <button type="button" onClick={() => void handleSubmit()} disabled={busy} className={authStyles.button}>
           {busy ? t("login.pleaseWait") : t("login.recoverySubmit")}
         </button>
       </div>
 
       {message ? (
-        <div
-          role="alert"
-          className={[
-            "mt-8 rounded-xl border px-3.5 py-3 text-sm leading-snug",
-            message.type === "error"
-              ? "border-[rgba(248,113,113,0.45)] bg-[rgba(69,10,10,0.55)] text-red-50 backdrop-blur-[10px]"
-              : "border-[rgba(52,211,153,0.4)] bg-[rgba(6,78,59,0.5)] text-emerald-50 backdrop-blur-[10px]",
-          ].join(" ")}
-        >
+        <div role="alert" className={authStyles.alert(message.type)}>
           {message.text}
         </div>
       ) : null}

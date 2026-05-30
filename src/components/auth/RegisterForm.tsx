@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { LockIcon, MailIcon } from "@/components/auth/login-icons";
+import { authStyles } from "@/components/auth/auth-styles";
 import { useI18n } from "@/i18n/provider";
 import { parseTokenFromInviteNext } from "@/lib/invite/next-path";
 import { signUpFormZodMessage } from "@/lib/validation/loginZodMessage";
@@ -101,101 +101,72 @@ export default function RegisterForm() {
     window.location.assign(safeNextPath(nextParam));
   }
 
-  const authCardShell = "login-auth-glass rounded-[2rem] p-8 sm:p-10";
-  const underlineWrap =
-    "flex items-end gap-3 border-b border-amber-200/20 pb-2 transition-colors focus-within:border-amber-300/50";
-  const inputClass =
-    "min-h-[2.75rem] flex-1 border-0 bg-transparent text-sm text-zinc-50 outline-none ring-0 placeholder:text-zinc-500 focus:ring-0";
-
   return (
-    <div className={authCardShell}>
-      <div className="border-b border-amber-200/12 pb-5">
-        <h1 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/90">{t("login.signUpCardHeading")}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-400">{t("login.signUpDescription")}</p>
-      </div>
+    <div>
+      <h1 className="text-[1.5rem] font-medium text-[#1c1917]">{t("login.signUpCardHeading")}</h1>
+      <p className="mt-1 text-sm text-[#78716c]">{t("login.signUpDescription")}</p>
 
       {inviteFlow ? (
-        <div className="mt-4 rounded-xl border border-amber-200/20 bg-amber-950/25 px-4 py-3 text-sm leading-relaxed text-amber-50/90">
+        <div className="mt-6 rounded-lg border border-[#e8dfd0] bg-[#fbf7ef] px-4 py-3 text-sm leading-relaxed text-[#57534e]">
           {t("login.inviteBannerRegister")}
         </div>
       ) : null}
 
-      <form className="mt-8 space-y-6" onSubmit={(e) => void handleSubmit(e)} noValidate>
+      <form className="mt-7 space-y-5" onSubmit={(e) => void handleSubmit(e)} noValidate>
         <div>
-          <label htmlFor="register-email" className="mb-2 block text-xs font-medium text-zinc-400">
+          <label htmlFor="register-email" className={authStyles.label}>
             {t("login.email")}
           </label>
-          <div className={underlineWrap}>
-            <MailIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-            <input
-              id="register-email"
-              type="email"
-              autoComplete="email"
-              placeholder={t("login.placeholderEmail")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          <input
+            id="register-email"
+            type="email"
+            autoComplete="email"
+            placeholder={t("login.placeholderEmail")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={authStyles.input}
+          />
         </div>
         <div>
-          <label htmlFor="register-password" className="mb-2 block text-xs font-medium text-zinc-400">
+          <label htmlFor="register-password" className={authStyles.label}>
             {t("login.password")}
           </label>
-          <div className={underlineWrap}>
-            <LockIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-            <input
-              id="register-password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          <input
+            id="register-password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={authStyles.input}
+          />
         </div>
         <div>
-          <label htmlFor="register-confirm-password" className="mb-2 block text-xs font-medium text-zinc-400">
+          <label htmlFor="register-confirm-password" className={authStyles.label}>
             {t("login.confirmPassword")}
           </label>
-          <div className={underlineWrap}>
-            <LockIcon className="mb-1 h-5 w-5 shrink-0 text-zinc-500" />
-            <input
-              id="register-confirm-password"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          <input
+            id="register-confirm-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={authStyles.input}
+          />
         </div>
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="flex h-12 w-full items-center justify-center rounded-full bg-amber-400 text-sm font-semibold uppercase tracking-wide text-stone-950 transition-opacity hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <button type="submit" disabled={busy} className={authStyles.button}>
           {busy ? t("login.pleaseWait") : t("login.signUpButton")}
         </button>
 
-        <p className="text-center text-sm text-zinc-500">
-          <Link href={loginHref} className="text-zinc-300 underline-offset-2 transition-colors hover:text-white hover:underline">
+        <p className="text-center text-sm text-[#78716c]">
+          <Link href={loginHref} className={authStyles.link}>
             {t("login.signUpBackToLogin")}
           </Link>
         </p>
       </form>
 
       {message ? (
-        <div
-          role="alert"
-          className={[
-            "mt-6 rounded-xl border px-3.5 py-3 text-sm leading-snug",
-            message.type === "error"
-              ? "border-[rgba(248,113,113,0.45)] bg-[rgba(69,10,10,0.55)] text-red-50 backdrop-blur-[10px]"
-              : "border-[rgba(52,211,153,0.4)] bg-[rgba(6,78,59,0.5)] text-emerald-50 backdrop-blur-[10px]",
-          ].join(" ")}
-        >
+        <div role="alert" className={authStyles.alert(message.type)}>
           {message.text}
         </div>
       ) : null}
