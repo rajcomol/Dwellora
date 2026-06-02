@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AddLooseExpenseModal from "@/components/dashboard/AddLooseExpenseModal";
 import BudgetOverviewSection from "@/components/dashboard/BudgetOverviewSection";
+import KostenramingTab from "@/components/dashboard/KostenramingTab";
 import FinancesSubtabNav, { type FinancesTab } from "@/components/dashboard/FinancesSubtabNav";
 import ReportsPageClient from "@/components/dashboard/ReportsPageClient";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
@@ -20,6 +21,7 @@ import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import type { ID, ProjectExpense } from "@/lib/renovation/types";
 
 function parseFinancesTab(value: string | null): FinancesTab {
+  if (value === "kostenraming") return "kostenraming";
   if (value === "declaraties") return "declaraties";
   if (value === "uitgaven") return "uitgaven";
   if (value === "rapporten") return "rapporten";
@@ -228,6 +230,8 @@ export default function FinancesPageClient() {
           </article>
         </section>
       ) : null}
+
+      {activeTab === "kostenraming" ? <KostenramingTab /> : null}
 
       {activeTab === "declaraties" ? <BouwdepotDeclaratiesSection projectId={projectId} /> : null}
 

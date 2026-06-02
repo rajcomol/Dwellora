@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/i18n/provider";
 
-export type FinancesTab = "overzicht" | "declaraties" | "uitgaven" | "rapporten";
+export type FinancesTab = "overzicht" | "kostenraming" | "declaraties" | "uitgaven" | "rapporten";
 
 type Props = {
   activeTab: FinancesTab;
@@ -33,6 +33,14 @@ export default function FinancesSubtabNav({ activeTab, onTabChange }: Props) {
         onClick={() => onTabChange("overzicht")}
       >
         {t("finances.tabs.overview")}
+      </button>
+      <button
+        type="button"
+        data-testid="finances-tab-kostenraming"
+        className={subtabClass(activeTab === "kostenraming")}
+        onClick={() => onTabChange("kostenraming")}
+      >
+        {t("finances.tabs.kostenraming")}
       </button>
       <button
         type="button"

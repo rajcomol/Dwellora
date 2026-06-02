@@ -8,7 +8,7 @@ test.describe("finances page", () => {
     await loginAsTestUser(page);
   });
 
-  test("loads finances page and all four subtabs", async ({ page }, testInfo) => {
+  test("loads finances page and all five subtabs", async ({ page }, testInfo) => {
     const projectName = uniqueName("PW Financien", testInfo);
     await createProjectAndSelect(page, {
       name: projectName,
@@ -19,12 +19,18 @@ test.describe("finances page", () => {
     await openFinancesPage(page);
     await expect(page.getByRole("heading", { name: "Financiën" })).toBeVisible();
     await expect(page.getByTestId("finances-tab-overzicht")).toBeVisible();
+    await expect(page.getByTestId("finances-tab-kostenraming")).toBeVisible();
     await expect(page.getByTestId("finances-tab-declaraties")).toBeVisible();
     await expect(page.getByTestId("finances-tab-uitgaven")).toBeVisible();
     await expect(page.getByTestId("finances-tab-rapporten")).toBeVisible();
 
     await page.getByTestId("finances-tab-overzicht").click();
     await expect(page.getByTestId("budget-total-spent")).toBeVisible();
+
+    await page.getByTestId("finances-tab-kostenraming").click();
+    await expect(page.getByTestId("kostenraming-tab")).toBeVisible();
+    await expect(page.getByTestId("kostenraming-totals")).toBeVisible();
+    await expect(page.getByTestId("kostenraming-totals")).toContainText("Totaal verwacht");
 
     await page.getByTestId("finances-tab-declaraties").click();
     await expect(page.getByTestId("bouwdepot-declaraties-section")).toBeVisible();

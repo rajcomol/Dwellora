@@ -44,33 +44,44 @@
     "saving": "Opslaan…",
     "saved": "Kamer opgeslagd.",
     "visual": {
-      "uploadTitle": "Foto's (optioneel)",
-      "currentPhotos": "Huidige kamer",
-      "currentPhotosHint": "Foto's van de bestaande ruimte helpen de AI de kamer te begrijpen.",
-      "inspirationPhotos": "Inspiratie",
-      "inspirationPhotosHint": "Inspiratiefoto's geven de AI een stijlreferentie.",
-      "uploadCta": "Klik om te uploaden of sleep hierheen",
+      "uploadTitle": "Foto's per element",
+      "uploadCta": "Klik om te uploaden",
       "removeImage": "Verwijderen",
-      "presetsLabel": "Stijl",
-      "describeLabel": "Beschrijving",
-      "describePlaceholder": "Beschrijf je droomkamer... Bijvoorbeeld: moderne woonkamer met licht eiken vloer, witte muren, grote ramen, minimalistische Scandinavische stijl, zachte bank in lichtgrijs, veel natuurlijk licht",
-      "describeRequired": "Schrijf eerst een beschrijving van je kamer.",
+      "zones": {
+        "kamer": {
+          "label": "Jouw huidige kamer",
+          "hint": "De structuur van deze foto blijft exact intact — ramen, deuren, indeling"
+        },
+        "vloer": {
+          "label": "Vloer of tegels",
+          "hint": "Upload een foto van je gewenste vloer of tegels — de AI neemt exact dit materiaal over"
+        },
+        "muur": {
+          "label": "Muurkleur",
+          "hint": "Upload een foto van je gewenste muurkleur of verfstaal — muren en plafond krijgen exact deze kleur"
+        },
+        "tvwand": {
+          "label": "Tv wand / Feature wall",
+          "hint": "Upload een inspiratiefoto van je gewenste tv wand of accentmuur"
+        }
+      },
+      "optional": "Optioneel",
+      "required": "Verplicht",
+      "extraWishesLabel": "Extra wensen (optioneel)",
+      "extraWishesPlaceholder": "Bijv. meer planten, warmer licht, specifieke meubels...",
+      "kamerRequired": "Upload minimaal een foto van je huidige kamer",
       "roomTypeLabel": "Kamertype",
       "generate": "Visualiseer mijn kamer",
-      "generating": "AI genereert jouw droomkamer…",
-      "generatingHint": "Dit kan een halve minuut duren. We maken meerdere renders en een 360°-view.",
-      "error": "Visualisatie mislukt. Probeer het opnieuw.",
-      "viewerEmpty": "Beschrijf je kamer en klik op 'Visualiseer mijn kamer' om fotorealistische renders te genereren.",
-      "noRenders": "Nog geen renders.",
-      "view360": "360° weergave",
+      "generating": "AI analyseert je foto's en genereert varianten...",
+      "generatingHint": "Dit duurt ongeveer 30-60 seconden",
+      "error": "Er is iets misgegaan bij het genereren. Probeer het opnieuw of gebruik een andere foto.",
+      "viewerEmpty": "Upload een foto van je huidige kamer en klik op 'Visualiseer mijn kamer' voor drie fotorealistische varianten.",
       "download": "Download",
       "close": "Sluiten",
-      "prev": "Vorige render",
-      "next": "Volgende render",
       "labels": {
-        "overzicht": "Overzicht",
-        "hoek": "Hoekperspectief",
-        "detail": "Detailweergave"
+        "structuur": "Behoud structuur",
+        "gebalanceerd": "Gebalanceerd",
+        "maximaal": "Maximale transformatie"
       }
     }
   },
@@ -192,9 +203,24 @@
     "subnavAria": "Financiën secties",
     "tabs": {
       "overview": "Overzicht",
+      "kostenraming": "Kostenraming",
       "declarations": "Declaraties",
       "expenses": "Uitgaven",
       "reports": "Rapporten"
+    },
+    "kostenraming": {
+      "title": "Kostenraming",
+      "subtitle": "Overzicht van geschatte en werkelijke kosten per categorie.",
+      "export": "Exporteren",
+      "empty": "Nog geen kosten ingevoerd. Voeg geschatte of werkelijke kosten toe aan je taken.",
+      "costTypeActual": "werkelijk",
+      "costTypeEstimated": "geschat",
+      "totalEstimated": "Totaal geschat",
+      "totalActual": "Totaal werkelijk",
+      "totalExpected": "Totaal verwacht",
+      "looseExpensesTitle": "Losse uitgaven",
+      "declarationsTitle": "Bouwdepot declaraties",
+      "itemCount": "{{count}} items"
     },
     "roomSummaryTitle": "Samenvatting per ruimte",
     "roomSummaryHint": "Aantal taken en kosten per ruimte.",

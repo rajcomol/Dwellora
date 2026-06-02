@@ -6,18 +6,41 @@ import Button from "@/components/ui/Button";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useI18n } from "@/i18n/provider";
 import { getBearerAuthHeaders } from "@/lib/supabase/client";
-import PanoramaViewer from "@/components/planner/PanoramaViewer";
 import { loadPlanners, savePlanner } from "@/lib/planner/storage";
 import {
   KAMER_TYPES,
-  STIJL_PRESETS,
   emptyVisualisatieData,
-  presetById,
+  type RenderHoek,
   type RenderImage,
   type VisualisatieData,
 } from "@/lib/planner/types";
 
 type UploadedImage = { name: string; dataUrl: string };
+
+type ZoneAccent = "amber" | "brown" | "blue" | "purple";
+
+const ZONE_ACCENTS: Record<ZoneAccent, { border: string; bg: string; dot: string }> = {
+  amber: {
+    border: "border-l-amber-500",
+    bg: "bg-amber-500/5",
+    dot: "bg-amber-500",
+  },
+  brown: {
+    border: "border-l-amber-900",
+    bg: "bg-amber-900/5",
+    dot: "bg-amber-900",
+  },
+  blue: {
+    border: "border-l-blue-500",
+    bg: "bg-blue-500/5",
+    dot: "bg-blue-500",
+  },
+  purple: {
+    border: "border-l-purple-500",
+    bg: "bg-purple-500/5",
+    dot: "bg-purple-500",
+  },
+};
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,8 +69,10 @@ async function downloadImage(url: string, fileName: string): Promise<void> {
 const fieldClass =
   "w-full rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated";
 
-const dropZoneClass =
-  "block cursor-pointer rounded-xl border-2 border-dashed border-renovation-border bg-renovation-surface p-4 text-center text-sm text-renovation-concrete transition-colors hover:border-renovation-accent hover:text-foreground";
+const dropZoneBaseClass =
+  "block cursor-pointer rounded-xl border-2 border-dashed border-renovation-border p-4 text-center text-sm text-renovation-concrete transition-colors hover:border-renovation-accent hover:text-foreground";
+
+const RENDER_HOEKEN: RenderHoek[] = ["structuur", "gebalanceerd", "maximaal"];
 
 export default function PlannerPageClient() {
   const { t } = useI18n();
@@ -57,16 +82,14 @@ export default function PlannerPageClient() {
   const [naam, setNaam] = useState("Nieuwe kamer");
   const [beschrijving, setBeschrijving] = useState("");
   const [kamerType, setKamerType] = useState<string>("Woonkamer");
-  const [stijlPreset, setStijlPreset] = useState<string | null>(null);
 
-  const [huidigeFotos, setHuidigeFotos] = useState<UploadedImage[]>([]);
-  const [inspiratieFotos, setInspiratieFotos] = useState<UploadedImage[]>([]);
+  const [kamerFoto, setKamerFoto] = useState<UploadedImage | null>(null);
+  const [vloerFoto, setVloerFoto] = useState<UploadedImage | null>(null);
+  const [muurFoto, setMuurFoto] = useState<UploadedImage | null>(null);
+  const [tvwandFoto, setTvwandFoto] = useState<UploadedImage | null>(null);
 
   const [renders, setRenders] = useState<RenderImage[]>([]);
-  const [panorama, setPanorama] = useState<string | null>(null);
-  const [current, setCurrent] = useState(0);
-  const [fullscreen, setFullscreen] = useState(false);
-  const [panoramaOpen, setPanoramaOpen] = useState(false);
+  const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,10 +109,7 @@ export default function PlannerPageClient() {
         setNaam(latest.naam);
         setBeschrijving(data.beschrijving);
         setKamerType(data.kamerType || "Woonkamer");
-        setStijlPreset(data.stijlPreset);
         setRenders(Array.isArray(data.renders) ? data.renders : []);
-        setPanorama(data.panorama ?? null);
-        setCurrent(0);
       } catch {
         /* tabel kan ontbreken vóór migratie; stil falen */
       }
@@ -99,32 +119,21 @@ export default function PlannerPageClient() {
     };
   }, [selectedProjectId]);
 
-  const onUpload = useCallback(
-    async (files: FileList | null, setter: React.Dispatch<React.SetStateAction<UploadedImage[]>>) => {
-      if (!files || files.length === 0) return;
-      const arr = await Promise.all(
-        Array.from(files)
-          .slice(0, 4)
-          .map(async (f) => ({ name: f.name, dataUrl: await fileToDataUrl(f) }))
-      );
-      setter((prev) => [...prev, ...arr].slice(0, 4));
+  const onSingleUpload = useCallback(
+    async (file: File | undefined, setter: React.Dispatch<React.SetStateAction<UploadedImage | null>>) => {
+      if (!file) return;
+      setter({ name: file.name, dataUrl: await fileToDataUrl(file) });
       setError(null);
     },
     []
   );
 
-  const applyPreset = useCallback((id: string) => {
-    const preset = presetById(id);
-    if (!preset) return;
-    setStijlPreset(id);
-    setBeschrijving(preset.beschrijving);
-  }, []);
-
   const handleGenerate = useCallback(async () => {
-    if (beschrijving.trim().length < 3) {
-      setError(t("planner.visual.describeRequired"));
+    if (!kamerFoto) {
+      setError(t("planner.visual.kamerRequired"));
       return;
     }
+
     setGenerating(true);
     setError(null);
     try {
@@ -133,25 +142,24 @@ export default function PlannerPageClient() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({
-          beschrijving: beschrijving.trim(),
+          kamer_foto: kamerFoto.dataUrl,
+          vloer_foto: vloerFoto?.dataUrl ?? undefined,
+          muur_foto: muurFoto?.dataUrl ?? undefined,
+          tvwand_foto: tvwandFoto?.dataUrl ?? undefined,
+          beschrijving: beschrijving.trim() || undefined,
           kamer_type: kamerType,
-          stijl_preset: stijlPreset,
-          huidige_kamer_fotos: huidigeFotos.map((p) => p.dataUrl),
-          inspiratie_fotos: inspiratieFotos.map((p) => p.dataUrl),
         }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? t("planner.visual.error"));
+      const json = (await res.json()) as { error?: string; renders?: RenderImage[] };
+      if (!res.ok) throw new Error(json.error ?? t("planner.visual.error"));
       const nieuweRenders: RenderImage[] = Array.isArray(json.renders) ? json.renders : [];
       setRenders(nieuweRenders);
-      setPanorama(json.panorama ?? null);
-      setCurrent(0);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("planner.visual.error"));
     } finally {
       setGenerating(false);
     }
-  }, [beschrijving, kamerType, stijlPreset, huidigeFotos, inspiratieFotos, t]);
+  }, [kamerFoto, vloerFoto, muurFoto, tvwandFoto, beschrijving, kamerType, t]);
 
   const handleSave = useCallback(async () => {
     if (!selectedProjectId) return;
@@ -161,9 +169,7 @@ export default function PlannerPageClient() {
       const kamerData: VisualisatieData = {
         beschrijving: beschrijving.trim(),
         kamerType,
-        stijlPreset,
         renders,
-        panorama,
       };
       const row = await savePlanner({
         id: plannerId,
@@ -178,11 +184,11 @@ export default function PlannerPageClient() {
     } finally {
       setSaving(false);
     }
-  }, [selectedProjectId, plannerId, naam, beschrijving, kamerType, stijlPreset, renders, panorama, t]);
+  }, [selectedProjectId, plannerId, naam, beschrijving, kamerType, renders, t]);
 
   const hoekLabel = useCallback(
     (hoek: string) => {
-      if (hoek === "overzicht" || hoek === "hoek" || hoek === "detail") {
+      if (RENDER_HOEKEN.includes(hoek as RenderHoek)) {
         return t(`planner.visual.labels.${hoek}`);
       }
       return hoek;
@@ -199,7 +205,7 @@ export default function PlannerPageClient() {
     );
   }
 
-  const activeRender = renders[current] ?? null;
+  const fullscreenRender = fullscreenIndex !== null ? renders[fullscreenIndex] ?? null : null;
 
   return (
     <div className="space-y-6" data-testid="planner-page">
@@ -227,187 +233,144 @@ export default function PlannerPageClient() {
       {saveMsg ? <p className="text-sm text-renovation-steel">{saveMsg}</p> : null}
 
       <div className="flex flex-col gap-4 lg:flex-row">
-        {/* Linkerkolom: render viewer (65%) */}
+        {/* Linkerkolom: render galerij (65%) */}
         <div className="lg:w-[65%]">
-          <div className="flex h-[55vh] flex-col overflow-hidden rounded-xl border border-renovation-border lg:h-[calc(100vh-14rem)]">
-            <div className="relative flex-1" style={{ backgroundColor: "#1a1a2e" }} data-testid="render-viewer">
-              {generating ? (
+          <div
+            className="flex min-h-[55vh] flex-col overflow-hidden rounded-xl border border-renovation-border lg:min-h-[calc(100vh-14rem)]"
+            data-testid="render-gallery"
+          >
+            {generating ? (
+              <div className="relative flex-1" style={{ backgroundColor: "#1a1a2e" }}>
                 <GeneratingState
                   title={t("planner.visual.generating")}
                   hint={t("planner.visual.generatingHint")}
                 />
-              ) : activeRender ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setFullscreen(true)}
-                    className="absolute inset-0 flex items-center justify-center"
-                    aria-label={hoekLabel(activeRender.hoek)}
-                  >
-                    <Image
-                      src={activeRender.url}
-                      alt={hoekLabel(activeRender.hoek)}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 1024px) 100vw, 65vw"
-                      className="object-contain"
-                      data-testid="render-image"
-                    />
-                  </button>
-                  {renders.length > 1 ? (
-                    <>
-                      <button
-                        type="button"
-                        aria-label={t("planner.visual.prev")}
-                        data-testid="render-prev"
-                        onClick={() => setCurrent((c) => (c - 1 + renders.length) % renders.length)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/40 p-2 text-white backdrop-blur hover:bg-black/60"
-                      >
-                        <ChevronIcon dir="left" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={t("planner.visual.next")}
-                        data-testid="render-next"
-                        onClick={() => setCurrent((c) => (c + 1) % renders.length)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/40 p-2 text-white backdrop-blur hover:bg-black/60"
-                      >
-                        <ChevronIcon dir="right" />
-                      </button>
-                    </>
-                  ) : null}
-                  <div className="absolute right-3 top-3 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => downloadImage(activeRender.url, `${naam || "render"}-${activeRender.hoek}.png`)}
-                      data-testid="render-download"
-                      className="rounded-lg border border-white/20 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-black/60"
-                    >
-                      {t("planner.visual.download")}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex h-full items-center justify-center px-8 text-center">
-                  <p className="text-sm text-white/70">{t("planner.visual.viewerEmpty")}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Onderbalk: label + 360° knop */}
-            <div className="flex items-center justify-between gap-3 border-t border-renovation-border bg-renovation-elevated px-4 py-3">
-              <div className="text-sm">
-                {activeRender ? (
-                  <span className="font-medium text-foreground" data-testid="render-label">
-                    {hoekLabel(activeRender.hoek)}{" "}
-                    <span className="text-renovation-concrete">
-                      ({current + 1} / {renders.length})
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-renovation-concrete">{t("planner.visual.noRenders")}</span>
-                )}
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={!panorama}
-                onClick={() => setPanoramaOpen(true)}
-                data-testid="open-360"
+            ) : renders.length > 0 ? (
+              <div className="grid flex-1 grid-cols-1 gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3">
+                {renders.map((render, index) => (
+                  <RenderCard
+                    key={`${render.hoek}-${index}`}
+                    render={render}
+                    label={hoekLabel(render.hoek)}
+                    naam={naam}
+                    downloadLabel={t("planner.visual.download")}
+                    onOpen={() => setFullscreenIndex(index)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                className="flex flex-1 items-center justify-center px-8 text-center"
+                style={{ backgroundColor: "#1a1a2e" }}
               >
-                {t("planner.visual.view360")}
-              </Button>
-            </div>
+                <p className="text-sm text-white/70">{t("planner.visual.viewerEmpty")}</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Rechterkolom: input panel (35%) */}
         <div className="lg:w-[35%]">
           <div className="space-y-5 rounded-xl border border-renovation-border bg-renovation-elevated p-4 dark:border-renovation-border dark:bg-renovation-elevated">
-            {/* Sectie 1: foto upload */}
+            {/* Sectie 1: vier upload zones */}
             <section className="space-y-3">
               <p className="text-sm font-semibold text-foreground">{t("planner.visual.uploadTitle")}</p>
+
               <UploadZone
-                testid="upload-huidige"
-                label={t("planner.visual.currentPhotos")}
-                hint={t("planner.visual.currentPhotosHint")}
+                testid="upload-kamer"
+                accent="amber"
+                label={t("planner.visual.zones.kamer.label")}
+                hint={t("planner.visual.zones.kamer.hint")}
+                badge={t("planner.visual.required")}
                 cta={t("planner.visual.uploadCta")}
-                images={huidigeFotos}
-                onUpload={(files) => onUpload(files, setHuidigeFotos)}
-                onRemove={(i) => setHuidigeFotos((prev) => prev.filter((_, idx) => idx !== i))}
+                image={kamerFoto}
+                icon={<CameraIcon />}
+                onUpload={(file) => onSingleUpload(file, setKamerFoto)}
+                onRemove={() => setKamerFoto(null)}
                 removeLabel={t("planner.visual.removeImage")}
               />
+
               <UploadZone
-                testid="upload-inspiratie"
-                label={t("planner.visual.inspirationPhotos")}
-                hint={t("planner.visual.inspirationPhotosHint")}
+                testid="upload-vloer"
+                accent="brown"
+                label={t("planner.visual.zones.vloer.label")}
+                hint={t("planner.visual.zones.vloer.hint")}
+                badge={t("planner.visual.optional")}
                 cta={t("planner.visual.uploadCta")}
-                images={inspiratieFotos}
-                onUpload={(files) => onUpload(files, setInspiratieFotos)}
-                onRemove={(i) => setInspiratieFotos((prev) => prev.filter((_, idx) => idx !== i))}
+                image={vloerFoto}
+                icon={<FloorIcon />}
+                onUpload={(file) => onSingleUpload(file, setVloerFoto)}
+                onRemove={() => setVloerFoto(null)}
+                removeLabel={t("planner.visual.removeImage")}
+              />
+
+              <UploadZone
+                testid="upload-muur"
+                accent="blue"
+                label={t("planner.visual.zones.muur.label")}
+                hint={t("planner.visual.zones.muur.hint")}
+                badge={t("planner.visual.optional")}
+                cta={t("planner.visual.uploadCta")}
+                image={muurFoto}
+                icon={<PaintIcon />}
+                onUpload={(file) => onSingleUpload(file, setMuurFoto)}
+                onRemove={() => setMuurFoto(null)}
+                removeLabel={t("planner.visual.removeImage")}
+              />
+
+              <UploadZone
+                testid="upload-tvwand"
+                accent="purple"
+                label={t("planner.visual.zones.tvwand.label")}
+                hint={t("planner.visual.zones.tvwand.hint")}
+                badge={t("planner.visual.optional")}
+                cta={t("planner.visual.uploadCta")}
+                image={tvwandFoto}
+                icon={<TvIcon />}
+                onUpload={(file) => onSingleUpload(file, setTvwandFoto)}
+                onRemove={() => setTvwandFoto(null)}
                 removeLabel={t("planner.visual.removeImage")}
               />
             </section>
 
-            {/* Sectie 2: beschrijving */}
-            <section className="space-y-3">
-              <div>
-                <p className="mb-1.5 text-xs font-medium text-renovation-concrete">{t("planner.visual.presetsLabel")}</p>
-                <div className="flex flex-wrap gap-1.5" data-testid="planner-presets">
-                  {STIJL_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => applyPreset(preset.id)}
-                      className={[
-                        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                        stijlPreset === preset.id
-                          ? "bg-renovation-accent text-renovation-accent-foreground"
-                          : "border border-renovation-border text-renovation-concrete hover:bg-renovation-muted hover:text-foreground",
-                      ].join(" ")}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="planner-beschrijving" className="mb-1 block text-xs font-medium text-renovation-concrete">
-                  {t("planner.visual.describeLabel")}
-                </label>
-                <textarea
-                  id="planner-beschrijving"
-                  value={beschrijving}
-                  onChange={(e) => setBeschrijving(e.target.value)}
-                  placeholder={t("planner.visual.describePlaceholder")}
-                  rows={6}
-                  className={`${fieldClass} resize-y`}
-                  data-testid="planner-beschrijving"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="planner-kamertype" className="mb-1 block text-xs font-medium text-renovation-concrete">
-                  {t("planner.visual.roomTypeLabel")}
-                </label>
-                <select
-                  id="planner-kamertype"
-                  value={kamerType}
-                  onChange={(e) => setKamerType(e.target.value)}
-                  className={fieldClass}
-                  data-testid="planner-kamertype"
-                >
-                  {KAMER_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Sectie 2: kamertype */}
+            <section>
+              <label htmlFor="planner-kamertype" className="mb-1 block text-xs font-medium text-renovation-concrete">
+                {t("planner.visual.roomTypeLabel")}
+              </label>
+              <select
+                id="planner-kamertype"
+                value={kamerType}
+                onChange={(e) => setKamerType(e.target.value)}
+                className={fieldClass}
+                data-testid="planner-kamertype"
+              >
+                {KAMER_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
             </section>
 
-            {/* Sectie 3: genereer */}
+            {/* Sectie 3: extra wensen (optioneel, kleiner) */}
+            <section>
+              <label htmlFor="planner-beschrijving" className="mb-1 block text-xs font-medium text-renovation-concrete">
+                {t("planner.visual.extraWishesLabel")}
+              </label>
+              <textarea
+                id="planner-beschrijving"
+                value={beschrijving}
+                onChange={(e) => setBeschrijving(e.target.value)}
+                placeholder={t("planner.visual.extraWishesPlaceholder")}
+                rows={2}
+                className={`${fieldClass} resize-y`}
+                data-testid="planner-beschrijving"
+              />
+            </section>
+
+            {/* Sectie 4: genereer */}
             <section className="space-y-2">
               <Button
                 type="button"
@@ -418,14 +381,18 @@ export default function PlannerPageClient() {
               >
                 {generating ? t("planner.visual.generating") : t("planner.visual.generate")}
               </Button>
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {error ? (
+                <p className="text-sm text-red-600" data-testid="planner-error">
+                  {error}
+                </p>
+              ) : null}
             </section>
           </div>
         </div>
       </div>
 
       {/* Fullscreen render */}
-      {fullscreen && activeRender ? (
+      {fullscreenRender ? (
         <div
           className="fixed inset-0 z-[10050] flex flex-col bg-black/95"
           role="dialog"
@@ -435,46 +402,31 @@ export default function PlannerPageClient() {
           <div className="flex items-center justify-end gap-2 p-3">
             <button
               type="button"
-              onClick={() => downloadImage(activeRender.url, `${naam || "render"}-${activeRender.hoek}.png`)}
+              onClick={() => downloadImage(fullscreenRender.url, `${naam || "render"}-${fullscreenRender.hoek}.png`)}
               className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
             >
               {t("planner.visual.download")}
             </button>
             <button
               type="button"
-              onClick={() => setFullscreen(false)}
+              onClick={() => setFullscreenIndex(null)}
               className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20"
             >
               {t("planner.visual.close")}
             </button>
           </div>
           <div className="relative flex-1">
-            <Image src={activeRender.url} alt={hoekLabel(activeRender.hoek)} fill unoptimized className="object-contain" />
+            <Image
+              src={fullscreenRender.url}
+              alt={hoekLabel(fullscreenRender.hoek)}
+              fill
+              unoptimized
+              className="object-contain"
+            />
           </div>
         </div>
       ) : null}
-
-      <PanoramaViewer
-        src={panorama}
-        open={panoramaOpen}
-        onClose={() => setPanoramaOpen(false)}
-        closeLabel={t("planner.visual.close")}
-      />
     </div>
-  );
-}
-
-function ChevronIcon({ dir }: { dir: "left" | "right" }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d={dir === "left" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"}
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 
@@ -490,38 +442,159 @@ function GeneratingState({ title, hint }: { title: string; hint: string }) {
   );
 }
 
+type RenderCardProps = {
+  render: RenderImage;
+  label: string;
+  naam: string;
+  downloadLabel: string;
+  onOpen: () => void;
+};
+
+function RenderCard({ render, label, naam, downloadLabel, onOpen }: RenderCardProps) {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-lg border border-renovation-border bg-renovation-surface">
+      <div className="relative aspect-[4/3]" style={{ backgroundColor: "#1a1a2e" }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="absolute inset-0 flex items-center justify-center"
+          aria-label={label}
+        >
+          <Image
+            src={render.url}
+            alt={label}
+            fill
+            unoptimized
+            sizes="(max-width: 1024px) 100vw, 22vw"
+            className="object-cover"
+            data-testid="render-image"
+          />
+        </button>
+        <button
+          type="button"
+          onClick={() => downloadImage(render.url, `${naam || "render"}-${render.hoek}.png`)}
+          data-testid="render-download"
+          className="absolute right-2 top-2 rounded-lg border border-white/20 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-black/60"
+        >
+          {downloadLabel}
+        </button>
+      </div>
+      <div className="border-t border-renovation-border bg-renovation-elevated px-3 py-2">
+        <span className="text-sm font-medium text-foreground" data-testid="render-label">
+          {label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 type UploadZoneProps = {
   testid: string;
+  accent: ZoneAccent;
   label: string;
   hint: string;
+  badge: string;
   cta: string;
-  images: UploadedImage[];
-  onUpload: (files: FileList | null) => void;
-  onRemove: (index: number) => void;
+  image: UploadedImage | null;
+  icon: React.ReactNode;
+  onUpload: (file: File | undefined) => void;
+  onRemove: () => void;
   removeLabel: string;
 };
 
-function UploadZone({ testid, label, hint, cta, images, onUpload, onRemove, removeLabel }: UploadZoneProps) {
+function UploadZone({
+  testid,
+  accent,
+  label,
+  hint,
+  badge,
+  cta,
+  image,
+  icon,
+  onUpload,
+  onRemove,
+  removeLabel,
+}: UploadZoneProps) {
+  const styles = ZONE_ACCENTS[accent];
+
   return (
-    <div>
-      <p className="mb-1 text-xs font-medium text-renovation-concrete">{label}</p>
-      <label className={dropZoneClass} data-testid={testid}>
-        <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onUpload(e.target.files)} />
-        <span className="block">{cta}</span>
-        <span className="mt-1 block text-xs">{hint}</span>
-      </label>
-      {images.length > 0 ? (
-        <ul className="mt-2 space-y-1">
-          {images.map((img, i) => (
-            <li key={`${img.name}-${i}`} className="flex items-center justify-between gap-2 text-xs text-foreground">
-              <span className="truncate">{img.name}</span>
-              <button type="button" onClick={() => onRemove(i)} className="text-red-600 hover:underline">
-                {removeLabel}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+    <div
+      className={`rounded-xl border-l-4 ${styles.border} ${styles.bg} p-3`}
+      data-testid={testid}
+    >
+      <div className="mb-2 flex items-start gap-2">
+        <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${styles.dot}`} aria-hidden />
+        <div className="flex flex-1 items-start justify-between gap-2">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 text-renovation-concrete">{icon}</span>
+            <div>
+              <p className="text-xs font-semibold text-foreground">{label}</p>
+              <p className="text-[11px] text-renovation-concrete">{hint}</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-full bg-renovation-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-renovation-concrete">
+            {badge}
+          </span>
+        </div>
+      </div>
+
+      {image ? (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 text-xs text-foreground">
+          <span className="truncate">{image.name}</span>
+          <button type="button" onClick={onRemove} className="shrink-0 text-red-600 hover:underline">
+            {removeLabel}
+          </button>
+        </div>
+      ) : (
+        <label className={`${dropZoneBaseClass} bg-renovation-surface`}>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              onUpload(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          <span className="flex items-center justify-center gap-2">
+            {icon}
+            <span>{cta}</span>
+          </span>
+        </label>
+      )}
     </div>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.798 2.25 10.125v7.875c0 1.035.84 1.875 1.875 1.875h13.5c1.035 0 1.875-.84 1.875-1.875v-7.875c0-1.327-.749-2.546-1.802-2.77-.377-.063-.754-.12-1.134-.176a2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039H9.384a2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+    </svg>
+  );
+}
+
+function FloorIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+    </svg>
+  );
+}
+
+function PaintIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128ZM13.5 8.25H15A2.25 2.25 0 0 1 17.25 10.5v1.5a2.25 2.25 0 0 1-2.25 2.25h-1.5m-6.75 0H6A2.25 2.25 0 0 1 3.75 12v-1.5A2.25 2.25 0 0 1 6 8.25h1.5m6.75 0V6A2.25 2.25 0 0 0 12 3.75H9A2.25 2.25 0 0 0 6.75 6v2.25m6.75 0V18" />
+    </svg>
+  );
+}
+
+function TvIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 20.25h12M3.75 5.25h16.5c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125H3.75c-.621 0-1.125-.504-1.125-1.125v-9.75c0-.621.504-1.125 1.125-1.125Z" />
+    </svg>
   );
 }

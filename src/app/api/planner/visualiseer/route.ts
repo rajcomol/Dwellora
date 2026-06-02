@@ -2,24 +2,29 @@ import OpenAI from "openai";
 import type { ChatCompletionContentPart } from "openai/resources/chat/completions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
+import { processImage, processImageToBuffer } from "@/lib/planner/imageProcessor";
+import { ReimagineHomeError, runReimagineHomeRedesign } from "@/lib/planner/reimagineHome";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
+import type { RenderHoek } from "@/lib/planner/types";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
-import { presetById, type RenderHoek } from "@/lib/planner/types";
 import { z } from "zod";
 
 export const maxDuration = 300;
 
 const BUCKET = "planner-renders";
-const MAX_PHOTOS = 4;
+
+const RENDER_HOEKEN: RenderHoek[] = ["structuur", "gebalanceerd", "maximaal"];
 
 const base64ImageSchema = z.string().min(1).max(12_000_000, "Afbeelding is te groot.");
+const optionalImageSchema = base64ImageSchema.optional().nullable();
 
 const bodySchema = z.object({
-  beschrijving: z.string().trim().min(3, "Geef een beschrijving op.").max(2000),
+  kamer_foto: base64ImageSchema,
+  vloer_foto: optionalImageSchema,
+  muur_foto: optionalImageSchema,
+  tvwand_foto: optionalImageSchema,
+  beschrijving: z.string().trim().max(2000).optional().nullable(),
   kamer_type: z.string().trim().min(1).max(60),
-  stijl_preset: z.string().trim().max(60).optional().nullable(),
-  huidige_kamer_fotos: z.array(base64ImageSchema).max(MAX_PHOTOS).optional(),
-  inspiratie_fotos: z.array(base64ImageSchema).max(MAX_PHOTOS).optional(),
 });
 
 const KAMER_TYPE_EN: Record<string, string> = {
@@ -31,11 +36,14 @@ const KAMER_TYPE_EN: Record<string, string> = {
   eetkamer: "dining room",
 };
 
-const RENDER_HOEKEN: { hoek: RenderHoek; angle: string }[] = [
-  { hoek: "overzicht", angle: "wide angle view from entrance" },
-  { hoek: "hoek", angle: "corner perspective showing two walls" },
-  { hoek: "detail", angle: "detail view of main focal point" },
-];
+const VLOER_SYSTEM =
+  "Analyseer deze vloer of tegel foto. Beschrijf in het Engels: het exacte materiaal, de kleur (geef een hex kleurcode), het formaat, de textuur en het patroon. Max 50 woorden. Wees zeer specifiek.";
+
+const MUUR_SYSTEM =
+  "Analyseer deze muurkleur of verfstaal foto. Geef de exacte kleur in hex code en beschrijf de tint in het Engels. Max 20 woorden.";
+
+const TVWAND_SYSTEM =
+  "Analyseer deze tv wand of feature wall foto. Beschrijf in het Engels alle elementen: materialen, kleuren, verlichting, planken, panelen, afmetingen verhouding. Max 100 woorden. Wees zeer specifiek.";
 
 function getOpenAI(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -47,94 +55,103 @@ function visionModel(): string {
   return process.env.OPENAI_VISION_MODEL ?? "gpt-4o";
 }
 
-function imageModel(): string {
-  return process.env.OPENAI_IMAGE_MODEL ?? "dall-e-3";
-}
-
 function toDataUrl(image: string): string {
-  return image.startsWith("data:") ? image : `data:image/png;base64,${image}`;
+  return image.startsWith("data:") ? image : `data:image/jpeg;base64,${image}`;
 }
 
-function imageParts(images: string[]): ChatCompletionContentPart[] {
-  return images.map((img) => ({ type: "image_url", image_url: { url: toDataUrl(img), detail: "low" } }));
+function imagePart(image: string): ChatCompletionContentPart {
+  return { type: "image_url", image_url: { url: toDataUrl(image), detail: "low" } };
 }
 
-/** Stap 1: korte technische context uit kamerfoto's via GPT-4o Vision. */
-async function describePhotos(openai: OpenAI, system: string, images: string[]): Promise<string> {
-  const completion = await openai.chat.completions.create({
-    model: visionModel(),
-    temperature: 0.3,
-    max_tokens: 300,
-    messages: [
-      { role: "system", content: system },
-      {
-        role: "user",
-        content: [{ type: "text", text: "Beschrijf kort op basis van deze foto's." }, ...imageParts(images)],
-      },
-    ],
-  });
-  return completion.choices?.[0]?.message?.content?.trim() ?? "";
+/** GPT-4o Vision analyse van één foto met een specifieke instructie. */
+async function analyseFoto(openai: OpenAI, image: string, systemPrompt: string): Promise<string> {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: visionModel(),
+      temperature: 0.3,
+      max_tokens: 280,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [{ type: "text", text: "Analyseer deze foto." }, imagePart(image)],
+        },
+      ],
+    });
+    return completion.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (e) {
+    console.warn("Planner foto-analyse overgeslagen:", (e as Error)?.message);
+    return "";
+  }
 }
 
-/** Stap 2: rijke DALL-E 3 prompt. */
-function buildPrompt(params: {
+/** Bouwt de gecombineerde prompt uit alle analyses. */
+function buildCombinedPrompt(params: {
   kamerType: string;
+  vloerAnalyse: string;
+  muurAnalyse: string;
+  tvwandAnalyse: string;
   beschrijving: string;
-  stijlContext: string;
-  kamerContext: string;
-  inspiratieContext: string;
-  angle: string;
 }): string {
-  const { kamerType, beschrijving, stijlContext, kamerContext, inspiratieContext, angle } = params;
+  const { kamerType, vloerAnalyse, muurAnalyse, tvwandAnalyse, beschrijving } = params;
   const en = KAMER_TYPE_EN[kamerType.toLowerCase()] ?? kamerType;
+
   const parts = [
-    `Photorealistic interior design render of a ${en}`,
-    beschrijving,
-    stijlContext,
-    inspiratieContext,
-    kamerContext,
-    angle,
-    "professional architectural photography, soft natural lighting, high detail, 8K quality, interior design magazine style",
-  ].filter((p) => p && p.trim().length > 0);
-  // DALL-E 3 promptlimiet is 4000 tekens.
-  return parts.join(", ").slice(0, 3900);
+    `Photorealistic interior design photo of a ${en}.`,
+    "Keep the exact room structure, windows, doors, ceiling height and spatial layout identical to the original photo.",
+    vloerAnalyse ? `Replace the floor with ${vloerAnalyse}.` : "",
+    muurAnalyse ? `Paint all walls and ceiling in exactly ${muurAnalyse}.` : "",
+    tvwandAnalyse ? `Replace the back feature wall with ${tvwandAnalyse}.` : "",
+    beschrijving.trim() ? beschrijving.trim() : "",
+    "The result should look like a real photograph, not a render.",
+    "Professional interior photography, natural lighting, photorealistic, high quality, 8K.",
+  ].filter((p) => p.length > 0);
+
+  return parts.join(" ");
 }
 
-async function generateImageB64(openai: OpenAI, prompt: string, size: "1024x1024" | "1792x1024"): Promise<string> {
-  const res = await openai.images.generate({
-    model: imageModel(),
-    prompt,
-    n: 1,
-    size,
-    response_format: "b64_json",
-  });
-  const b64 = res.data?.[0]?.b64_json;
-  if (!b64) throw new Error("Geen afbeelding ontvangen van het model.");
-  return b64;
-}
-
-/** Upload base64 PNG naar Storage; valt terug op data-URL als upload faalt. */
-async function persistImage(
+async function uploadToBucket(
   client: SupabaseClient,
   userId: string,
   folder: string,
   name: string,
-  b64: string
+  bytes: Buffer,
+  contentType: string
 ): Promise<string> {
+  const path = `${userId}/${folder}/${name}`;
+  const { error } = await client.storage.from(BUCKET).upload(path, bytes, { contentType, upsert: true });
+  if (error) throw error;
+  const { data } = client.storage.from(BUCKET).getPublicUrl(path);
+  if (!data?.publicUrl) throw new Error("Geen publieke URL voor upload.");
+  return data.publicUrl;
+}
+
+async function uploadKamerFoto(
+  client: SupabaseClient,
+  userId: string,
+  folder: string,
+  jpeg: Buffer
+): Promise<string> {
+  return uploadToBucket(client, userId, folder, "input.jpg", jpeg, "image/jpeg");
+}
+
+async function persistRender(
+  client: SupabaseClient,
+  userId: string,
+  folder: string,
+  name: string,
+  sourceUrl: string
+): Promise<string> {
+  const fetched = await fetch(sourceUrl);
+  if (!fetched.ok) throw new Error(`Kon render niet ophalen (${fetched.status}).`);
+  const bytes = Buffer.from(await fetched.arrayBuffer());
+  const contentType = fetched.headers.get("content-type") ?? "image/png";
   try {
-    const bytes = Buffer.from(b64, "base64");
-    const path = `${userId}/${folder}/${name}.png`;
-    const { error } = await client.storage.from(BUCKET).upload(path, bytes, {
-      contentType: "image/png",
-      upsert: true,
-    });
-    if (error) throw error;
-    const { data } = client.storage.from(BUCKET).getPublicUrl(path);
-    if (data?.publicUrl) return data.publicUrl;
+    return await uploadToBucket(client, userId, folder, name, bytes, contentType);
   } catch (e) {
     console.warn("planner render upload faalde, val terug op data-URL:", (e as Error)?.message);
+    return `data:${contentType};base64,${bytes.toString("base64")}`;
   }
-  return `data:image/png;base64,${b64}`;
 }
 
 export async function POST(req: Request) {
@@ -158,82 +175,83 @@ export async function POST(req: Request) {
     return jsonValidationError(parsed.error);
   }
   const {
+    kamer_foto: kamerFoto,
+    vloer_foto: vloerFoto,
+    muur_foto: muurFoto,
+    tvwand_foto: tvwandFoto,
     beschrijving,
     kamer_type: kamerType,
-    stijl_preset: stijlPreset,
-    huidige_kamer_fotos = [],
-    inspiratie_fotos = [],
   } = parsed.data;
 
   try {
     const openai = getOpenAI();
-
-    // Stap 1: foto-context (optioneel)
-    let kamerContext = "";
-    let inspiratieContext = "";
-    const visionJobs: Promise<void>[] = [];
-    if (huidige_kamer_fotos.length > 0) {
-      visionJobs.push(
-        describePhotos(
-          openai,
-          "Analyseer deze kamer foto's en geef een korte technische beschrijving van de ruimte: afmetingen, lichtinval, architecturale kenmerken, bestaande elementen die behouden kunnen worden. Max 100 woorden.",
-          huidige_kamer_fotos
-        ).then((txt) => {
-          if (txt) kamerContext = `existing room context: ${txt}`;
-        })
-      );
-    }
-    if (inspiratie_fotos.length > 0) {
-      visionJobs.push(
-        describePhotos(
-          openai,
-          "Beschrijf in max 50 woorden de stijl, kleuren, materialen en sfeer van deze inspiratiefoto's, te gebruiken als stijlreferentie voor een nieuw interieurontwerp.",
-          inspiratie_fotos
-        ).then((txt) => {
-          if (txt) inspiratieContext = `style reference: ${txt}`;
-        })
-      );
-    }
-    if (visionJobs.length > 0) await Promise.all(visionJobs);
-
-    const preset = presetById(stijlPreset);
-    const stijlContext = preset ? `in ${preset.label} style` : "";
-
-    // Stap 3 + 4: 3 renders + 360° panorama parallel genereren en opslaan.
     const folder = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    const renderJobs = RENDER_HOEKEN.map(async ({ hoek, angle }) => {
-      const prompt = buildPrompt({ kamerType, beschrijving, stijlContext, kamerContext, inspiratieContext, angle });
-      const b64 = await generateImageB64(openai, prompt, "1024x1024");
-      const url = await persistImage(auth.client, auth.userId, folder, `render-${hoek}`, b64);
+    const kamerBuffer = await processImageToBuffer(kamerFoto);
+    const kamerFotoUrl = await uploadKamerFoto(auth.client, auth.userId, folder, kamerBuffer);
+
+    // Stap 1: elke optionele foto apart analyseren (parallel).
+    const [processedVloer, processedMuur, processedTvwand] = await Promise.all([
+      vloerFoto ? processImage(vloerFoto) : Promise.resolve(null),
+      muurFoto ? processImage(muurFoto) : Promise.resolve(null),
+      tvwandFoto ? processImage(tvwandFoto) : Promise.resolve(null),
+    ]);
+
+    const [vloerAnalyse, muurAnalyse, tvwandAnalyse] = await Promise.all([
+      processedVloer ? analyseFoto(openai, processedVloer, VLOER_SYSTEM) : Promise.resolve(""),
+      processedMuur ? analyseFoto(openai, processedMuur, MUUR_SYSTEM) : Promise.resolve(""),
+      processedTvwand ? analyseFoto(openai, processedTvwand, TVWAND_SYSTEM) : Promise.resolve(""),
+    ]);
+
+    // Stap 2: gecombineerde prompt.
+    const prompt = buildCombinedPrompt({
+      kamerType,
+      vloerAnalyse,
+      muurAnalyse,
+      tvwandAnalyse,
+      beschrijving: beschrijving?.trim() ?? "",
+    });
+
+    // Stap 4–6: ReimagineHome masker-analyse + beeldgeneratie, daarna opslaan in Storage.
+    const generatedUrls = await runReimagineHomeRedesign({
+      imageUrl: kamerFotoUrl,
+      kamerType,
+      prompt,
+    });
+
+    const persistJobs = generatedUrls.slice(0, 3).map(async (sourceUrl, index) => {
+      const hoek = RENDER_HOEKEN[index] ?? `variant-${index + 1}`;
+      const url = await persistRender(auth.client, auth.userId, folder, `render-${hoek}.png`, sourceUrl);
       return { url, hoek };
     });
 
-    const panoramaJob = (async () => {
-      const prompt = buildPrompt({
-        kamerType,
-        beschrijving,
-        stijlContext,
-        kamerContext,
-        inspiratieContext,
-        angle: "equirectangular 360 degree panorama, seamless wraparound view",
-      });
-      const b64 = await generateImageB64(openai, prompt, "1792x1024");
-      return persistImage(auth.client, auth.userId, folder, "panorama", b64);
-    })();
+    const renders = await Promise.all(persistJobs);
 
-    const [renders, panorama] = await Promise.all([Promise.all(renderJobs), panoramaJob]);
-
-    return Response.json({ renders, panorama });
+    return Response.json({ renders });
   } catch (e) {
-    const error = e as { name?: string; message?: string; status?: number; code?: string };
+    const error = e as { name?: string; message?: string; status?: number; statusCode?: number; code?: string };
     console.error("Planner visualiseer error", {
       name: error?.name,
-      status: error?.status,
+      status: error?.status ?? error?.statusCode,
       code: error?.code,
       message: error?.message,
     });
-    const status = error?.message === "OPENAI_API_KEY is not set" ? 503 : 502;
-    return Response.json({ error: "Visualisatie mislukt. Probeer het later opnieuw." }, { status });
+
+    if (error?.message === "OPENAI_API_KEY is not set" || error?.message === "REIMAGINEHOME_API_KEY is not set") {
+      return Response.json(
+        { error: "De beeldgeneratie is nog niet geconfigureerd. Neem contact op met de beheerder." },
+        { status: 503 }
+      );
+    }
+
+    if (error instanceof ReimagineHomeError) {
+      const status = error.statusCode === 504 ? 504 : error.statusCode && error.statusCode >= 400 ? error.statusCode : 502;
+      return Response.json({ error: error.message }, { status });
+    }
+
+    return Response.json(
+      { error: "Er is iets misgegaan bij het genereren. Probeer het opnieuw of gebruik een andere foto." },
+      { status: 502 }
+    );
   }
 }
