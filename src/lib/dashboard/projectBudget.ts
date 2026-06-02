@@ -1,6 +1,6 @@
-import { taskBouwdepotChargeAmount } from "@/lib/dashboard/bouwdepot";
+import { computeBouwdepotUsage, taskBouwdepotChargeAmount } from "@/lib/dashboard/bouwdepot";
 import { sumEstimatedCostsUnique, taskChargeAmount, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
-import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { BouwdepotDeclaratie, Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 /** Losse projectuitgaven voor budget (niet gekoppeld aan een taak; voorkomt dubbeltelling). */
 export function looseExpensesForBudget(expenses: ProjectExpense[], _tasks?: Task[]): ProjectExpense[] {
@@ -107,7 +107,8 @@ export type ProjectSpendOverview = {
 export function computeProjectSpendOverview(
   project: Project,
   tasks: Task[],
-  expenses: ProjectExpense[] = []
+  expenses: ProjectExpense[] = [],
+  declaraties: BouwdepotDeclaratie[] = []
 ): ProjectSpendOverview {
   const { own, depot, total } = projectMoney(project);
   const projectExpenses = expenses.filter((e) => e.projectId === project.id);
@@ -125,12 +126,7 @@ export function computeProjectSpendOverview(
   const ownUsedTotal = ownTaskUsed + ownExpenseUsed;
   const ownRemaining = own - ownUsedTotal;
 
-  const depotTaskUsed = tasks.reduce((s, t) => s + taskBouwdepotChargeAmount(t), 0);
-  const depotExpenseUsed = budgetExpenses
-    .filter((e) => e.fundedByConstructionDepot)
-    .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
-  const depotUsedTotal = depotTaskUsed + depotExpenseUsed;
-  const depotRemaining = depot - depotUsedTotal;
+  const depotUsage = computeBouwdepotUsage(project, tasks, projectExpenses, declaraties);
 
   return {
     ownTotal: own,
@@ -138,9 +134,9 @@ export function computeProjectSpendOverview(
     ownRemaining,
     ownUsedPct: own > 0 ? Math.min(100, (ownUsedTotal / own) * 100) : 0,
     depotTotal: depot,
-    depotUsed: depotUsedTotal,
-    depotRemaining,
-    depotUsedPct: depot > 0 ? Math.min(100, (depotUsedTotal / depot) * 100) : 0,
+    depotUsed: depotUsage.usedAmount,
+    depotRemaining: depotUsage.remainingAmount,
+    depotUsedPct: depotUsage.percentageUsed,
     totalBudget: total,
     totalSpent,
     remainingBudget: total - actualTaskSpent - looseSpent,

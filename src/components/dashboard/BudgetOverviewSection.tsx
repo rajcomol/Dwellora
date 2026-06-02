@@ -6,11 +6,10 @@ import BudgetSourceCard from "@/components/dashboard/BudgetSourceCard";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
-import { computeDeclaratieTotals } from "@/lib/dashboard/bouwdepotDeclaraties";
+import { computeBouwdepotUsage } from "@/lib/dashboard/bouwdepot";
 import {
   computeProjectSpendOverview,
   filterTasksForProjectId,
-  projectMoney,
 } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
 
@@ -27,18 +26,22 @@ export default function BudgetOverviewSection() {
     const roomIds = new Set(rooms.filter((r) => r.projectId === project.id).map((r) => r.id));
     const filteredTasks = filterTasksForProjectId(tasks, project.id, roomIds);
     const expenses = projectExpenses.filter((e) => e.projectId === project.id);
-    return computeProjectSpendOverview(project, filteredTasks, expenses);
-  }, [project, rooms, tasks, projectExpenses]);
+    return computeProjectSpendOverview(project, filteredTasks, expenses, declaraties ?? []);
+  }, [project, rooms, tasks, projectExpenses, declaraties]);
 
   const declaratieOverview = useMemo(() => {
     if (!project) return null;
-    const depotTotal = projectMoney(project).depot;
-    const totals = computeDeclaratieTotals(declaraties ?? [], project.id);
-    const declared = totals.totaalUitbetaald;
-    const remaining = depotTotal - declared;
-    const declaredPct = depotTotal > 0 ? (declared / depotTotal) * 100 : 0;
-    return { depotTotal, declared, remaining, declaredPct };
-  }, [project, declaraties]);
+    const roomIds = new Set(rooms.filter((r) => r.projectId === project.id).map((r) => r.id));
+    const filteredTasks = filterTasksForProjectId(tasks, project.id, roomIds);
+    const expenses = projectExpenses.filter((e) => e.projectId === project.id);
+    const usage = computeBouwdepotUsage(project, filteredTasks, expenses, declaraties ?? []);
+    return {
+      depotTotal: usage.totalAmount,
+      declared: usage.usedAmount,
+      remaining: usage.remainingAmount,
+      declaredPct: usage.percentageUsed,
+    };
+  }, [project, rooms, tasks, projectExpenses, declaraties]);
 
   if (!project || !overview) {
     return (

@@ -387,7 +387,8 @@ function withBouwdepotBalances(state: RenovationState): RenovationState {
     projectConstructionDepotBalances: computeBouwdepotBalancesForProjects(
       state.projects,
       state.tasks,
-      state.projectExpenses
+      state.projectExpenses,
+      state.declaraties ?? []
     ),
   };
 }

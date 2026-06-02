@@ -4,13 +4,12 @@ import { useMemo } from "react";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useI18n } from "@/i18n/provider";
+import { computeBouwdepotUsage } from "@/lib/dashboard/bouwdepot";
 import {
   computeProjectSpendOverview,
   daysUntilKeyHandover,
   filterTasksForProjectId,
-  projectMoney,
 } from "@/lib/dashboard/projectBudget";
-import { computeDeclaratieTotals } from "@/lib/dashboard/bouwdepotDeclaraties";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import type { BouwdepotDeclaratie, Project, ProjectExpense, Task } from "@/lib/renovation/types";
@@ -47,9 +46,9 @@ function statsForProject(
   t: (k: string, p?: Record<string, string | number>) => string
 ) {
   const filtered = filterTasksForProjectId(tasks, project.id, roomIds);
-  const overview = computeProjectSpendOverview(project, filtered, expenses);
-  const declTotals = computeDeclaratieTotals(declaraties, project.id);
-  const depotRemaining = projectMoney(project).depot - declTotals.totaalUitbetaald;
+  const overview = computeProjectSpendOverview(project, filtered, expenses, declaraties);
+  const depotUsage = computeBouwdepotUsage(project, filtered, expenses, declaraties);
+  const depotRemaining = depotUsage.remainingAmount;
   const total = filtered.length;
   const done = filtered.filter((tk) => tk.status === "done").length;
   const days = daysUntilKeyHandover(project.expectedKeyHandover);

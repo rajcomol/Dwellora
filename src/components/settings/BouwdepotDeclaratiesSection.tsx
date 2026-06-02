@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import BouwdepotDeclaratieModal from "@/components/settings/BouwdepotDeclaratieModal";
 import { useI18n } from "@/i18n/provider";
+import { computeBouwdepotUsage } from "@/lib/dashboard/bouwdepot";
 import { computeDeclaratieTotals, declaratieStatusBadgeClass } from "@/lib/dashboard/bouwdepotDeclaraties";
 import { projectMoney } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
@@ -21,7 +22,7 @@ function formatDeclDate(value: string | null): string {
 
 export default function BouwdepotDeclaratiesSection({ projectId }: { projectId: ID }) {
   const { t } = useI18n();
-  const { projects, declaraties } = useRenovation();
+  const { projects, declaraties, tasks, projectExpenses } = useRenovation();
   const project = useMemo(() => projects.find((p) => p.id === projectId), [projects, projectId]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,12 +41,17 @@ export default function BouwdepotDeclaratiesSection({ projectId }: { projectId: 
     [declaraties, projectId]
   );
 
+  const depotUsage = useMemo(() => {
+    if (!project) return null;
+    return computeBouwdepotUsage(project, tasks, projectExpenses, declaraties ?? []);
+  }, [project, tasks, projectExpenses, declaraties]);
+
   if (!project) return null;
 
   const depotTotal = projectMoney(project).depot;
-  const gedeclareerd = totals.totaalUitbetaald;
-  const resterend = depotTotal - gedeclareerd;
-  const declaredPct = depotTotal > 0 ? Math.min(100, Math.max(0, (gedeclareerd / depotTotal) * 100)) : 0;
+  const gedeclareerd = depotUsage?.usedAmount ?? 0;
+  const resterend = depotUsage?.remainingAmount ?? depotTotal;
+  const declaredPct = depotUsage?.percentageUsed ?? 0;
 
   function openCreate() {
     setEditing(null);
