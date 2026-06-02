@@ -138,8 +138,8 @@ export function buildKostenramingData(params: {
     buckets.get(categoryId)!.push(toTaskLine(task, roomsById));
   }
 
-  const categories: KostenramingCategory[] = [
-    ...CATEGORY_DEFS.map((def) => {
+  const allCategories: KostenramingCategory[] = [
+    ...CATEGORY_DEFS.map((def): KostenramingCategory => {
       const items = buckets.get(def.id) ?? [];
       return {
         id: def.id,
@@ -156,7 +156,9 @@ export function buildKostenramingData(params: {
       items: buckets.get("overig") ?? [],
       subtotal: (buckets.get("overig") ?? []).reduce((s, i) => s + i.expected, 0),
     },
-  ].filter((c) => c.items.length > 0);
+  ];
+
+  const categories = allCategories.filter((c) => c.items.length > 0);
 
   const looseExpenses: KostenramingExpenseLine[] = projectExpenses
     .filter((e) => e.projectId === projectId && !e.taskId && Number.isFinite(e.amount) && e.amount > 0)
