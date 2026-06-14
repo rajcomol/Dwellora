@@ -66,9 +66,19 @@ export default function LoginForm() {
   }, [inviteFlow, nextParam]);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    void supabase.auth
+      .getSession()
+      .then(async ({ data: { session }, error }) => {
+        if (error) {
+          await supabase.auth.signOut().catch(() => undefined);
+          setUser(null);
+          return;
+        }
+        setUser(session?.user ?? null);
+      })
+      .catch(() => {
+        setUser(null);
+      });
 
     const {
       data: { subscription },

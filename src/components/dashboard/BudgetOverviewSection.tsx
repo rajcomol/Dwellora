@@ -60,8 +60,8 @@ export default function BudgetOverviewSection() {
     );
   }
 
-  const financesHref = projectId ? `/dashboard/finances?tab=uitgaven&project=${projectId}` : null;
-  const declaratiesHref = projectId ? `/dashboard/finances?tab=declaraties&project=${projectId}` : null;
+  const financesHref = projectId ? `/dashboard/finances?project=${projectId}` : null;
+  const declaratiesHref = projectId ? `/dashboard/finances?project=${projectId}` : null;
 
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-3">

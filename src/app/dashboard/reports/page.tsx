@@ -12,7 +12,6 @@ export default async function DashboardReportsPage({
   if (projectId && typeof projectId === "string") {
     params.set("project", projectId);
   }
-  params.set("tab", "rapporten");
-  redirect(`/dashboard/finances?${params.toString()}`);
+  const qs = params.toString();
+  redirect(qs ? `/dashboard/finances?${qs}` : "/dashboard/finances");
 }
-

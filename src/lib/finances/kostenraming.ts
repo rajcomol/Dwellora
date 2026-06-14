@@ -85,6 +85,12 @@ export function categorizeTaskTitle(title: string): KostenramingCategoryId {
   return "overig";
 }
 
+export function kostenCategoryLabel(title: string): string {
+  const id = categorizeTaskTitle(title);
+  const def = CATEGORY_DEFS.find((c) => c.id === id);
+  return def?.label ?? "Overig";
+}
+
 function taskHasCosts(task: Task): boolean {
   const estimated = taskEstimatedAmount(task);
   const actual = Number.isFinite(task.actualCost) && task.actualCost > 0 ? task.actualCost : 0;

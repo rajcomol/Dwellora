@@ -9,6 +9,6 @@ export default async function ProjectFinancesRoute({
   const projectId = Array.isArray(idParam) ? idParam[0] : idParam;
   const qs = new URLSearchParams();
   if (projectId) qs.set("project", projectId);
-  qs.set("tab", "uitgaven");
-  redirect(`/dashboard/finances?${qs.toString()}`);
+  const query = qs.toString();
+  redirect(query ? `/dashboard/finances?${query}` : "/dashboard/finances");
 }

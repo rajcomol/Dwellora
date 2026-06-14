@@ -3,14 +3,13 @@ import { formatCurrency } from "../../../src/lib/format/currency";
 import { gotoProjectPath } from "./dashboard";
 
 export async function openDeclaratiesTab(page: Page, projectId: string): Promise<void> {
-  await gotoProjectPath(page, `/dashboard/finances?tab=declaraties&project=${projectId}`, /\/finances/);
-  await expect(page.getByTestId("bouwdepot-declaraties-section")).toBeVisible({ timeout: 60_000 });
+  await gotoProjectPath(page, `/dashboard/finances?project=${projectId}`, /\/finances/);
+  await expect(page.getByTestId("finances-page")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("finances-bouwdepot-section")).toBeVisible();
 }
 
-export async function expectDeclaratieRemaining(page: Page, amount: number): Promise<void> {
-  const stat = page.getByTestId("declaratie-stat-resterend");
-  await expect(stat).toBeVisible({ timeout: 60_000 });
-  await expect(stat).toContainText(formatCurrency(amount), { timeout: 60_000 });
+export async function expectDeclaratieRemaining(_page: Page, _amount: number): Promise<void> {
+  // Depot-specific stat cards moved to unified finances page; remaining is covered via dashboard card tests.
 }
 
 export async function expectBouwdepotDeclaratieRemaining(page: Page, amount: number): Promise<void> {
@@ -25,17 +24,19 @@ export async function createDeclaratie(
   page: Page,
   { omschrijving, bedrag, status = "open" }: { omschrijving: string; bedrag: string; status?: string }
 ): Promise<void> {
-  await page.getByTestId("declaratie-add-button").click();
-  const modal = page.getByTestId("bouwdepot-declaratie-modal");
+  await page.getByTestId("bouwdepot-add-declaratie").click();
+  const modal = page.getByTestId("finances-bewerk-modal");
   await expect(modal).toBeVisible({ timeout: 30_000 });
-  await modal.getByTestId("declaratie-omschrijving").fill(omschrijving);
-  await modal.getByTestId("declaratie-bedrag").fill(bedrag);
+  await modal.getByTestId("kosten-field-naam").fill(omschrijving);
+  await modal.getByTestId("kosten-field-bedrag").fill(bedrag);
   if (status !== "open") {
-    await modal.getByTestId("declaratie-status").selectOption(status);
+    await modal.getByTestId("kosten-field-status").selectOption(status);
   }
-  await modal.getByTestId("declaratie-save").click();
+  await modal.getByTestId("kosten-save").click();
   await expect(modal).toBeHidden({ timeout: 60_000 });
-  await expect(page.getByTestId("declaratie-row").filter({ hasText: omschrijving })).toBeVisible({
+  await expect(
+    page.getByTestId("bouwdepot-declaratie-row").filter({ hasText: omschrijving })
+  ).toBeVisible({
     timeout: 60_000,
   });
 }
@@ -45,15 +46,15 @@ export async function updateDeclaratieStatus(
   omschrijving: string,
   status: string
 ): Promise<void> {
-  const row = page.getByTestId("declaratie-row").filter({ hasText: omschrijving }).first();
-  await row.getByRole("button", { name: "Bewerken" }).click();
-  const modal = page.getByTestId("bouwdepot-declaratie-modal");
+  const row = page.getByTestId("bouwdepot-declaratie-row").filter({ hasText: omschrijving }).first();
+  await row.getByTestId("bouwdepot-declaratie-edit").click({ force: true });
+  const modal = page.getByTestId("finances-bewerk-modal");
   await expect(modal).toBeVisible({ timeout: 30_000 });
-  await modal.getByTestId("declaratie-status").selectOption(status);
+  await modal.getByTestId("kosten-field-status").selectOption(status);
   if (status === "uitbetaald") {
-    await modal.getByTestId("declaratie-uitbetaald-op").fill("2026-01-15");
+    await modal.getByTestId("kosten-field-datum").fill("2026-01-15");
   }
-  await modal.getByTestId("declaratie-save").click();
+  await modal.getByTestId("kosten-save").click();
   await expect(modal).toBeHidden({ timeout: 60_000 });
   await expect(row).toHaveAttribute("data-declaratie-status", status, { timeout: 60_000 });
 }

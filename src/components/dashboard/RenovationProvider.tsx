@@ -572,10 +572,22 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   const [isRenovationDataReady, setIsRenovationDataReady] = useState(false);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      setSessionUserId(data.session?.user.id ?? null);
-      setSessionResolved(true);
-    });
+    void supabase.auth
+      .getSession()
+      .then(async ({ data, error }) => {
+        if (error) {
+          await supabase.auth.signOut().catch(() => undefined);
+          setSessionUserId(null);
+          setSessionResolved(true);
+          return;
+        }
+        setSessionUserId(data.session?.user.id ?? null);
+        setSessionResolved(true);
+      })
+      .catch(() => {
+        setSessionUserId(null);
+        setSessionResolved(true);
+      });
 
     const {
       data: { subscription },

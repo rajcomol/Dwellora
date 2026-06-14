@@ -10,6 +10,8 @@ import {
 } from "./helpers/dashboard";
 
 test.describe("reports by room", () => {
+  test.skip(true, "Reports moved off unified finances page; restore when reports route returns.");
+
   test("lists all rooms including rooms without tasks", async ({ page }, testInfo) => {
     test.skip(!testUserCredentialsConfigured, "Set TEST_USER_EMAIL and TEST_USER_PASSWORD");
 

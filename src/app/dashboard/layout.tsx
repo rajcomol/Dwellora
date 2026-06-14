@@ -9,6 +9,7 @@ import { HelpProvider } from "@/components/help/HelpProvider";
 import OnboardingTourClient from "@/components/help/OnboardingTourClient";
 import nl from "@/i18n/locales/nl.json";
 import { createSupabaseServerClient } from "@/lib/supabase/server-user";
+import { safeGetSession } from "@/lib/supabase/safe-auth";
 
 export const metadata: Metadata = {
   title: nl.meta.dashboardTitle,
@@ -21,9 +22,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session = await safeGetSession(supabase);
   if (!session?.user) {
     redirect("/login?next=/dashboard");
   }
