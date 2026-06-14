@@ -21,12 +21,22 @@ export type BouwdepotUsageBreakdown = {
   remainingAmount: number;
   percentageUsed: number;
   uitbetaaldDeclaraties: number;
+  ingediendDeclaraties: number;
   depotExpenses: number;
   depotTasks: number;
 };
 
+/** Kleur voor resterend bouwdepot-saldo t.o.v. totaal. */
+export function bouwdepotRemainingAmountClass(remaining: number, total: number): string {
+  if (total <= 0) return "text-foreground";
+  const pct = (remaining / total) * 100;
+  if (pct < 10) return "text-red-600 dark:text-red-400";
+  if (pct <= 25) return "text-amber-600 dark:text-amber-400";
+  return "text-emerald-600 dark:text-emerald-400";
+}
+
 /**
- * Gebruikt bouwdepot = uitbetaalde declaraties + depot-uitgaven + depot-taken.
+ * Gebruikt bouwdepot = uitbetaalde + ingediende declaraties + depot-uitgaven + depot-taken.
  * Taken met een uitbetaalde declaratie (zelfde taak_id) tellen alleen via de declaratie mee.
  */
 export function computeBouwdepotUsage(
@@ -38,7 +48,9 @@ export function computeBouwdepotUsage(
   const projectId = project.id;
   const totalAmount = projectMoney(project).depot;
 
-  const uitbetaaldDeclaraties = computeDeclaratieTotals(declaraties, projectId).totaalUitbetaald;
+  const declTotals = computeDeclaratieTotals(declaraties, projectId);
+  const uitbetaaldDeclaraties = declTotals.totaalUitbetaald;
+  const ingediendDeclaraties = declTotals.totaalIngediend;
 
   const paidTaskIds = new Set(
     declaraties
@@ -54,7 +66,7 @@ export function computeBouwdepotUsage(
     .filter((e) => e.projectId === projectId && e.fundedByConstructionDepot)
     .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
 
-  const usedAmount = uitbetaaldDeclaraties + depotExpenses + depotTasks;
+  const usedAmount = uitbetaaldDeclaraties + ingediendDeclaraties + depotExpenses + depotTasks;
   const remainingAmount = totalAmount - usedAmount;
   const percentageUsed = totalAmount > 0 ? Math.min(100, (usedAmount / totalAmount) * 100) : 0;
 
@@ -64,6 +76,7 @@ export function computeBouwdepotUsage(
     remainingAmount,
     percentageUsed,
     uitbetaaldDeclaraties,
+    ingediendDeclaraties,
     depotExpenses,
     depotTasks,
   };

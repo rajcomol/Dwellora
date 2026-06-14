@@ -36,8 +36,8 @@ test.describe("bouwdepot declaraties", () => {
 
     await createDeclaratie(page, { omschrijving: declTitle, bedrag: String(declAmount), status: "open" });
     await expect(
-      page.getByTestId("bouwdepot-declaratie-row").filter({ hasText: declTitle })
-    ).toHaveAttribute("data-declaratie-status", "open");
+      page.getByTestId("bouwdepot-row").filter({ hasText: declTitle })
+    ).toHaveAttribute("data-bouwdepot-status", "open");
     await expectDeclaratieRemaining(page, depotTotal);
 
     await updateDeclaratieStatus(page, declTitle, "uitbetaald");

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bouwdepotRemainingAmountClass,
   computeBouwdepotUsage,
   computeProjectBouwdepotBalance,
   taskBouwdepotChargeAmount,
@@ -86,6 +87,14 @@ describe("taskBouwdepotChargeAmount", () => {
   });
 });
 
+describe("bouwdepotRemainingAmountClass", () => {
+  it("returns red below 10%, amber between 10-25%, green above 25%", () => {
+    expect(bouwdepotRemainingAmountClass(500, 10000)).toContain("red");
+    expect(bouwdepotRemainingAmountClass(2000, 10000)).toContain("amber");
+    expect(bouwdepotRemainingAmountClass(3000, 10000)).toContain("emerald");
+  });
+});
+
 describe("computeBouwdepotUsage", () => {
   it("includes loose project expenses linked to bouwdepot", () => {
     const usage = computeBouwdepotUsage(project, [], [expense()], []);
@@ -94,17 +103,22 @@ describe("computeBouwdepotUsage", () => {
     expect(usage.remainingAmount).toBe(8500);
   });
 
-  it("sums uitbetaald declaraties, depot expenses and depot tasks", () => {
+  it("sums uitbetaald and ingediende declaraties, depot expenses and depot tasks", () => {
     const usage = computeBouwdepotUsage(
       project,
       [task({ id: "t1", estimatedCost: 5000, actualCost: 0 })],
       [expense({ id: "e1", amount: 600, fundedByConstructionDepot: true })],
-      [declaratie({ id: "d1", bedrag: 400, status: "uitbetaald" })]
+      [
+        declaratie({ id: "d1", bedrag: 400, status: "uitbetaald" }),
+        declaratie({ id: "d2", bedrag: 250, status: "ingediend" }),
+      ]
     );
     expect(usage.uitbetaaldDeclaraties).toBe(400);
+    expect(usage.ingediendDeclaraties).toBe(250);
     expect(usage.depotExpenses).toBe(600);
     expect(usage.depotTasks).toBe(5000);
-    expect(usage.usedAmount).toBe(6000);
+    expect(usage.usedAmount).toBe(6250);
+    expect(usage.remainingAmount).toBe(33750);
   });
 
   it("does not double-count tasks with an uitbetaald declaratie", () => {

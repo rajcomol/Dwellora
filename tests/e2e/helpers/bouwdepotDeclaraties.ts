@@ -35,7 +35,7 @@ export async function createDeclaratie(
   await modal.getByTestId("kosten-save").click();
   await expect(modal).toBeHidden({ timeout: 60_000 });
   await expect(
-    page.getByTestId("bouwdepot-declaratie-row").filter({ hasText: omschrijving })
+    page.getByTestId("bouwdepot-row").filter({ hasText: omschrijving })
   ).toBeVisible({
     timeout: 60_000,
   });
@@ -46,7 +46,7 @@ export async function updateDeclaratieStatus(
   omschrijving: string,
   status: string
 ): Promise<void> {
-  const row = page.getByTestId("bouwdepot-declaratie-row").filter({ hasText: omschrijving }).first();
+  const row = page.getByTestId("bouwdepot-row").filter({ hasText: omschrijving }).first();
   await row.getByTestId("bouwdepot-declaratie-edit").click({ force: true });
   const modal = page.getByTestId("finances-bewerk-modal");
   await expect(modal).toBeVisible({ timeout: 30_000 });
@@ -56,5 +56,5 @@ export async function updateDeclaratieStatus(
   }
   await modal.getByTestId("kosten-save").click();
   await expect(modal).toBeHidden({ timeout: 60_000 });
-  await expect(row).toHaveAttribute("data-declaratie-status", status, { timeout: 60_000 });
+  await expect(row).toHaveAttribute("data-bouwdepot-status", status, { timeout: 60_000 });
 }

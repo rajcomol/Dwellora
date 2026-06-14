@@ -294,8 +294,10 @@
       "statTotal": "Totaal depot",
       "statSubmitted": "Ingediend",
       "statPaid": "Uitbetaald",
+      "statRemaining": "Resterend",
+      "statusLinked": "Gekoppeld",
       "addButton": "+ Declaratie toevoegen",
-      "empty": "Nog geen declaraties toegevoegd.",
+      "empty": "Nog geen bouwdepot-posten gekoppeld.",
       "colDate": "Datum"
     }
   },
