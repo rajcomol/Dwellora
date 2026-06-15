@@ -1,38 +1,18 @@
-import { filterTasksForProjectId } from "@/lib/dashboard/projectBudget";
-import { taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
-import type {
-  BouwdepotDeclaratie,
-  KostCategorie,
-  ProjectExpense,
-  Room,
-  Task,
-} from "@/lib/renovation/types";
+import type { KostCategorie, ProjectExpense } from "@/lib/renovation/types";
 
 export type CostLineType = "werkelijk" | "geschat";
-
-export type KostenramingTaskLine = {
-  kind: "task";
-  taskId: string;
-  title: string;
-  roomName: string;
-  amount: number;
-  costType: CostLineType;
-  estimated: number;
-  actual: number;
-  expected: number;
-};
 
 export type KostenramingExpenseLine = {
   kind: "expense";
   expenseId: string;
   title: string;
   amount: number;
-  costType: "werkelijk";
+  costType: CostLineType;
 };
 
-export type KostenramingDeclaratieLine = {
-  kind: "declaratie";
-  declaratieId: string;
+export type KostenramingBouwdepotLine = {
+  kind: "bouwdepot";
+  expenseId: string;
   title: string;
   amount: number;
   costType: "werkelijk";
@@ -52,14 +32,14 @@ export type KostenramingCategory = {
   id: KostenramingCategoryId;
   icon: string;
   label: string;
-  items: KostenramingTaskLine[];
+  items: KostenramingExpenseLine[];
   subtotal: number;
 };
 
 export type KostenramingData = {
   categories: KostenramingCategory[];
   looseExpenses: KostenramingExpenseLine[];
-  declaraties: KostenramingDeclaratieLine[];
+  bouwdepotExpenses: KostenramingBouwdepotLine[];
   totals: {
     estimated: number;
     actual: number;
@@ -107,57 +87,32 @@ export const KOST_CATEGORIE_ORDER: KostCategorie[] = [
   "overig",
 ];
 
-function taskHasCosts(task: Task): boolean {
-  const estimated = taskEstimatedAmount(task);
-  const actual = Number.isFinite(task.actualCost) && task.actualCost > 0 ? task.actualCost : 0;
-  return estimated > 0 || actual > 0;
-}
-
-function roomNameForTask(task: Task, roomsById: Map<string, Room>): string {
-  if (task.roomIds.length === 0) return "—";
-  const names = task.roomIds
-    .map((id) => roomsById.get(id)?.name)
-    .filter((n): n is string => Boolean(n));
-  return names.length > 0 ? names.join(", ") : "—";
-}
-
-function toTaskLine(task: Task, roomsById: Map<string, Room>): KostenramingTaskLine {
-  const estimated = taskEstimatedAmount(task);
-  const actual = Number.isFinite(task.actualCost) && task.actualCost > 0 ? task.actualCost : 0;
-  const costType: CostLineType = actual > 0 ? "werkelijk" : "geschat";
-  const amount = actual > 0 ? actual : estimated;
+function toExpenseLine(expense: ProjectExpense): KostenramingExpenseLine {
   return {
-    kind: "task",
-    taskId: task.id,
-    title: task.title,
-    roomName: roomNameForTask(task, roomsById),
-    amount,
-    costType,
-    estimated,
-    actual,
-    expected: actual > 0 ? actual : estimated,
+    kind: "expense",
+    expenseId: expense.id,
+    title: expense.title,
+    amount: expense.amount,
+    costType: expense.kostType,
   };
 }
 
 export function buildKostenramingData(params: {
   projectId: string;
-  tasks: Task[];
-  rooms: Room[];
   projectExpenses: ProjectExpense[];
-  declaraties: BouwdepotDeclaratie[];
 }): KostenramingData {
-  const { projectId, tasks, rooms, projectExpenses, declaraties } = params;
-  const roomIds = new Set(rooms.filter((r) => r.projectId === projectId).map((r) => r.id));
-  const roomsById = new Map(rooms.map((r) => [r.id, r]));
-  const projectTasks = filterTasksForProjectId(tasks, projectId, roomIds).filter(taskHasCosts);
+  const { projectId, projectExpenses } = params;
+  const projectItems = projectExpenses.filter(
+    (e) => e.projectId === projectId && Number.isFinite(e.amount) && e.amount > 0
+  );
 
-  const buckets = new Map<KostenramingCategoryId, KostenramingTaskLine[]>();
+  const buckets = new Map<KostenramingCategoryId, KostenramingExpenseLine[]>();
   for (const def of CATEGORY_DEFS) buckets.set(def.id, []);
   buckets.set("overig", []);
 
-  for (const task of projectTasks) {
-    const categoryId = categorizeTaskTitle(task.title);
-    buckets.get(categoryId)!.push(toTaskLine(task, roomsById));
+  for (const expense of projectItems.filter((e) => !e.fundedByConstructionDepot)) {
+    const categoryId = expense.categorie;
+    buckets.get(categoryId)!.push(toExpenseLine(expense));
   }
 
   const allCategories: KostenramingCategory[] = [
@@ -168,7 +123,7 @@ export function buildKostenramingData(params: {
         icon: def.icon,
         label: def.label,
         items,
-        subtotal: items.reduce((s, i) => s + i.expected, 0),
+        subtotal: items.reduce((s, i) => s + i.amount, 0),
       };
     }),
     {
@@ -176,56 +131,44 @@ export function buildKostenramingData(params: {
       icon: "📦",
       label: "Overig",
       items: buckets.get("overig") ?? [],
-      subtotal: (buckets.get("overig") ?? []).reduce((s, i) => s + i.expected, 0),
+      subtotal: (buckets.get("overig") ?? []).reduce((s, i) => s + i.amount, 0),
     },
   ];
 
   const categories = allCategories.filter((c) => c.items.length > 0);
 
-  const looseExpenses: KostenramingExpenseLine[] = projectExpenses
-    .filter((e) => e.projectId === projectId && !e.taskId && Number.isFinite(e.amount) && e.amount > 0)
+  const looseExpenses: KostenramingExpenseLine[] = projectItems
+    .filter((e) => !e.fundedByConstructionDepot && !e.taskId)
+    .map(toExpenseLine);
+
+  const bouwdepotLines: KostenramingBouwdepotLine[] = projectItems
+    .filter((e) => e.fundedByConstructionDepot)
     .map((e) => ({
-      kind: "expense" as const,
+      kind: "bouwdepot" as const,
       expenseId: e.id,
       title: e.title,
       amount: e.amount,
       costType: "werkelijk" as const,
     }));
 
-  const declaratieLines: KostenramingDeclaratieLine[] = declaraties
-    .filter((d) => d.projectId === projectId && Number.isFinite(d.bedrag) && d.bedrag > 0)
-    .map((d) => ({
-      kind: "declaratie" as const,
-      declaratieId: d.id,
-      title: d.omschrijving,
-      amount: d.bedrag,
-      costType: "werkelijk" as const,
-    }));
+  const estimatedTotal = projectItems
+    .filter((e) => e.kostType === "geschat")
+    .reduce((s, e) => s + e.amount, 0);
+  const actualTotal = projectItems
+    .filter((e) => e.kostType === "werkelijk")
+    .reduce((s, e) => s + e.amount, 0);
+  const expectedTotal = projectItems.reduce((s, e) => s + e.amount, 0);
 
-  const taskEstimatedTotal = projectTasks.reduce((s, t) => s + taskEstimatedAmount(t), 0);
-  const taskActualTotal = projectTasks.reduce(
-    (s, t) => s + (Number.isFinite(t.actualCost) && t.actualCost > 0 ? t.actualCost : 0),
-    0
-  );
-  const taskExpectedTotal = projectTasks.reduce((s, t) => {
-    const actual = Number.isFinite(t.actualCost) && t.actualCost > 0 ? t.actualCost : 0;
-    return s + (actual > 0 ? actual : taskEstimatedAmount(t));
-  }, 0);
-
-  const looseTotal = looseExpenses.reduce((s, e) => s + e.amount, 0);
-  const declaratieTotal = declaratieLines.reduce((s, d) => s + d.amount, 0);
-
-  const hasAnyCosts =
-    projectTasks.length > 0 || looseExpenses.length > 0 || declaratieLines.length > 0;
+  const hasAnyCosts = projectItems.length > 0;
 
   return {
     categories,
     looseExpenses,
-    declaraties: declaratieLines,
+    bouwdepotExpenses: bouwdepotLines,
     totals: {
-      estimated: taskEstimatedTotal,
-      actual: taskActualTotal + looseTotal + declaratieTotal,
-      expected: taskExpectedTotal + looseTotal + declaratieTotal,
+      estimated: estimatedTotal,
+      actual: actualTotal,
+      expected: expectedTotal,
     },
     hasAnyCosts,
   };
@@ -247,16 +190,16 @@ export function kostenramingToCsvRows(data: KostenramingData): KostenramingCsvRo
       rows.push({
         categorie: category.label,
         taaknaam: item.title,
-        ruimte: item.roomName,
+        ruimte: "—",
         type: item.costType,
         bedrag: item.amount,
       });
     }
   }
 
-  for (const item of data.declaraties) {
+  for (const item of data.bouwdepotExpenses) {
     rows.push({
-      categorie: "Bouwdepot declaraties",
+      categorie: "Bouwdepot",
       taaknaam: item.title,
       ruimte: "—",
       type: item.costType,

@@ -18,7 +18,7 @@ const MOCK_VISUALISATIE = {
 
 async function openPlannerPage(page: Page): Promise<void> {
   await gotoProjectPath(page, "/dashboard/planner");
-  await expect(page.getByRole("heading", { name: "3D Planner" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Maak je nieuwe situatie" })).toBeVisible({ timeout: 60_000 });
 }
 
 async function uploadPhoto(page: Page, testid: string, fileName: string): Promise<void> {

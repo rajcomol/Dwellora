@@ -108,21 +108,6 @@ export async function openProjectPlanningPage(page: Page): Promise<void> {
   await expect(page.getByTestId("planning-page")).toBeVisible({ timeout: 60_000 });
 }
 
-export async function openReportsPage(page: Page): Promise<void> {
-  if (await clickNavLink(page, "Financiën", "**/finances**")) return;
-  const moreButton = page.getByTestId("bottom-nav-more");
-  if (await moreButton.isVisible().catch(() => false)) {
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await moreButton.click({ force: true });
-    const financesLink = page.getByRole("dialog").getByRole("link", { name: "Financiën", exact: true });
-    await financesLink.click({ force: true });
-    await page.waitForURL("**/finances**", { timeout: 60_000 });
-    await settleAfterNavigation(page);
-    return;
-  }
-  await gotoProjectPath(page, "/dashboard/finances", "**/finances**");
-}
-
 export async function openFinancesPage(page: Page): Promise<void> {
   if (await clickNavLink(page, "Financiën", "**/finances**")) return;
   await gotoProjectPath(page, "/dashboard/finances", "**/finances**");

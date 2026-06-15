@@ -1,24 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { buildKostenramingData, categorizeTaskTitle, kostenramingToCsv } from "@/lib/finances/kostenraming";
-import type { Task } from "@/lib/renovation/types";
+import type { ProjectExpense } from "@/lib/renovation/types";
 
-function sampleTask(overrides: Partial<Task> = {}): Task {
+function expense(overrides: Partial<ProjectExpense> = {}): ProjectExpense {
   return {
-    id: "t1",
+    id: "e1",
     projectId: "p1",
-    title: "Vloer tegels leggen",
-    roomIds: ["r1"],
-    renovationPhase: "afwerking",
-    status: "todo",
-    estimatedCost: 1500,
-    actualCost: 0,
-    durationDays: 3,
-    priority: "medium",
-    description: "",
-    sortOrder: 0,
-    startDate: null,
-    assignedRosterId: null,
+    title: "Vloer schatting",
+    amount: 800,
+    spentOn: null,
+    notes: "",
+    taskId: null,
     fundedByConstructionDepot: false,
+    kostType: "geschat",
+    categorie: "vloeren",
+    bouwdepotStatus: "open",
+    createdAt: "2026-01-01",
     ...overrides,
   };
 }
@@ -38,34 +35,32 @@ describe("categorizeTaskTitle", () => {
 });
 
 describe("buildKostenramingData", () => {
-  it("groups tasks and computes expected totals", () => {
+  it("groups kostenposten and computes totals from expenses only", () => {
     const data = buildKostenramingData({
       projectId: "p1",
-      rooms: [{ id: "r1", projectId: "p1", name: "Woonkamer" }],
-      tasks: [
-        sampleTask({ id: "t1", title: "Vloer laminaat", estimatedCost: 1000, actualCost: 0 }),
-        sampleTask({ id: "t2", title: "Stopcontacten", estimatedCost: 500, actualCost: 750 }),
-      ],
       projectExpenses: [
-        {
-          id: "e1",
-          projectId: "p1",
+        expense({ id: "e1", title: "Vloer laminaat", amount: 1000, categorie: "vloeren", kostType: "geschat" }),
+        expense({
+          id: "e2",
+          title: "Stopcontacten",
+          amount: 750,
+          categorie: "elektra",
+          kostType: "werkelijk",
+        }),
+        expense({
+          id: "e3",
           title: "Bouwmarkt",
           amount: 120,
-          spentOn: null,
-          notes: "",
-          taskId: null,
-          fundedByConstructionDepot: false,
-          createdAt: "2026-01-01",
-        },
+          categorie: "overig",
+          kostType: "werkelijk",
+        }),
       ],
-      declaraties: [],
     });
 
     expect(data.categories.some((c) => c.id === "vloeren")).toBe(true);
     expect(data.categories.some((c) => c.id === "elektra")).toBe(true);
-    expect(data.looseExpenses).toHaveLength(1);
-    expect(data.totals.estimated).toBe(1500);
+    expect(data.looseExpenses).toHaveLength(3);
+    expect(data.totals.estimated).toBe(1000);
     expect(data.totals.actual).toBe(870);
     expect(data.totals.expected).toBe(1870);
   });
@@ -75,10 +70,9 @@ describe("kostenramingToCsv", () => {
   it("exports expected columns", () => {
     const data = buildKostenramingData({
       projectId: "p1",
-      rooms: [{ id: "r1", projectId: "p1", name: "Keuken" }],
-      tasks: [sampleTask({ title: "Keuken aanrecht", estimatedCost: 2000 })],
-      projectExpenses: [],
-      declaraties: [],
+      projectExpenses: [
+        expense({ title: "Keuken aanrecht", amount: 2000, categorie: "keuken", kostType: "geschat" }),
+      ],
     });
     const csv = kostenramingToCsv(data);
     expect(csv).toContain("Categorie,Taaknaam,Ruimte,Type,Bedrag");

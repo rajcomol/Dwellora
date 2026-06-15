@@ -1,6 +1,5 @@
 "use client";
 
-import BouwdepotLinkedTasksSection from "@/components/dashboard/BouwdepotLinkedTasksSection";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
@@ -71,7 +70,6 @@ export default function BouwdepotPageClient() {
               {t("bouwdepot.editBudgetSettings")}
             </Link>
           </div>
-          <BouwdepotLinkedTasksSection projectId={selectedProjectId} />
         </>
       ) : (
         <p className="text-sm text-renovation-concrete">{t("layout.topBar.chooseProject")}</p>

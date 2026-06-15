@@ -1,60 +1,4 @@
-import { looseExpensesForBudget } from "@/lib/dashboard/projectBudget";
-import { sumEstimatedCostsUnique, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
 import type { Project, ProjectConstructionDepotBalance, ProjectExpense, Task } from "@/lib/renovation/types";
-
-export type DashboardMetrics = {
-  totalProjectBudget: number;
-  totalEstimatedTaskCosts: number;
-  /** Som werkelijke kosten op taken (zonder losse projectuitgaven). */
-  totalActualFromTasks: number;
-  /** Losse uitgaven op projectniveau (bouwmarkt, enz.). */
-  totalLooseExpenses: number;
-  /** Taken + losse uitgaven — totaal geregistreerde uitgaven. */
-  totalActualRecordedSpend: number;
-  budgetGap: number;
-  estimateVsActualGap: number;
-  totalTasks: number;
-  completedTasks: number;
-  highPriorityTasks: number;
-};
-
-function sumExpenseAmounts(expenses: ProjectExpense[]): number {
-  return expenses.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
-}
-
-export function computeMetrics(
-  projects: Project[],
-  tasks: Task[],
-  projectExpenses: ProjectExpense[] = []
-): DashboardMetrics {
-  const totalProjectBudget = projects.reduce((sum, p) => sum + (Number.isFinite(p.totalBudget) ? p.totalBudget : 0), 0);
-  const totalEstimatedTaskCosts = sumEstimatedCostsUnique(tasks);
-  const totalActualFromTasks = tasks.reduce(
-    (sum, t) => sum + (Number.isFinite(t.actualCost) ? t.actualCost : 0),
-    0
-  );
-  const totalLooseExpenses = sumExpenseAmounts(looseExpensesForBudget(projectExpenses, tasks));
-  const totalActualRecordedSpend = totalActualFromTasks + totalLooseExpenses;
-  const budgetGap = totalProjectBudget - totalEstimatedTaskCosts;
-  const estimateVsActualGap = totalEstimatedTaskCosts - totalActualRecordedSpend;
-
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t) => t.status === "done").length;
-  const highPriorityTasks = tasks.filter((t) => t.priority === "high").length;
-
-  return {
-    totalProjectBudget,
-    totalEstimatedTaskCosts,
-    totalActualFromTasks,
-    totalLooseExpenses,
-    totalActualRecordedSpend,
-    budgetGap,
-    estimateVsActualGap,
-    totalTasks,
-    completedTasks,
-    highPriorityTasks,
-  };
-}
 
 export type InsightItem = {
   severity: "warning" | "info";
@@ -62,6 +6,10 @@ export type InsightItem = {
   messageKey: string;
   messageParams?: Record<string, string | number>;
 };
+
+function sumExpenseAmounts(expenses: ProjectExpense[]): number {
+  return expenses.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+}
 
 export function generateInsights(
   projects: Project[],
@@ -74,10 +22,7 @@ export function generateInsights(
 
   const totalBudget = projects.reduce((s, p) => s + p.totalBudget, 0);
   const hasAnyProjectWithoutBudget = projects.some((p) => p.totalBudget <= 0);
-  const totalEstimated = sumEstimatedCostsUnique(tasks);
-  const totalActualTasks = tasks.reduce((s, t) => s + (Number.isFinite(t.actualCost) ? t.actualCost : 0), 0);
-  const totalLoose = sumExpenseAmounts(looseExpensesForBudget(projectExpenses, tasks));
-  const totalActualAll = totalActualTasks + totalLoose;
+  const totalSpent = sumExpenseAmounts(projectExpenses);
 
   for (const d of depotBalances) {
     if (d.remainingAmount < 0) {
@@ -89,10 +34,10 @@ export function generateInsights(
     }
   }
 
-  if (tasks.length > 0 && totalActualAll > totalEstimated) {
+  if (totalBudget > 0 && totalSpent > totalBudget) {
     insights.push({
       severity: "warning",
-      messageKey: "insights.actualExceedsEstimated",
+      messageKey: "insights.spentExceedsBudget",
     });
   }
 
@@ -100,13 +45,6 @@ export function generateInsights(
     insights.push({
       severity: "warning",
       messageKey: "insights.noProjectBudget",
-    });
-  }
-
-  if (totalBudget > 0 && totalEstimated > totalBudget) {
-    insights.push({
-      severity: "warning",
-      messageKey: "insights.estimatedExceedsBudget",
     });
   }
 

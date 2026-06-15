@@ -159,7 +159,7 @@ async function buildProjectContext(
       tasksRes = await supabase
         .from("tasks")
         .select(
-          "id,title,status,estimated_cost,actual_cost,duration_days,priority,description,sort_order,start_date"
+          "id,title,status,duration_days,priority,description,sort_order,start_date"
         )
         .in("id", taskIdList);
     }
@@ -183,7 +183,7 @@ async function buildProjectContext(
         : tasksForRoom
             .map(
               (task) =>
-                `${task.title} [${task.status}, ${task.priority}, ${task.duration_days}d, est ${task.estimated_cost}, actual ${task.actual_cost ?? 0}]`
+                `${task.title} [${task.status}, ${task.priority}, ${task.duration_days}d]`
             )
             .join("; ");
     return `- ${room.name}: ${taskSummary}`;

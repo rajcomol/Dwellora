@@ -8,11 +8,10 @@ import { computeBouwdepotUsage } from "@/lib/dashboard/bouwdepot";
 import {
   computeProjectSpendOverview,
   daysUntilKeyHandover,
-  filterTasksForProjectId,
 } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
-import type { BouwdepotDeclaratie, Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 function StatCard({
   label,
@@ -41,16 +40,15 @@ function statsForProject(
   project: Project,
   tasks: Task[],
   expenses: ProjectExpense[],
-  declaraties: BouwdepotDeclaratie[],
-  roomIds: Set<string>,
   t: (k: string, p?: Record<string, string | number>) => string
 ) {
-  const filtered = filterTasksForProjectId(tasks, project.id, roomIds);
-  const overview = computeProjectSpendOverview(project, filtered, expenses);
-  const depotUsage = computeBouwdepotUsage(project, expenses);
+  const projectExpenses = expenses.filter((e) => e.projectId === project.id);
+  const overview = computeProjectSpendOverview(project, projectExpenses);
+  const depotUsage = computeBouwdepotUsage(project, projectExpenses);
   const depotRemaining = depotUsage.remainingAmount;
-  const total = filtered.length;
-  const done = filtered.filter((tk) => tk.status === "done").length;
+  const projectTasks = tasks.filter((tk) => tk.projectId === project.id);
+  const total = projectTasks.length;
+  const done = projectTasks.filter((tk) => tk.status === "done").length;
   const days = daysUntilKeyHandover(project.expectedKeyHandover);
   const keyLabel = project.expectedKeyHandover
     ? formatDisplayDate(project.expectedKeyHandover)
@@ -74,22 +72,11 @@ function statsForProject(
 export default function DashboardStatGrid() {
   const { t } = useI18n();
   const { selectedProject } = useSelectedProject();
-  const { projects, rooms, tasks, projectExpenses, declaraties } = useRenovation();
-
-  const roomIdsByProject = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    for (const r of rooms) {
-      const set = map.get(r.projectId) ?? new Set();
-      set.add(r.id);
-      map.set(r.projectId, set);
-    }
-    return map;
-  }, [rooms]);
+  const { projects, tasks, projectExpenses } = useRenovation();
 
   const display = useMemo(() => {
     if (selectedProject) {
-      const roomIds = roomIdsByProject.get(selectedProject.id) ?? new Set();
-      return statsForProject(selectedProject, tasks, projectExpenses, declaraties ?? [], roomIds, t);
+      return statsForProject(selectedProject, tasks, projectExpenses, t);
     }
     if (projects.length === 0) {
       return {
@@ -101,9 +88,8 @@ export default function DashboardStatGrid() {
       };
     }
     const first = projects[0]!;
-    const roomIds = roomIdsByProject.get(first.id) ?? new Set();
-    return statsForProject(first, tasks, projectExpenses, declaraties ?? [], roomIds, t);
-  }, [selectedProject, projects, tasks, projectExpenses, declaraties, roomIdsByProject, t]);
+    return statsForProject(first, tasks, projectExpenses, t);
+  }, [selectedProject, projects, tasks, projectExpenses, t]);
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

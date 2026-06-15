@@ -8,7 +8,6 @@ export type RoomTaskSummaryRow = {
   room_name: string;
   task_count: number;
   completed_count: number;
-  estimated_cost_sum: number;
   earliest_start_date: string | null;
   latest_end_date: string | null;
 };
@@ -35,14 +34,10 @@ export function buildRoomSummariesFromTasks(
 
   return (rooms ?? []).map((room) => {
     const roomTasks = tasksForRoom(tasks, room.id);
-    let estimatedCostSum = 0;
     let earliest: string | null = null;
     let latest: string | null = null;
 
     for (const tk of roomTasks) {
-      if (tk.estimatedCost != null) {
-        estimatedCostSum += tk.estimatedCost;
-      }
       const dates = datesByTaskId.get(tk.id);
       if (dates?.start) {
         if (!earliest || dates.start < earliest) earliest = dates.start;
@@ -58,7 +53,6 @@ export function buildRoomSummariesFromTasks(
       room_name: room.name,
       task_count: roomTasks.length,
       completed_count: roomTasks.filter((tk) => tk.status === "done").length,
-      estimated_cost_sum: estimatedCostSum,
       earliest_start_date: earliest,
       latest_end_date: latest,
     };

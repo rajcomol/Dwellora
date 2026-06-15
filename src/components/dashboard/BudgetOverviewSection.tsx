@@ -9,30 +9,25 @@ import { useI18n } from "@/i18n/provider";
 import { computeBouwdepotUsage } from "@/lib/dashboard/bouwdepot";
 import {
   computeProjectSpendOverview,
-  filterTasksForProjectId,
 } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
 
 export default function BudgetOverviewSection() {
   const { t } = useI18n();
   const { selectedProject, selectedProjectId } = useSelectedProject();
-  const { projects, rooms, tasks, projectExpenses, declaraties } = useRenovation();
+  const { projects, projectExpenses } = useRenovation();
 
   const project = selectedProject ?? projects[0] ?? null;
   const projectId = selectedProjectId ?? project?.id ?? null;
 
   const overview = useMemo(() => {
     if (!project) return null;
-    const roomIds = new Set(rooms.filter((r) => r.projectId === project.id).map((r) => r.id));
-    const filteredTasks = filterTasksForProjectId(tasks, project.id, roomIds);
     const expenses = projectExpenses.filter((e) => e.projectId === project.id);
-    return computeProjectSpendOverview(project, filteredTasks, expenses);
-  }, [project, rooms, tasks, projectExpenses, declaraties]);
+    return computeProjectSpendOverview(project, expenses);
+  }, [project, projectExpenses]);
 
   const declaratieOverview = useMemo(() => {
     if (!project) return null;
-    const roomIds = new Set(rooms.filter((r) => r.projectId === project.id).map((r) => r.id));
-    const filteredTasks = filterTasksForProjectId(tasks, project.id, roomIds);
     const expenses = projectExpenses.filter((e) => e.projectId === project.id);
     const usage = computeBouwdepotUsage(project, expenses);
     return {
@@ -41,7 +36,7 @@ export default function BudgetOverviewSection() {
       remaining: usage.remainingAmount,
       declaredPct: usage.percentageUsed,
     };
-  }, [project, rooms, tasks, projectExpenses, declaraties]);
+  }, [project, projectExpenses]);
 
   if (!project || !overview) {
     return (
@@ -96,9 +91,7 @@ export default function BudgetOverviewSection() {
           {formatCurrency(overview.totalSpent)}
         </p>
         <p className="mt-1 text-xs text-renovation-concrete">
-          {t("dashboard.budget.spentOfEstimated", {
-            amount: formatCurrency(overview.estimatedTasksTotal),
-          })}
+          {t("finances.unified.spentOfBudget", { pct: Math.round(overview.spentVsBudgetPct) })}
         </p>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-renovation-muted">
           <div

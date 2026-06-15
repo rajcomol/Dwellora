@@ -38,9 +38,6 @@ export interface Task {
   /** Planning / hub grouping: Slopen → … → Nazorg */
   renovationPhase: RenovationPhase;
   status: TaskStatus;
-  /** null = no estimate entered */
-  estimatedCost: number | null;
-  actualCost: number;
   durationDays: number;
   priority: TaskPriority;
   description: string;
@@ -49,34 +46,8 @@ export interface Task {
   startDate: string | null;
   /** project_team_roster row for this project, or null */
   assignedRosterId: ID | null;
-  /** Kosten van deze taak tellen mee voor het project-bouwdepot */
+  /** Legacy DB flag; bouwdepot loopt via kostenposten, niet via taken. */
   fundedByConstructionDepot: boolean;
-}
-
-export type BouwdepotDeclaratieStatus = "open" | "ingediend" | "uitbetaling_verwacht" | "uitbetaald";
-
-/** Declaratie bij bank voor terugbetaling uit bouwdepot. */
-export interface BouwdepotDeclaratie {
-  id: ID;
-  projectId: ID;
-  userId: ID;
-  omschrijving: string;
-  bedrag: number;
-  status: BouwdepotDeclaratieStatus;
-  /** ISO date (YYYY-MM-DD) or null */
-  ingediendOp: string | null;
-  /** ISO date (YYYY-MM-DD) or null */
-  uitbetaaldOp: string | null;
-  taakId: ID | null;
-  notities: string;
-  aangemaaktOp: string;
-  bijgewerktOp: string;
-}
-
-export interface BouwdepotDeclaratieTotals {
-  totaalUitbetaald: number;
-  totaalIngediend: number;
-  totaalOpen: number;
 }
 
 /** Bouwdepot-saldo per project (financieringsbron, geen uitgave). */
@@ -174,7 +145,6 @@ export interface RenovationState {
   projects: Project[];
   rooms: Room[];
   tasks: Task[];
-  declaraties: BouwdepotDeclaratie[];
   projectConstructionDepotBalances: ProjectConstructionDepotBalance[];
   projectExpenses: ProjectExpense[];
   expenseDocuments: ExpenseDocument[];

@@ -211,24 +211,3 @@ export function PlanningPageSkeleton() {
     </div>
   );
 }
-
-/** Rapporten: titel + filter + kaartenrij. */
-export function ReportsPageSkeleton() {
-  return (
-    <div className="min-w-0 space-y-6" aria-busy="true" aria-live="polite">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Skeleton className="h-8 w-44" />
-          <Skeleton className="mt-2 h-4 w-72 max-w-full" />
-        </div>
-        <Skeleton className="h-10 w-full sm:w-64" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
-      <Skeleton className="h-56 w-full rounded-xl border border-dashed border-renovation-border dark:border-renovation-border" />
-    </div>
-  );
-}

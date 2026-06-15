@@ -147,7 +147,6 @@ export default function RoomsPageClient() {
                   room_name: room.name,
                   task_count: 0,
                   completed_count: 0,
-                  estimated_cost_sum: 0,
                   earliest_start_date: null,
                   latest_end_date: null,
                 };

@@ -24,7 +24,7 @@ function AuthLogoMark() {
   );
 }
 
-const pills = [nl.login.pillTasks, nl.login.pillBudget, nl.login.pillRooms, "3D kamerplanner"];
+const pills = [nl.login.pillTasks, nl.login.pillBudget, nl.login.pillRooms, nl.login.pillSfeerbeeld];
 
 export default function LoginScreenChrome({ children }: Props) {
   return (

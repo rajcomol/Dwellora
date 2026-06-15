@@ -62,7 +62,6 @@ test.describe("kostenposten financieel overzicht", () => {
       constructionDepotTotal: String(depotTotal),
     });
     await addRoom(page, roomName);
-    await openProjectOverview(page);
     await addTaskToRoom(page, roomName, taskTitle);
 
     await openFinancesPage(page);

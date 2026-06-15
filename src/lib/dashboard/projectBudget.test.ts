@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeProjectSpendOverview, looseExpensesForBudget } from "@/lib/dashboard/projectBudget";
 import { DEFAULT_RENOVATION_PHASE } from "@/lib/renovation/phases";
-import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { Project, ProjectExpense } from "@/lib/renovation/types";
 
 const project: Project = {
   id: "p1",
@@ -15,27 +15,6 @@ const project: Project = {
   notes: "",
 };
 
-function task(overrides: Partial<Task> = {}): Task {
-  return {
-    id: "t1",
-    projectId: "p1",
-    title: "Taak",
-    roomIds: [],
-    renovationPhase: DEFAULT_RENOVATION_PHASE,
-    status: "todo",
-    estimatedCost: 1000,
-    actualCost: 0,
-    durationDays: 1,
-    priority: "medium",
-    description: "",
-    sortOrder: 0,
-    startDate: null,
-    assignedRosterId: null,
-    fundedByConstructionDepot: false,
-    ...overrides,
-  };
-}
-
 function expense(overrides: Partial<ProjectExpense> = {}): ProjectExpense {
   return {
     id: "e1",
@@ -47,47 +26,34 @@ function expense(overrides: Partial<ProjectExpense> = {}): ProjectExpense {
     createdAt: "2025-06-01T12:00:00Z",
     taskId: null,
     fundedByConstructionDepot: false,
+    kostType: "werkelijk",
+    categorie: "overig",
+    bouwdepotStatus: "open",
     ...overrides,
   };
 }
 
 describe("computeProjectSpendOverview", () => {
-  it("splits usage between own money and bouwdepot", () => {
-    const overview = computeProjectSpendOverview(
-      project,
-      [
-        task({ id: "t1", estimatedCost: 2000, fundedByConstructionDepot: false }),
-        task({ id: "t2", estimatedCost: 3000, fundedByConstructionDepot: true }),
-      ],
-      [
-        expense({ id: "e1", amount: 400, fundedByConstructionDepot: false }),
-        expense({ id: "e2", amount: 600, fundedByConstructionDepot: true }),
-      ]
-    );
-    expect(overview.ownUsed).toBe(2400);
-    expect(overview.ownRemaining).toBe(7600);
-    expect(overview.depotUsed).toBe(3600);
-    expect(overview.depotRemaining).toBe(16400);
-    expect(overview.remainingBudget).toBe(30000 - 1000);
+  it("splits usage between own money and bouwdepot from kostenposten", () => {
+    const overview = computeProjectSpendOverview(project, [
+      expense({ id: "e1", amount: 400, fundedByConstructionDepot: false }),
+      expense({ id: "e2", amount: 600, fundedByConstructionDepot: true }),
+    ]);
+
+    expect(overview.ownUsed).toBe(400);
+    expect(overview.ownRemaining).toBe(9600);
+    expect(overview.depotUsed).toBe(600);
+    expect(overview.depotRemaining).toBe(19400);
+    expect(overview.totalSpent).toBe(1000);
+    expect(overview.remainingBudget).toBe(29000);
   });
 
-  it("remaining budget uses actual task costs plus loose expenses only", () => {
-    const overview = computeProjectSpendOverview(
-      project,
-      [task({ id: "t1", estimatedCost: 5000, actualCost: 2000 })],
-      [expense({ id: "e1", amount: 1500, taskId: null })]
-    );
-    expect(overview.totalSpent).toBe(3500);
-    expect(overview.remainingBudget).toBe(30000 - 2000 - 1500);
-  });
-
-  it("excludes expenses linked to a live task from loose spend (no double count)", () => {
-    const tasks = [task({ id: "t1", estimatedCost: 2000 })];
-    const overview = computeProjectSpendOverview(project, tasks, [
+  it("sums all kostenposten for total spent", () => {
+    const overview = computeProjectSpendOverview(project, [
       expense({ id: "e1", amount: 500, taskId: "t1" }),
       expense({ id: "e2", amount: 300, taskId: null }),
     ]);
-    expect(overview.totalSpent).toBe(2300);
+    expect(overview.totalSpent).toBe(800);
   });
 
   it("treats only unlinked expenses as loose spend", () => {

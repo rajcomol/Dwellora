@@ -1,37 +1,10 @@
-import { computeBouwdepotUsage, taskBouwdepotChargeAmount } from "@/lib/dashboard/bouwdepot";
-import { taskChargeAmount, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
+import { computeBouwdepotUsage } from "@/lib/dashboard/bouwdepot";
 import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
-/** Losse projectuitgaven voor budget (niet gekoppeld aan een taak; voorkomt dubbeltelling). */
-export function looseExpensesForBudget(expenses: ProjectExpense[], _tasks?: Task[]): ProjectExpense[] {
+/** Losse projectuitgaven (niet gekoppeld aan een taak). */
+export function looseExpensesForBudget(expenses: ProjectExpense[]): ProjectExpense[] {
   return expenses.filter((e) => !e.taskId);
 }
-
-/** Bedrag dat een taak tegen eigen geld telt (niet uit bouwdepot). */
-export function taskOwnMoneyChargeAmount(task: Task): number {
-  if (task.fundedByConstructionDepot) return 0;
-  return taskChargeAmount(task);
-}
-
-function sumOwnMoneyExpenseUsed(expenses: ProjectExpense[]): number {
-  return expenses
-    .filter((e) => !e.fundedByConstructionDepot)
-    .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
-}
-
-function sumExpenseAmounts(expenses: ProjectExpense[]): number {
-  return expenses.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
-}
-
-export type ProjectBudgetBreakdown = {
-  ownContribution: number;
-  constructionDepotTotal: number;
-  totalBudget: number;
-  spentDone: number;
-  remainingBudget: number;
-  depotSpentTotal: number;
-  depotRemaining: number;
-};
 
 export function projectMoney(project: Project): {
   own: number;
@@ -51,24 +24,6 @@ export function filterTasksForProjectId(tasks: Task[], projectId: string, roomId
   return tasks.filter(
     (t) => t.projectId === projectId && (t.roomIds.length === 0 || t.roomIds.some((rid) => roomIds.has(rid)))
   );
-}
-
-export function computeProjectBudgetBreakdown(project: Project, tasks: Task[]): ProjectBudgetBreakdown {
-  const { own, depot, total } = projectMoney(project);
-  const spentDone = tasks
-    .filter((t) => t.status === "done")
-    .reduce((s, t) => s + taskEstimatedAmount(t), 0);
-  const depotSpentTotal = tasks.reduce((s, t) => s + taskBouwdepotChargeAmount(t), 0);
-
-  return {
-    ownContribution: own,
-    constructionDepotTotal: depot,
-    totalBudget: total,
-    spentDone,
-    remainingBudget: Math.max(0, total - spentDone),
-    depotSpentTotal,
-    depotRemaining: Math.max(0, depot - depotSpentTotal),
-  };
 }
 
 export function daysUntilKeyHandover(dateIso: string | null): number | null {
@@ -98,15 +53,13 @@ export type ProjectSpendOverview = {
   depotUsedPct: number;
   totalBudget: number;
   totalSpent: number;
-  /** Totaal budget minus werkelijke kosten taken en losse uitgaven. */
+  /** Totaal budget minus som van alle kostenposten. */
   remainingBudget: number;
-  estimatedTasksTotal: number;
   spentVsBudgetPct: number;
 };
 
 export function computeProjectSpendOverview(
   project: Project,
-  _tasks: Task[],
   expenses: ProjectExpense[] = []
 ): ProjectSpendOverview {
   const { own, depot, total } = projectMoney(project);
@@ -134,7 +87,6 @@ export function computeProjectSpendOverview(
     totalBudget: total,
     totalSpent,
     remainingBudget: total - totalSpent,
-    estimatedTasksTotal: 0,
     spentVsBudgetPct: total > 0 ? Math.min(100, (totalSpent / total) * 100) : 0,
   };
 }

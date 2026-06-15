@@ -3,13 +3,7 @@ import type {
   Project,
   ProjectConstructionDepotBalance,
   ProjectExpense,
-  Task,
 } from "@/lib/renovation/types";
-
-/** @deprecated Taken tellen niet meer mee voor bouwdepot. */
-export function taskBouwdepotChargeAmount(_task: Task): number {
-  return 0;
-}
 
 export type BouwdepotUsageBreakdown = {
   totalAmount: number;
@@ -59,7 +53,6 @@ export function computeBouwdepotUsage(project: Project, expenses: ProjectExpense
 
 export function computeProjectBouwdepotBalance(
   project: Project,
-  _tasks: Task[],
   expenses: ProjectExpense[] = []
 ): ProjectConstructionDepotBalance {
   const usage = computeBouwdepotUsage(project, expenses);
@@ -77,8 +70,7 @@ export function computeProjectBouwdepotBalance(
 
 export function computeBouwdepotBalancesForProjects(
   projects: Project[],
-  _tasks: Task[],
   expenses: ProjectExpense[] = []
 ): ProjectConstructionDepotBalance[] {
-  return projects.map((project) => computeProjectBouwdepotBalance(project, [], expenses));
+  return projects.map((project) => computeProjectBouwdepotBalance(project, expenses));
 }

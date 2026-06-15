@@ -114,7 +114,6 @@ export default function RoomDetailPageClient({ roomId }: Props) {
             projectId: room.projectId,
             roomIds: [room.id],
             status: values.status,
-            estimatedCost: null,
             durationDays: values.durationDays,
             priority: values.priority,
             renovationPhase: values.renovationPhase ?? DEFAULT_RENOVATION_PHASE,

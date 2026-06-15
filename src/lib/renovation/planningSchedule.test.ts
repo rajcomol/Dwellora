@@ -8,8 +8,6 @@ function task(partial: Partial<Task> & Pick<Task, "id" | "title">): Task {
     projectId: "p1",
     roomIds: ["r"],
     status: "todo",
-    estimatedCost: 0,
-    actualCost: 0,
     durationDays: 1,
     priority: "medium",
     description: "",

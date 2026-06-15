@@ -3,10 +3,8 @@ import {
   bouwdepotRemainingAmountClass,
   computeBouwdepotUsage,
   computeProjectBouwdepotBalance,
-  taskBouwdepotChargeAmount,
 } from "@/lib/dashboard/bouwdepot";
-import { DEFAULT_RENOVATION_PHASE } from "@/lib/renovation/phases";
-import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { Project, ProjectExpense } from "@/lib/renovation/types";
 
 const project: Project = {
   id: "p1",
@@ -19,27 +17,6 @@ const project: Project = {
   planningStartDate: null,
   notes: "",
 };
-
-function task(overrides: Partial<Task> = {}): Task {
-  return {
-    id: "t1",
-    projectId: "p1",
-    title: "Tegels",
-    roomIds: [],
-    renovationPhase: DEFAULT_RENOVATION_PHASE,
-    status: "todo",
-    estimatedCost: 5000,
-    actualCost: 0,
-    durationDays: 1,
-    priority: "medium",
-    description: "",
-    sortOrder: 0,
-    startDate: null,
-    assignedRosterId: null,
-    fundedByConstructionDepot: true,
-    ...overrides,
-  };
-}
 
 function expense(overrides: Partial<ProjectExpense> = {}): ProjectExpense {
   return {
@@ -58,12 +35,6 @@ function expense(overrides: Partial<ProjectExpense> = {}): ProjectExpense {
     ...overrides,
   };
 }
-
-describe("taskBouwdepotChargeAmount", () => {
-  it("returns 0 (tasks no longer count toward depot)", () => {
-    expect(taskBouwdepotChargeAmount(task({ actualCost: 4200 }))).toBe(0);
-  });
-});
 
 describe("bouwdepotRemainingAmountClass", () => {
   it("returns red below 10%, amber between 10-25%, green above 25%", () => {
@@ -103,7 +74,7 @@ describe("computeBouwdepotUsage", () => {
 
 describe("computeProjectBouwdepotBalance", () => {
   it("computes balance from depot-linked expenses only", () => {
-    const balance = computeProjectBouwdepotBalance(project, [], [expense()]);
+    const balance = computeProjectBouwdepotBalance(project, [expense()]);
     expect(balance.usedAmount).toBe(31500);
     expect(balance.remainingAmount).toBe(8500);
     expect(balance.linkedTaskCount).toBe(1);
