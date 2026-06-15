@@ -1,6 +1,6 @@
 import { computeBouwdepotUsage, taskBouwdepotChargeAmount } from "@/lib/dashboard/bouwdepot";
-import { sumEstimatedCostsUnique, taskChargeAmount, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
-import type { BouwdepotDeclaratie, Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import { taskChargeAmount, taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
+import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 /** Losse projectuitgaven voor budget (niet gekoppeld aan een taak; voorkomt dubbeltelling). */
 export function looseExpensesForBudget(expenses: ProjectExpense[], _tasks?: Task[]): ProjectExpense[] {
@@ -106,41 +106,35 @@ export type ProjectSpendOverview = {
 
 export function computeProjectSpendOverview(
   project: Project,
-  tasks: Task[],
-  expenses: ProjectExpense[] = [],
-  declaraties: BouwdepotDeclaratie[] = []
+  _tasks: Task[],
+  expenses: ProjectExpense[] = []
 ): ProjectSpendOverview {
   const { own, depot, total } = projectMoney(project);
   const projectExpenses = expenses.filter((e) => e.projectId === project.id);
-  const budgetExpenses = looseExpensesForBudget(projectExpenses, tasks);
-  const taskSpent = tasks.reduce((s, t) => s + taskChargeAmount(t), 0);
-  const actualTaskSpent = tasks.reduce(
-    (s, t) => s + (Number.isFinite(t.actualCost) ? t.actualCost : 0),
+  const totalSpent = projectExpenses.reduce(
+    (s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0),
     0
   );
-  const looseSpent = sumExpenseAmounts(budgetExpenses);
-  const totalSpent = taskSpent + looseSpent;
-  const estimatedTasksTotal = sumEstimatedCostsUnique(tasks);
-  const ownTaskUsed = tasks.reduce((s, t) => s + taskOwnMoneyChargeAmount(t), 0);
-  const ownExpenseUsed = sumOwnMoneyExpenseUsed(budgetExpenses);
-  const ownUsedTotal = ownTaskUsed + ownExpenseUsed;
-  const ownRemaining = own - ownUsedTotal;
+  const ownExpenseUsed = projectExpenses
+    .filter((e) => !e.fundedByConstructionDepot)
+    .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+  const ownRemaining = own - ownExpenseUsed;
 
-  const depotUsage = computeBouwdepotUsage(project, tasks, projectExpenses, declaraties);
+  const depotUsage = computeBouwdepotUsage(project, projectExpenses);
 
   return {
     ownTotal: own,
-    ownUsed: ownUsedTotal,
+    ownUsed: ownExpenseUsed,
     ownRemaining,
-    ownUsedPct: own > 0 ? Math.min(100, (ownUsedTotal / own) * 100) : 0,
+    ownUsedPct: own > 0 ? Math.min(100, (ownExpenseUsed / own) * 100) : 0,
     depotTotal: depot,
     depotUsed: depotUsage.usedAmount,
     depotRemaining: depotUsage.remainingAmount,
     depotUsedPct: depotUsage.percentageUsed,
     totalBudget: total,
     totalSpent,
-    remainingBudget: total - actualTaskSpent - looseSpent,
-    estimatedTasksTotal,
+    remainingBudget: total - totalSpent,
+    estimatedTasksTotal: 0,
     spentVsBudgetPct: total > 0 ? Math.min(100, (totalSpent / total) * 100) : 0,
   };
 }

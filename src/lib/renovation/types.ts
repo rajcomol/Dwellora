@@ -106,7 +106,19 @@ export interface ExpenseDocument {
   extractedMetadata: Record<string, unknown>;
 }
 
-/** Losse uitgaven op projectniveau (bouwmarkt, materiaal, enz.); optioneel gekoppeld aan een taak. */
+export type KostType = "werkelijk" | "geschat";
+export type KostCategorie =
+  | "deuren"
+  | "vloeren"
+  | "elektra"
+  | "sanitair"
+  | "schilderwerk"
+  | "dakwerk"
+  | "keuken"
+  | "overig";
+export type BouwdepotStatus = "open" | "ingediend" | "uitbetaald";
+
+/** Zelfstandige kostenpost op projectniveau (los van taken). */
 export interface ProjectExpense {
   id: ID;
   projectId: ID;
@@ -116,10 +128,13 @@ export interface ProjectExpense {
   spentOn: string | null;
   notes: string;
   createdAt: string;
-  /** Taak waar deze kosten bij horen, indien van toepassing */
+  /** Legacy: optionele taakkoppeling; nieuwe posten altijd null */
   taskId: ID | null;
   /** Bedrag telt mee voor het project-bouwdepot */
   fundedByConstructionDepot: boolean;
+  kostType: KostType;
+  categorie: KostCategorie;
+  bouwdepotStatus: BouwdepotStatus;
 }
 
 export interface TaskDependency {

@@ -150,19 +150,6 @@ export const expenseLineFormSchema = z.object({
 export const taskFormFieldsSchema = z.object({
   title: z.string().trim().min(1),
   roomIds: z.array(z.string().uuid()),
-  estimatedCost: z
-    .string()
-    .transform((s) => {
-      const t = s.trim();
-      if (t === "") return null;
-      const n = Number.parseFloat(t);
-      return Number.isFinite(n) ? n : NaN;
-    })
-    .pipe(z.union([z.null(), z.number().finite()])),
-  actualCost: z
-    .string()
-    .transform((s) => (s.trim() === "" ? 0 : Number.parseFloat(s)))
-    .pipe(z.number().finite()),
   durationDays: z
     .string()
     .transform((s) => (s.trim() === "" ? 0 : Number.parseInt(s, 10)))

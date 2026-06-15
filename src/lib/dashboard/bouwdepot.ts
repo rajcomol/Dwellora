@@ -1,18 +1,14 @@
-import { computeDeclaratieTotals } from "@/lib/dashboard/bouwdepotDeclaraties";
 import { projectMoney } from "@/lib/dashboard/projectBudget";
 import type {
-  BouwdepotDeclaratie,
   Project,
   ProjectConstructionDepotBalance,
   ProjectExpense,
   Task,
 } from "@/lib/renovation/types";
 
-/** Bedrag dat een taak tegen het bouwdepot telt: werkelijk indien ingevuld, anders geschat. */
-export function taskBouwdepotChargeAmount(task: Task): number {
-  if (!task.fundedByConstructionDepot) return 0;
-  if (Number.isFinite(task.actualCost) && task.actualCost > 0) return task.actualCost;
-  return task.estimatedCost != null && Number.isFinite(task.estimatedCost) ? task.estimatedCost : 0;
+/** @deprecated Taken tellen niet meer mee voor bouwdepot. */
+export function taskBouwdepotChargeAmount(_task: Task): number {
+  return 0;
 }
 
 export type BouwdepotUsageBreakdown = {
@@ -20,10 +16,8 @@ export type BouwdepotUsageBreakdown = {
   usedAmount: number;
   remainingAmount: number;
   percentageUsed: number;
-  uitbetaaldDeclaraties: number;
-  ingediendDeclaraties: number;
-  depotExpenses: number;
-  depotTasks: number;
+  ingediend: number;
+  uitbetaald: number;
 };
 
 /** Kleur voor resterend bouwdepot-saldo t.o.v. totaal. */
@@ -35,38 +29,21 @@ export function bouwdepotRemainingAmountClass(remaining: number, total: number):
   return "text-emerald-600 dark:text-emerald-400";
 }
 
-/**
- * Gebruikt bouwdepot = uitbetaalde + ingediende declaraties + depot-uitgaven + depot-taken.
- * Taken met een uitbetaalde declaratie (zelfde taak_id) tellen alleen via de declaratie mee.
- */
-export function computeBouwdepotUsage(
-  project: Project,
-  tasks: Task[],
-  expenses: ProjectExpense[],
-  declaraties: BouwdepotDeclaratie[] = []
-): BouwdepotUsageBreakdown {
-  const projectId = project.id;
+function depotExpensesForProject(projectId: string, expenses: ProjectExpense[]): ProjectExpense[] {
+  return expenses.filter((e) => e.projectId === projectId && e.fundedByConstructionDepot);
+}
+
+function sumAmounts(items: ProjectExpense[]): number {
+  return items.reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
+}
+
+/** Bouwdepot-gebruik puur uit kostenposten met fundedByConstructionDepot. */
+export function computeBouwdepotUsage(project: Project, expenses: ProjectExpense[]): BouwdepotUsageBreakdown {
   const totalAmount = projectMoney(project).depot;
-
-  const declTotals = computeDeclaratieTotals(declaraties, projectId);
-  const uitbetaaldDeclaraties = declTotals.totaalUitbetaald;
-  const ingediendDeclaraties = declTotals.totaalIngediend;
-
-  const paidTaskIds = new Set(
-    declaraties
-      .filter((d) => d.projectId === projectId && d.status === "uitbetaald" && d.taakId)
-      .map((d) => d.taakId as string)
-  );
-
-  const depotTasks = tasks
-    .filter((t) => t.projectId === projectId && t.fundedByConstructionDepot && !paidTaskIds.has(t.id))
-    .reduce((s, t) => s + taskBouwdepotChargeAmount(t), 0);
-
-  const depotExpenses = expenses
-    .filter((e) => e.projectId === projectId && e.fundedByConstructionDepot)
-    .reduce((s, e) => s + (Number.isFinite(e.amount) ? e.amount : 0), 0);
-
-  const usedAmount = uitbetaaldDeclaraties + ingediendDeclaraties + depotExpenses + depotTasks;
+  const depotItems = depotExpensesForProject(project.id, expenses);
+  const usedAmount = sumAmounts(depotItems);
+  const ingediend = sumAmounts(depotItems.filter((e) => e.bouwdepotStatus === "ingediend"));
+  const uitbetaald = sumAmounts(depotItems.filter((e) => e.bouwdepotStatus === "uitbetaald"));
   const remainingAmount = totalAmount - usedAmount;
   const percentageUsed = totalAmount > 0 ? Math.min(100, (usedAmount / totalAmount) * 100) : 0;
 
@@ -75,21 +52,18 @@ export function computeBouwdepotUsage(
     usedAmount,
     remainingAmount,
     percentageUsed,
-    uitbetaaldDeclaraties,
-    ingediendDeclaraties,
-    depotExpenses,
-    depotTasks,
+    ingediend,
+    uitbetaald,
   };
 }
 
 export function computeProjectBouwdepotBalance(
   project: Project,
-  tasks: Task[],
-  expenses: ProjectExpense[] = [],
-  declaraties: BouwdepotDeclaratie[] = []
+  _tasks: Task[],
+  expenses: ProjectExpense[] = []
 ): ProjectConstructionDepotBalance {
-  const usage = computeBouwdepotUsage(project, tasks, expenses, declaraties);
-  const linked = tasks.filter((t) => t.projectId === project.id && t.fundedByConstructionDepot);
+  const usage = computeBouwdepotUsage(project, expenses);
+  const linkedCount = depotExpensesForProject(project.id, expenses).length;
 
   return {
     projectId: project.id,
@@ -97,18 +71,14 @@ export function computeProjectBouwdepotBalance(
     usedAmount: usage.usedAmount,
     remainingAmount: usage.remainingAmount,
     percentageUsed: usage.percentageUsed,
-    linkedTaskCount: linked.length,
+    linkedTaskCount: linkedCount,
   };
 }
 
 export function computeBouwdepotBalancesForProjects(
   projects: Project[],
-  tasks: Task[],
-  expenses: ProjectExpense[] = [],
-  declaraties: BouwdepotDeclaratie[] = []
+  _tasks: Task[],
+  expenses: ProjectExpense[] = []
 ): ProjectConstructionDepotBalance[] {
-  return projects.map((project) => {
-    const projectTasks = tasks.filter((t) => t.projectId === project.id);
-    return computeProjectBouwdepotBalance(project, projectTasks, expenses, declaraties);
-  });
+  return projects.map((project) => computeProjectBouwdepotBalance(project, [], expenses));
 }

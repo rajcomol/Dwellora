@@ -9,7 +9,6 @@ import {
   roomStatusLabelKey,
 } from "@/lib/dashboard/roomStatus";
 import type { RoomTaskSummaryRow } from "@/lib/dashboard/roomOverview";
-import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import type { Task } from "@/lib/renovation/types";
 
@@ -71,18 +70,11 @@ export default function RoomOverviewCard({
         <>
           <ul className="mt-4 space-y-2">
             {previewTasks.map((tk) => (
-              <li key={tk.id} className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="min-w-0 flex-1 truncate font-medium text-foreground">{tk.title}</span>
-                <span className="shrink-0 text-xs tabular-nums text-renovation-concrete">
-                  {tk.estimatedCost != null ? formatCurrency(tk.estimatedCost) : "—"}
-                </span>
+              <li key={tk.id} className="truncate text-sm font-medium text-foreground">
+                {tk.title}
               </li>
             ))}
           </ul>
-
-          <p className="mt-3 text-xs text-renovation-concrete">
-            {t("rooms.totalEstimated", { amount: formatCurrency(summary.estimated_cost_sum) })}
-          </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full bg-renovation-muted px-2.5 py-0.5 text-xs font-medium text-renovation-concrete">

@@ -26,7 +26,7 @@ export default function BudgetOverviewSection() {
     const roomIds = new Set(rooms.filter((r) => r.projectId === project.id).map((r) => r.id));
     const filteredTasks = filterTasksForProjectId(tasks, project.id, roomIds);
     const expenses = projectExpenses.filter((e) => e.projectId === project.id);
-    return computeProjectSpendOverview(project, filteredTasks, expenses, declaraties ?? []);
+    return computeProjectSpendOverview(project, filteredTasks, expenses);
   }, [project, rooms, tasks, projectExpenses, declaraties]);
 
   const declaratieOverview = useMemo(() => {
@@ -34,7 +34,7 @@ export default function BudgetOverviewSection() {
     const roomIds = new Set(rooms.filter((r) => r.projectId === project.id).map((r) => r.id));
     const filteredTasks = filterTasksForProjectId(tasks, project.id, roomIds);
     const expenses = projectExpenses.filter((e) => e.projectId === project.id);
-    const usage = computeBouwdepotUsage(project, filteredTasks, expenses, declaraties ?? []);
+    const usage = computeBouwdepotUsage(project, expenses);
     return {
       depotTotal: usage.totalAmount,
       declared: usage.usedAmount,

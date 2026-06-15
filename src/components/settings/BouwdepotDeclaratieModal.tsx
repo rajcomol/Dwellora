@@ -1,5 +1,7 @@
 "use client";
 
+// TODO: verwijderen na opruiming — vervangen door KostenBewerkModal kostenpost-flow
+
 import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";

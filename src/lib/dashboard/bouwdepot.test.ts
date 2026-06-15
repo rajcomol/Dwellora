@@ -6,7 +6,7 @@ import {
   taskBouwdepotChargeAmount,
 } from "@/lib/dashboard/bouwdepot";
 import { DEFAULT_RENOVATION_PHASE } from "@/lib/renovation/phases";
-import type { BouwdepotDeclaratie, Project, ProjectExpense, Task } from "@/lib/renovation/types";
+import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 const project: Project = {
   id: "p1",
@@ -51,39 +51,16 @@ function expense(overrides: Partial<ProjectExpense> = {}): ProjectExpense {
     createdAt: "2025-06-01T12:00:00Z",
     taskId: null,
     fundedByConstructionDepot: true,
-    ...overrides,
-  };
-}
-
-function declaratie(overrides: Partial<BouwdepotDeclaratie> = {}): BouwdepotDeclaratie {
-  return {
-    id: "d1",
-    projectId: "p1",
-    userId: "u1",
-    omschrijving: "Declaratie",
-    bedrag: 1000,
-    status: "uitbetaald",
-    ingediendOp: "2025-06-01",
-    uitbetaaldOp: "2025-06-15",
-    taakId: null,
-    notities: "",
-    aangemaaktOp: "2025-06-01T12:00:00Z",
-    bijgewerktOp: "2025-06-15T12:00:00Z",
+    kostType: "werkelijk",
+    categorie: "dakwerk",
+    bouwdepotStatus: "open",
     ...overrides,
   };
 }
 
 describe("taskBouwdepotChargeAmount", () => {
-  it("uses estimated cost when actual is not filled", () => {
-    expect(taskBouwdepotChargeAmount(task({ actualCost: 0, estimatedCost: 3000 }))).toBe(3000);
-  });
-
-  it("uses actual cost when filled", () => {
-    expect(taskBouwdepotChargeAmount(task({ actualCost: 4200, estimatedCost: 3000 }))).toBe(4200);
-  });
-
-  it("returns 0 when task is not funded by depot", () => {
-    expect(taskBouwdepotChargeAmount(task({ fundedByConstructionDepot: false }))).toBe(0);
+  it("returns 0 (tasks no longer count toward depot)", () => {
+    expect(taskBouwdepotChargeAmount(task({ actualCost: 4200 }))).toBe(0);
   });
 });
 
@@ -96,59 +73,38 @@ describe("bouwdepotRemainingAmountClass", () => {
 });
 
 describe("computeBouwdepotUsage", () => {
-  it("includes loose project expenses linked to bouwdepot", () => {
-    const usage = computeBouwdepotUsage(project, [], [expense()], []);
-    expect(usage.depotExpenses).toBe(31500);
+  it("sums all depot-linked expenses as used", () => {
+    const usage = computeBouwdepotUsage(project, [expense()]);
     expect(usage.usedAmount).toBe(31500);
     expect(usage.remainingAmount).toBe(8500);
   });
 
-  it("sums uitbetaald and ingediende declaraties, depot expenses and depot tasks", () => {
-    const usage = computeBouwdepotUsage(
-      project,
-      [task({ id: "t1", estimatedCost: 5000, actualCost: 0 })],
-      [expense({ id: "e1", amount: 600, fundedByConstructionDepot: true })],
-      [
-        declaratie({ id: "d1", bedrag: 400, status: "uitbetaald" }),
-        declaratie({ id: "d2", bedrag: 250, status: "ingediend" }),
-      ]
-    );
-    expect(usage.uitbetaaldDeclaraties).toBe(400);
-    expect(usage.ingediendDeclaraties).toBe(250);
-    expect(usage.depotExpenses).toBe(600);
-    expect(usage.depotTasks).toBe(5000);
-    expect(usage.usedAmount).toBe(6250);
-    expect(usage.remainingAmount).toBe(33750);
+  it("tracks ingediend and uitbetaald subtotals", () => {
+    const usage = computeBouwdepotUsage(project, [
+      expense({ id: "e1", amount: 400, bouwdepotStatus: "ingediend" }),
+      expense({ id: "e2", amount: 250, bouwdepotStatus: "uitbetaald" }),
+      expense({ id: "e3", amount: 600, bouwdepotStatus: "open" }),
+    ]);
+    expect(usage.ingediend).toBe(400);
+    expect(usage.uitbetaald).toBe(250);
+    expect(usage.usedAmount).toBe(1250);
+    expect(usage.remainingAmount).toBe(38750);
   });
 
-  it("does not double-count tasks with an uitbetaald declaratie", () => {
-    const usage = computeBouwdepotUsage(
-      project,
-      [task({ id: "t1", estimatedCost: 5000, actualCost: 0 })],
-      [],
-      [declaratie({ id: "d1", bedrag: 5000, status: "uitbetaald", taakId: "t1" })]
-    );
-    expect(usage.depotTasks).toBe(0);
-    expect(usage.uitbetaaldDeclaraties).toBe(5000);
-    expect(usage.usedAmount).toBe(5000);
+  it("ignores non-depot expenses", () => {
+    const usage = computeBouwdepotUsage(project, [
+      expense({ fundedByConstructionDepot: false, amount: 99999 }),
+      expense({ amount: 1000 }),
+    ]);
+    expect(usage.usedAmount).toBe(1000);
   });
 });
 
 describe("computeProjectBouwdepotBalance", () => {
-  it("computes used and remaining from linked tasks", () => {
-    const balance = computeProjectBouwdepotBalance(project, [
-      task({ id: "t1", estimatedCost: 10000, actualCost: 0 }),
-      task({ id: "t2", estimatedCost: 5000, actualCost: 6000 }),
-      task({ id: "t3", fundedByConstructionDepot: false, estimatedCost: 99999 }),
-    ]);
-    expect(balance.usedAmount).toBe(16000);
-    expect(balance.remainingAmount).toBe(24000);
-    expect(balance.linkedTaskCount).toBe(2);
-  });
-
-  it("includes depot-linked loose expenses in balance", () => {
-    const balance = computeProjectBouwdepotBalance(project, [], [expense()], []);
+  it("computes balance from depot-linked expenses only", () => {
+    const balance = computeProjectBouwdepotBalance(project, [], [expense()]);
     expect(balance.usedAmount).toBe(31500);
     expect(balance.remainingAmount).toBe(8500);
+    expect(balance.linkedTaskCount).toBe(1);
   });
 });

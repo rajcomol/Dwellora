@@ -194,7 +194,6 @@ export default function ProjectFinancesPageClient({ projectId }: { projectId: st
               amount: d.amount,
               spentOn: d.spentOn.trim() || null,
               notes: d.notes.trim(),
-              taskId: d.taskId.trim() || null,
             });
             setTitle("");
             setAmount("");

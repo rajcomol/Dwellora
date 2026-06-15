@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { appendProjectQuery } from "@/components/layout/tab-nav-config";
 import { useI18n } from "@/i18n/provider";
-import { formatCurrency } from "@/lib/format/currency";
 import { formatTaskDateRange, taskEndDate } from "@/lib/renovation/taskDates";
 import type { Task } from "@/lib/renovation/types";
 
@@ -65,10 +64,8 @@ export default function TaskDetailPanel({ task, roomLabel, projectId, onClose }:
             <p className="mt-1 text-sm">{formatTaskDateRange(task.startDate, end, t)}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-renovation-concrete">Geschatte kosten</p>
-            <p className="mt-1 text-sm tabular-nums">
-              {task.estimatedCost != null ? formatCurrency(task.estimatedCost) : t("common.emDash")}
-            </p>
+            <p className="text-xs font-medium text-renovation-concrete">{t("projectDetail.durationDays")}</p>
+            <p className="mt-1 text-sm">{task.durationDays}d</p>
           </div>
           {task.description ? (
             <div>

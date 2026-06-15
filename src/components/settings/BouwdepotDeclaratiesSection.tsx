@@ -1,5 +1,7 @@
 "use client";
 
+// TODO: verwijderen na opruiming — vervangen door kostenposten in Financiën
+
 import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
@@ -43,7 +45,7 @@ export default function BouwdepotDeclaratiesSection({ projectId }: { projectId: 
 
   const depotUsage = useMemo(() => {
     if (!project) return null;
-    return computeBouwdepotUsage(project, tasks, projectExpenses, declaraties ?? []);
+    return computeBouwdepotUsage(project, projectExpenses);
   }, [project, tasks, projectExpenses, declaraties]);
 
   if (!project) return null;

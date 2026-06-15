@@ -1,35 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BouwdepotSectie from "@/components/dashboard/BouwdepotSectie";
 import KostenBewerkModal from "@/components/dashboard/KostenBewerkModal";
-import KostenKeuzeModal from "@/components/dashboard/KostenKeuzeModal";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import Button from "@/components/ui/Button";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useI18n } from "@/i18n/provider";
-import { filterTasksForProjectId, projectMoney } from "@/lib/dashboard/projectBudget";
+import { projectMoney } from "@/lib/dashboard/projectBudget";
+import { categorieLabel, KOST_CATEGORIE_ORDER } from "@/lib/finances/kostenraming";
 import { formatCurrency } from "@/lib/format/currency";
-import {
-  mergeKostenItems,
-  type KostenRegel,
-  type KostenRegelType,
-  type KostenStatus,
-} from "@/lib/mergeKostenItems";
-import type { ID, Project } from "@/lib/renovation/types";
+import { mergeKostenItems, type KostenRegel, type KostenStatus } from "@/lib/mergeKostenItems";
+import type { BouwdepotStatus, ID, KostCategorie, Project } from "@/lib/renovation/types";
 
-type TypeFilter = "alle" | KostenRegelType;
-
-function typeBadgeClass(type: KostenRegelType): string {
-  switch (type) {
-    case "taak":
-      return "bg-renovation-muted text-renovation-steel dark:bg-renovation-muted/60";
-    case "losse_uitgave":
-      return "bg-renovation-accent/15 text-renovation-steel dark:bg-renovation-accent/20";
-  }
-}
+type StatusFilter = "alle" | KostenStatus;
+type ViewMode = "flat" | "category";
 
 function statusBadgeClass(status: KostenStatus): string {
   switch (status) {
@@ -38,6 +25,10 @@ function statusBadgeClass(status: KostenStatus): string {
     case "werkelijk":
       return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
   }
+}
+
+function bouwdepotIndicatorClass(): string {
+  return "bg-renovation-accent/15 text-renovation-steel dark:bg-renovation-accent/20";
 }
 
 function remainingAmountClass(pct: number): string {
@@ -86,15 +77,16 @@ function TrashIcon() {
   );
 }
 
-function typeLabel(t: (key: string) => string, type: KostenRegelType): string {
-  if (type === "taak") return t("finances.unified.typeTaak");
-  return t("finances.unified.typeLoose");
-}
-
 function statusLabel(t: (key: string) => string, status: KostenStatus): string {
   return status === "geschat"
     ? t("finances.unified.statusGeschat")
     : t("finances.unified.statusWerkelijk");
+}
+
+function bouwdepotStatusLabel(t: (key: string) => string, status: BouwdepotStatus): string {
+  if (status === "ingediend") return t("finances.unified.statusIngediend");
+  if (status === "uitbetaald") return t("finances.unified.statusUitbetaald");
+  return t("finances.unified.statusOpen");
 }
 
 type BudgetCardsProps = {
@@ -124,7 +116,7 @@ function BudgetSummaryCards({ project, regels }: BudgetCardsProps) {
       </article>
 
       <article className="rounded-xl border border-renovation-border bg-renovation-surface p-5 shadow-renovation-card">
-        <h3 className="text-sm font-semibold text-foreground">{t("finances.unified.spentEstimated")}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t("finances.unified.spent")}</h3>
         <p
           data-testid="finances-budget-spent"
           className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-foreground"
@@ -159,25 +151,90 @@ function BudgetSummaryCards({ project, regels }: BudgetCardsProps) {
   );
 }
 
+type KostenRowProps = {
+  regel: KostenRegel;
+  onEdit: (regel: KostenRegel) => void;
+  onDelete: (regel: KostenRegel) => void;
+};
+
+function KostenTableRow({ regel, onEdit, onDelete }: KostenRowProps) {
+  const { t } = useI18n();
+
+  return (
+    <tr
+      data-testid="finances-kosten-row"
+      data-kosten-status={regel.kostType}
+      data-kosten-categorie={regel.categorieId}
+      className="group border-b border-renovation-border/80"
+    >
+      <td className="py-2.5 pr-3 font-medium text-foreground">{regel.omschrijving}</td>
+      <td className="hidden py-2.5 pr-3 text-renovation-concrete md:table-cell">{regel.categorie}</td>
+      <td className="py-2.5 pr-3 text-right font-medium tabular-nums text-foreground">
+        {formatCurrency(regel.bedrag)}
+      </td>
+      <td className="py-2.5 pr-3">
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(regel.kostType)}`}>
+          {statusLabel(t, regel.kostType)}
+        </span>
+      </td>
+      <td className="hidden py-2.5 pr-3 sm:table-cell">
+        {regel.gekoppeld_aan_depot ? (
+          <span
+            data-testid="finances-kosten-depot-badge"
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${bouwdepotIndicatorClass()}`}
+          >
+            {t("finances.unified.depotIndicator", {
+              status: bouwdepotStatusLabel(t, regel.bouwdepotStatus),
+            })}
+          </span>
+        ) : (
+          <span className="text-xs text-renovation-concrete">{t("common.emDash")}</span>
+        )}
+      </td>
+      <td className="py-2.5">
+        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <button
+            type="button"
+            data-testid="finances-kosten-edit"
+            aria-label={t("common.edit")}
+            className="rounded-md p-1.5 text-renovation-concrete transition-colors hover:bg-renovation-muted hover:text-foreground"
+            onClick={() => onEdit(regel)}
+          >
+            <PencilIcon />
+          </button>
+          <button
+            type="button"
+            data-testid="finances-kosten-delete"
+            aria-label={t("common.delete")}
+            className="rounded-md p-1.5 text-renovation-concrete transition-colors hover:bg-renovation-muted hover:text-red-600 dark:hover:text-red-400"
+            onClick={() => onDelete(regel)}
+          >
+            <TrashIcon />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+type CategoryGroup = {
+  id: KostCategorie;
+  label: string;
+  regels: KostenRegel[];
+  subtotal: number;
+  sharePct: number;
+};
+
 export default function FinancesPageClient() {
   const { t } = useI18n();
   const { selectedProject, selectedProjectId } = useSelectedProject();
-  const {
-    projects,
-    rooms,
-    tasks,
-    projectExpenses,
-    isRenovationDataReady,
-    deleteTask,
-    deleteProjectExpense,
-  } = useRenovation();
+  const { projects, projectExpenses, isRenovationDataReady, deleteProjectExpense } = useRenovation();
 
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("alle");
-  const [categoryFilter, setCategoryFilter] = useState("alle");
-  const [keuzeOpen, setKeuzeOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("alle");
+  const [categoryFilter, setCategoryFilter] = useState<"alle" | KostCategorie>("alle");
+  const [viewMode, setViewMode] = useState<ViewMode>("flat");
   const [bewerkOpen, setBewerkOpen] = useState(false);
-  const [bewerkType, setBewerkType] = useState<KostenRegelType>("taak");
   const [editingRegel, setEditingRegel] = useState<KostenRegel | null>(null);
 
   const project = selectedProject ?? projects[0] ?? null;
@@ -185,11 +242,9 @@ export default function FinancesPageClient() {
 
   const allRegels = useMemo(() => {
     if (!projectId) return [];
-    const roomIds = new Set(rooms.filter((r) => r.projectId === projectId).map((r) => r.id));
-    const projectTasks = filterTasksForProjectId(tasks, projectId, roomIds);
     const expenses = projectExpenses.filter((e) => e.projectId === projectId);
-    return mergeKostenItems(projectTasks, expenses);
-  }, [projectId, rooms, tasks, projectExpenses]);
+    return mergeKostenItems(expenses);
+  }, [projectId, projectExpenses]);
 
   const searchFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -197,52 +252,71 @@ export default function FinancesPageClient() {
     return allRegels.filter((r) => r.omschrijving.toLowerCase().includes(q));
   }, [allRegels, search]);
 
-  const typeFiltered = useMemo(() => {
-    if (typeFilter === "alle") return searchFiltered;
-    return searchFiltered.filter((r) => r.type === typeFilter);
-  }, [searchFiltered, typeFilter]);
+  const statusFiltered = useMemo(() => {
+    if (statusFilter === "alle") return searchFiltered;
+    return searchFiltered.filter((r) => r.kostType === statusFilter);
+  }, [searchFiltered, statusFilter]);
 
-  const categories = useMemo(() => {
-    const unique = new Set(typeFiltered.map((r) => r.categorie).filter(Boolean));
-    return [...unique].sort((a, b) => a.localeCompare(b, "nl"));
-  }, [typeFiltered]);
+  const availableCategories = useMemo(() => {
+    const ids = new Set(statusFiltered.map((r) => r.categorieId));
+    return KOST_CATEGORIE_ORDER.filter((id) => ids.has(id));
+  }, [statusFiltered]);
+
+  const effectiveCategoryFilter = useMemo(() => {
+    if (categoryFilter === "alle") return "alle" as const;
+    return availableCategories.includes(categoryFilter) ? categoryFilter : ("alle" as const);
+  }, [categoryFilter, availableCategories]);
+
+  useEffect(() => {
+    if (categoryFilter !== "alle" && effectiveCategoryFilter === "alle") {
+      setCategoryFilter("alle");
+    }
+  }, [categoryFilter, effectiveCategoryFilter]);
 
   const filteredRegels = useMemo(() => {
-    if (categoryFilter === "alle") return typeFiltered;
-    return typeFiltered.filter((r) => r.categorie === categoryFilter);
-  }, [typeFiltered, categoryFilter]);
+    if (effectiveCategoryFilter === "alle") return statusFiltered;
+    return statusFiltered.filter((r) => r.categorieId === effectiveCategoryFilter);
+  }, [statusFiltered, effectiveCategoryFilter]);
 
   const footerTotal = useMemo(
     () => filteredRegels.reduce((sum, r) => sum + r.bedrag, 0),
     [filteredRegels]
   );
 
-  function openAddFlow() {
-    setEditingRegel(null);
-    setKeuzeOpen(true);
-  }
+  const categoryGroups = useMemo((): CategoryGroup[] => {
+    const total = filteredRegels.reduce((s, r) => s + r.bedrag, 0);
+    const byId = new Map<KostCategorie, KostenRegel[]>();
+    for (const regel of filteredRegels) {
+      const arr = byId.get(regel.categorieId) ?? [];
+      arr.push(regel);
+      byId.set(regel.categorieId, arr);
+    }
+    return KOST_CATEGORIE_ORDER.filter((id) => byId.has(id)).map((id) => {
+      const regels = byId.get(id) ?? [];
+      const subtotal = regels.reduce((s, r) => s + r.bedrag, 0);
+      return {
+        id,
+        label: categorieLabel(id),
+        regels,
+        subtotal,
+        sharePct: total > 0 ? (subtotal / total) * 100 : 0,
+      };
+    });
+  }, [filteredRegels]);
 
-  function handleKeuze(type: KostenRegelType) {
-    setKeuzeOpen(false);
-    setBewerkType(type);
+  function openAddFlow() {
     setEditingRegel(null);
     setBewerkOpen(true);
   }
 
   function openEdit(regel: KostenRegel) {
-    setBewerkType(regel.type);
     setEditingRegel(regel);
     setBewerkOpen(true);
   }
 
   function handleDelete(regel: KostenRegel) {
     if (typeof window !== "undefined" && !window.confirm(t("finances.unified.confirmDelete"))) return;
-
-    if (regel.type === "taak") {
-      deleteTask(regel.source_id as ID);
-    } else {
-      deleteProjectExpense(regel.source_id as ID);
-    }
+    deleteProjectExpense(regel.source_id as ID);
   }
 
   if (!isRenovationDataReady) return <DashboardPageSkeleton />;
@@ -273,6 +347,39 @@ export default function FinancesPageClient() {
       <BudgetSummaryCards project={project} regels={allRegels} />
 
       <section className="space-y-4 rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-renovation-card sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div
+            className="inline-flex rounded-lg border border-renovation-border bg-renovation-surface p-0.5"
+            role="group"
+            aria-label={t("finances.unified.viewModeLabel")}
+          >
+            <button
+              type="button"
+              data-testid="finances-view-flat"
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                viewMode === "flat"
+                  ? "bg-renovation-accent text-white"
+                  : "text-renovation-concrete hover:text-foreground"
+              }`}
+              onClick={() => setViewMode("flat")}
+            >
+              {t("finances.unified.viewFlat")}
+            </button>
+            <button
+              type="button"
+              data-testid="finances-view-category"
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                viewMode === "category"
+                  ? "bg-renovation-accent text-white"
+                  : "text-renovation-concrete hover:text-foreground"
+              }`}
+              onClick={() => setViewMode("category")}
+            >
+              {t("finances.unified.viewCategory")}
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <input
             type="search"
@@ -283,25 +390,25 @@ export default function FinancesPageClient() {
             className="rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-renovation-accent/40"
           />
           <select
-            data-testid="finances-type-filter"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+            data-testid="finances-status-filter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-renovation-accent/40"
           >
-            <option value="alle">{t("finances.unified.filterAllTypes")}</option>
-            <option value="taak">{t("finances.unified.filterTasks")}</option>
-            <option value="losse_uitgave">{t("finances.unified.filterLoose")}</option>
+            <option value="alle">{t("finances.unified.filterAllStatuses")}</option>
+            <option value="werkelijk">{t("finances.unified.statusWerkelijk")}</option>
+            <option value="geschat">{t("finances.unified.statusGeschat")}</option>
           </select>
           <select
             data-testid="finances-category-filter"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            value={effectiveCategoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as "alle" | KostCategorie)}
             className="rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-renovation-accent/40"
           >
             <option value="alle">{t("finances.unified.filterAllCategories")}</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+            {availableCategories.map((id) => (
+              <option key={id} value={id}>
+                {categorieLabel(id)}
               </option>
             ))}
           </select>
@@ -310,15 +417,15 @@ export default function FinancesPageClient() {
         <div className="overflow-x-auto" data-testid="finances-kosten-table">
           {filteredRegels.length === 0 ? (
             <p className="py-8 text-center text-sm text-renovation-concrete">{t("finances.unified.emptyTable")}</p>
-          ) : (
+          ) : viewMode === "flat" ? (
             <table className="w-full min-w-[20rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-renovation-border text-xs text-renovation-concrete">
                   <th className="pb-2 pr-3 font-medium">{t("finances.unified.colDescription")}</th>
-                  <th className="hidden pb-2 pr-3 font-medium sm:table-cell">{t("finances.unified.colType")}</th>
                   <th className="hidden pb-2 pr-3 font-medium md:table-cell">{t("finances.unified.colCategory")}</th>
                   <th className="pb-2 pr-3 text-right font-medium">{t("finances.unified.colAmount")}</th>
                   <th className="pb-2 pr-3 font-medium">{t("finances.unified.colStatus")}</th>
+                  <th className="hidden pb-2 pr-3 font-medium sm:table-cell">{t("finances.unified.colDepot")}</th>
                   <th className="pb-2 font-medium">
                     <span className="sr-only">{t("finances.unified.colActions")}</span>
                   </th>
@@ -326,53 +433,7 @@ export default function FinancesPageClient() {
               </thead>
               <tbody>
                 {filteredRegels.map((regel) => (
-                  <tr
-                    key={regel.id}
-                    data-testid="finances-kosten-row"
-                    data-kosten-type={regel.type}
-                    data-kosten-status={regel.status}
-                    className="group border-b border-renovation-border/80"
-                  >
-                    <td className="py-2.5 pr-3 font-medium text-foreground">{regel.omschrijving}</td>
-                    <td className="hidden py-2.5 pr-3 sm:table-cell">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeBadgeClass(regel.type)}`}>
-                        {typeLabel(t, regel.type)}
-                      </span>
-                    </td>
-                    <td className="hidden py-2.5 pr-3 text-renovation-concrete md:table-cell">{regel.categorie}</td>
-                    <td className="py-2.5 pr-3 text-right font-medium tabular-nums text-foreground">
-                      {formatCurrency(regel.bedrag)}
-                    </td>
-                    <td className="py-2.5 pr-3">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(regel.status)}`}
-                      >
-                        {statusLabel(t, regel.status)}
-                      </span>
-                    </td>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                        <button
-                          type="button"
-                          data-testid="finances-kosten-edit"
-                          aria-label={t("common.edit")}
-                          className="rounded-md p-1.5 text-renovation-concrete transition-colors hover:bg-renovation-muted hover:text-foreground"
-                          onClick={() => openEdit(regel)}
-                        >
-                          <PencilIcon />
-                        </button>
-                        <button
-                          type="button"
-                          data-testid="finances-kosten-delete"
-                          aria-label={t("common.delete")}
-                          className="rounded-md p-1.5 text-renovation-concrete transition-colors hover:bg-renovation-muted hover:text-red-600 dark:hover:text-red-400"
-                          onClick={() => handleDelete(regel)}
-                        >
-                          <TrashIcon />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <KostenTableRow key={regel.id} regel={regel} onEdit={openEdit} onDelete={handleDelete} />
                 ))}
               </tbody>
               <tfoot>
@@ -386,17 +447,47 @@ export default function FinancesPageClient() {
                 </tr>
               </tfoot>
             </table>
+          ) : (
+            <div className="space-y-6" data-testid="finances-category-groups">
+              {categoryGroups.map((group) => (
+                <div key={group.id} data-testid="finances-category-group" data-category={group.id}>
+                  <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                      <p className="text-xs text-renovation-concrete">
+                        {t("finances.unified.categoryGroupMeta", {
+                          count: group.regels.length,
+                          subtotal: formatCurrency(group.subtotal),
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mb-3 h-1 overflow-hidden rounded-full bg-renovation-muted">
+                    <div
+                      data-testid="finances-category-share-bar"
+                      className="h-full rounded-full bg-renovation-accent transition-all"
+                      style={{ width: `${group.sharePct}%` }}
+                    />
+                  </div>
+                  <table className="w-full min-w-[20rem] text-left text-sm">
+                    <tbody>
+                      {group.regels.map((regel) => (
+                        <KostenTableRow key={regel.id} regel={regel} onEdit={openEdit} onDelete={handleDelete} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </section>
 
       <BouwdepotSectie project={project} projectId={projectId} />
 
-      <KostenKeuzeModal open={keuzeOpen} onClose={() => setKeuzeOpen(false)} onChoose={handleKeuze} />
       <KostenBewerkModal
         project={project}
         open={bewerkOpen}
-        type={bewerkType}
         regel={editingRegel}
         onClose={() => setBewerkOpen(false)}
       />

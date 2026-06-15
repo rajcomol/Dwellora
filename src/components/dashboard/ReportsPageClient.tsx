@@ -1,5 +1,6 @@
 "use client";
 
+// TODO: verwijderen na opruiming — rapporten gebruiken nog taakkosten i.p.v. kostenposten
 import { useEffect, useMemo, useState } from "react";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";

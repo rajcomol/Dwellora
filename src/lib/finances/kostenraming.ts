@@ -1,6 +1,12 @@
 import { filterTasksForProjectId } from "@/lib/dashboard/projectBudget";
 import { taskEstimatedAmount } from "@/lib/dashboard/taskCosts";
-import type { BouwdepotDeclaratie, ProjectExpense, Room, Task } from "@/lib/renovation/types";
+import type {
+  BouwdepotDeclaratie,
+  KostCategorie,
+  ProjectExpense,
+  Room,
+  Task,
+} from "@/lib/renovation/types";
 
 export type CostLineType = "werkelijk" | "geschat";
 
@@ -87,9 +93,19 @@ export function categorizeTaskTitle(title: string): KostenramingCategoryId {
 
 export function kostenCategoryLabel(title: string): string {
   const id = categorizeTaskTitle(title);
+  return categorieLabel(id);
+}
+
+/** Label voor een opgeslagen kostencategorie (kostenposten). */
+export function categorieLabel(id: KostCategorie): string {
   const def = CATEGORY_DEFS.find((c) => c.id === id);
   return def?.label ?? "Overig";
 }
+
+export const KOST_CATEGORIE_ORDER: KostCategorie[] = [
+  ...CATEGORY_DEFS.map((d) => d.id),
+  "overig",
+];
 
 function taskHasCosts(task: Task): boolean {
   const estimated = taskEstimatedAmount(task);

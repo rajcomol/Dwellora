@@ -8,10 +8,13 @@ import type {
   BouwdepotDeclaratie,
   BouwdepotDeclaratieStatus,
   BouwdepotDeclaratieTotals,
+  BouwdepotStatus,
   ExpenseDocument,
   ExpenseDocumentType,
   ID,
   KeyHandoverChecklistItem,
+  KostCategorie,
+  KostType,
   Project,
   ProjectExpense,
   RenovationState,
@@ -120,7 +123,7 @@ type CreateTaskInput = {
   projectId?: ID;
   roomIds: ID[];
   status: TaskStatus;
-  estimatedCost: number | null;
+  estimatedCost?: number | null;
   actualCost?: number;
   durationDays: number;
   priority: TaskPriority;
@@ -179,7 +182,9 @@ type RenovationActions = {
     amount: number;
     spentOn?: string | null;
     notes?: string;
-    taskId?: ID | null;
+    kostType?: KostType;
+    categorie?: KostCategorie;
+    bouwdepotStatus?: BouwdepotStatus;
     fundedByConstructionDepot?: boolean;
   }) => void;
   updateProjectExpense: (input: {
@@ -188,7 +193,10 @@ type RenovationActions = {
     amount?: number;
     spentOn?: string | null;
     notes?: string;
-    taskId?: ID | null;
+    kostType?: KostType;
+    categorie?: KostCategorie;
+    bouwdepotStatus?: BouwdepotStatus;
+    fundedByConstructionDepot?: boolean;
   }) => void;
   deleteProjectExpense: (id: ID) => void;
   uploadExpenseDocument: (
@@ -387,8 +395,7 @@ function withBouwdepotBalances(state: RenovationState): RenovationState {
     projectConstructionDepotBalances: computeBouwdepotBalancesForProjects(
       state.projects,
       state.tasks,
-      state.projectExpenses,
-      state.declaraties ?? []
+      state.projectExpenses
     ),
   };
 }
@@ -405,6 +412,33 @@ function buildRoomIdsByTask(rows: { task_id: unknown; room_id: unknown }[]): Map
   return map;
 }
 
+const EXPENSE_SELECT =
+  "id,project_id,title,amount,spent_on,notes,created_at,task_id,funded_by_construction_depot,kost_type,categorie,bouwdepot_status";
+
+function parseKostType(value: unknown): KostType {
+  return value === "geschat" ? "geschat" : "werkelijk";
+}
+
+function parseKostCategorie(value: unknown): KostCategorie {
+  const valid: KostCategorie[] = [
+    "deuren",
+    "vloeren",
+    "elektra",
+    "sanitair",
+    "schilderwerk",
+    "dakwerk",
+    "keuken",
+    "overig",
+  ];
+  const s = String(value ?? "overig");
+  return valid.includes(s as KostCategorie) ? (s as KostCategorie) : "overig";
+}
+
+function parseBouwdepotStatus(value: unknown): BouwdepotStatus {
+  if (value === "ingediend" || value === "uitbetaald") return value;
+  return "open";
+}
+
 function mapExpense(row: {
   id: unknown;
   project_id: unknown;
@@ -415,6 +449,9 @@ function mapExpense(row: {
   created_at?: unknown;
   task_id?: unknown;
   funded_by_construction_depot?: unknown;
+  kost_type?: unknown;
+  categorie?: unknown;
+  bouwdepot_status?: unknown;
 }): ProjectExpense {
   const so = row.spent_on;
   const tid = row.task_id;
@@ -430,6 +467,9 @@ function mapExpense(row: {
     createdAt: String(row.created_at ?? ""),
     taskId: tid == null || tid === "" ? null : String(tid),
     fundedByConstructionDepot: funded === true || funded === "true",
+    kostType: parseKostType(row.kost_type),
+    categorie: parseKostCategorie(row.categorie),
+    bouwdepotStatus: parseBouwdepotStatus(row.bouwdepot_status),
   };
 }
 
@@ -730,7 +770,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const ext = await Promise.all([
         supabase
           .from("project_expenses")
-          .select("id,project_id,title,amount,spent_on,notes,created_at,task_id,funded_by_construction_depot")
+          .select(EXPENSE_SELECT)
           .in("project_id", projectIds),
         supabase
           .from("expense_documents")
@@ -995,7 +1035,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   const createTask = async (input: CreateTaskInput): Promise<boolean> => {
     const trimmed = input.title.trim();
     if (!trimmed) return false;
-    if (input.estimatedCost !== null && !Number.isFinite(input.estimatedCost)) return false;
+    const estimatedCost = input.estimatedCost ?? null;
+    if (estimatedCost !== null && !Number.isFinite(estimatedCost)) return false;
     if (!Number.isFinite(input.durationDays)) return false;
     const roomIds = [...new Set(input.roomIds.filter(Boolean))];
 
@@ -1051,7 +1092,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         p_title: trimmed,
         p_renovation_phase: renovationPhase,
         p_status: input.status,
-        p_estimated_cost: input.estimatedCost,
+        p_estimated_cost: estimatedCost,
         p_actual_cost: actualCost,
         p_duration_days: input.durationDays,
         p_priority: input.priority,
@@ -1131,30 +1172,8 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       withBouwdepotBalances({ ...prev, tasks: [...(prev.tasks ?? []), nextTask] })
     );
 
-    if (input.fundedByConstructionDepot === true) {
-      const { data: authData } = await supabase.auth.getUser();
-      const uid = authData.user?.id;
-      if (uid) {
-        const ins = await supabase
-          .from("bouwdepot_declaraties")
-          .insert({
-            project_id: resolvedProjectId,
-            user_id: uid,
-            omschrijving: trimmed,
-            bedrag: taskDeclaratieBedrag(nextTask),
-            status: "open",
-            taak_id: nextTask.id,
-          })
-          .select(DECLARATIE_SELECT)
-          .single();
-        if (!ins.error && ins.data) {
-          setState((prev) => ({
-            ...prev,
-            declaraties: [...(prev.declaraties ?? []), mapDeclaratie(ins.data)],
-          }));
-        }
-      }
-    }
+    // TODO: verwijderen na opruiming — declaraties worden niet meer auto-aangemaakt bij taken
+    void input.fundedByConstructionDepot;
 
     return true;
   };
@@ -1225,33 +1244,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       })
     );
 
-    const shouldCreateDeclaratie =
-      input.fundedByConstructionDepot === true &&
-      !(state.declaraties ?? []).some((d) => d.taakId === next.id);
-    if (shouldCreateDeclaratie) {
-      const { data: authData } = await supabase.auth.getUser();
-      const uid = authData.user?.id;
-      if (uid) {
-        const ins = await supabase
-          .from("bouwdepot_declaraties")
-          .insert({
-            project_id: next.projectId,
-            user_id: uid,
-            omschrijving: next.title,
-            bedrag: taskDeclaratieBedrag(next),
-            status: "open",
-            taak_id: next.id,
-          })
-          .select(DECLARATIE_SELECT)
-          .single();
-        if (!ins.error && ins.data) {
-          setState((prev) => ({
-            ...prev,
-            declaraties: [...(prev.declaraties ?? []), mapDeclaratie(ins.data)],
-          }));
-        }
-      }
-    }
+    // TODO: verwijderen na opruiming — declaraties worden niet meer auto-aangemaakt bij taken
 
     return true;
   };
@@ -1539,7 +1532,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     amount: number;
     spentOn?: string | null;
     notes?: string;
-    taskId?: ID | null;
+    kostType?: KostType;
+    categorie?: KostCategorie;
+    bouwdepotStatus?: BouwdepotStatus;
     fundedByConstructionDepot?: boolean;
   }) => {
     const title = input.title.trim();
@@ -1550,8 +1545,6 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return;
 
-      const taskId = await resolveTaskIdForProjectExpense(input.projectId, input.taskId ?? null);
-
       const res = await supabase
         .from("project_expenses")
         .insert({
@@ -1560,10 +1553,13 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
           amount: input.amount,
           spent_on: input.spentOn?.trim() || null,
           notes: (input.notes ?? "").trim(),
-          task_id: taskId,
+          task_id: null,
           funded_by_construction_depot: input.fundedByConstructionDepot === true,
+          kost_type: input.kostType ?? "werkelijk",
+          categorie: input.categorie ?? "overig",
+          bouwdepot_status: input.bouwdepotStatus ?? "open",
         })
-        .select("id,project_id,title,amount,spent_on,notes,created_at,task_id,funded_by_construction_depot")
+        .select(EXPENSE_SELECT)
         .single();
 
       if (res.error || !res.data) return;
@@ -1582,7 +1578,10 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
     amount?: number;
     spentOn?: string | null;
     notes?: string;
-    taskId?: ID | null;
+    kostType?: KostType;
+    categorie?: KostCategorie;
+    bouwdepotStatus?: BouwdepotStatus;
+    fundedByConstructionDepot?: boolean;
   }) => {
     void (async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -1593,10 +1592,11 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (input.amount !== undefined) patch.amount = input.amount;
       if (input.spentOn !== undefined) patch.spent_on = input.spentOn?.trim() || null;
       if (input.notes !== undefined) patch.notes = input.notes.trim();
-      if (input.taskId !== undefined) {
-        const expRow = await supabase.from("project_expenses").select("project_id").eq("id", input.id).maybeSingle();
-        const pid = expRow.data?.project_id != null ? String(expRow.data.project_id) : null;
-        patch.task_id = pid ? await resolveTaskIdForProjectExpense(pid, input.taskId) : null;
+      if (input.kostType !== undefined) patch.kost_type = input.kostType;
+      if (input.categorie !== undefined) patch.categorie = input.categorie;
+      if (input.bouwdepotStatus !== undefined) patch.bouwdepot_status = input.bouwdepotStatus;
+      if (input.fundedByConstructionDepot !== undefined) {
+        patch.funded_by_construction_depot = input.fundedByConstructionDepot;
       }
       if (Object.keys(patch).length === 0) return;
 
@@ -1604,15 +1604,17 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         .from("project_expenses")
         .update(patch)
         .eq("id", input.id)
-        .select("id,project_id,title,amount,spent_on,notes,created_at,task_id")
+        .select(EXPENSE_SELECT)
         .single();
 
       if (res.error || !res.data) return;
       const next = mapExpense(res.data);
-      setState((prev) => ({
-        ...prev,
-        projectExpenses: (prev.projectExpenses ?? []).map((e) => (e.id === next.id ? next : e)),
-      }));
+      setState((prev) =>
+        withBouwdepotBalances({
+          ...prev,
+          projectExpenses: (prev.projectExpenses ?? []).map((e) => (e.id === next.id ? next : e)),
+        })
+      );
     })();
   };
 

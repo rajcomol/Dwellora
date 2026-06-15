@@ -46,8 +46,8 @@ function statsForProject(
   t: (k: string, p?: Record<string, string | number>) => string
 ) {
   const filtered = filterTasksForProjectId(tasks, project.id, roomIds);
-  const overview = computeProjectSpendOverview(project, filtered, expenses, declaraties);
-  const depotUsage = computeBouwdepotUsage(project, filtered, expenses, declaraties);
+  const overview = computeProjectSpendOverview(project, filtered, expenses);
+  const depotUsage = computeBouwdepotUsage(project, expenses);
   const depotRemaining = depotUsage.remainingAmount;
   const total = filtered.length;
   const done = filtered.filter((tk) => tk.status === "done").length;

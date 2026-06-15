@@ -1,13 +1,16 @@
 "use client";
 
+// TODO: verwijderen na opruiming — er is nog maar één type kostenpost
+
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/i18n/provider";
-import type { KostenRegelType } from "@/lib/mergeKostenItems";
+
+type LegacyKostenType = "taak" | "losse_uitgave";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onChoose: (type: KostenRegelType) => void;
+  onChoose: (type: LegacyKostenType) => void;
 };
 
 export default function KostenKeuzeModal({ open, onClose, onChoose }: Props) {

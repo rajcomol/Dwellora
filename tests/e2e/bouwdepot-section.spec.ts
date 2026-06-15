@@ -9,7 +9,9 @@ test.describe("bouwdepot section on finances page", () => {
     await loginAsTestUser(page);
   });
 
-  test("shows four stats, depot-linked expense in list, and correct remaining", async ({ page }, testInfo) => {
+  test("shows four stats, depot-linked kostenpost with status select, and correct remaining", async ({
+    page,
+  }, testInfo) => {
     const projectName = uniqueName("PW Bouwdepot", testInfo);
     const expenseTitle = uniqueName("Depot uitgave", testInfo);
     const depotTotal = 20_000;
@@ -31,20 +33,18 @@ test.describe("bouwdepot section on finances page", () => {
 
     await expect(page.getByTestId("bouwdepot-stat-totaal")).toContainText(formatCurrency(depotTotal));
 
-    await page.getByTestId("finances-add-button").click();
-    await page.getByTestId("finances-keuze-losse-uitgave").click();
+    await page.getByTestId("bouwdepot-add-expense").click();
     const modal = page.getByTestId("finances-bewerk-modal");
     await expect(modal).toBeVisible({ timeout: 30_000 });
+    await expect(modal.getByTestId("kosten-field-depot")).toBeChecked();
     await modal.getByTestId("kosten-field-naam").fill(expenseTitle);
     await modal.getByTestId("kosten-field-bedrag").fill(String(expenseAmount));
-    await modal.getByTestId("kosten-field-depot").check();
     await modal.getByTestId("kosten-save").click();
     await expect(modal).toBeHidden({ timeout: 60_000 });
 
-    const depotRow = page
-      .locator('[data-testid="bouwdepot-row"][data-bouwdepot-type="losse_uitgave"]')
-      .filter({ hasText: expenseTitle });
+    const depotRow = page.getByTestId("bouwdepot-row").filter({ hasText: expenseTitle });
     await expect(depotRow).toBeVisible({ timeout: 60_000 });
+    await expect(depotRow.getByTestId("bouwdepot-status-select")).toBeVisible();
 
     const expectedRemaining = depotTotal - expenseAmount;
     await expect(page.getByTestId("bouwdepot-stat-resterend-amount")).toHaveText(

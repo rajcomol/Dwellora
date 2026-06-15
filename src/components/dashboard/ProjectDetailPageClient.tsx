@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { filterTasksForProject, useRenovation } from "@/components/dashboard/RenovationProvider";
-import {
-  formatEstimatedCostDisplay,
-  sumEstimatedCostsForRoom,
-  sumEstimatedCostsUnique,
-} from "@/lib/dashboard/taskCosts";
+import { sumEstimatedCostsUnique } from "@/lib/dashboard/taskCosts";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { DEFAULT_RENOVATION_PHASE, RENOVATION_PHASE_ORDER } from "@/lib/renovation/phases";
@@ -160,11 +156,6 @@ function TaskEditor({
   const [title, setTitle] = useState(task.title);
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [selectedRoomIds, setSelectedRoomIds] = useState<ID[]>(task.roomIds);
-  const [fundedByConstructionDepot, setFundedByConstructionDepot] = useState(task.fundedByConstructionDepot);
-  const [estimatedCost, setEstimatedCost] = useState(
-    task.estimatedCost == null ? "" : String(task.estimatedCost)
-  );
-  const [actualCost, setActualCost] = useState(String(task.actualCost));
   const [durationDays, setDurationDays] = useState(String(task.durationDays));
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [description, setDescription] = useState(task.description);
@@ -192,9 +183,6 @@ function TaskEditor({
     setTitle(task.title);
     setStatus(task.status);
     setSelectedRoomIds(task.roomIds);
-    setFundedByConstructionDepot(task.fundedByConstructionDepot);
-    setEstimatedCost(task.estimatedCost == null ? "" : String(task.estimatedCost));
-    setActualCost(String(task.actualCost));
     setDurationDays(String(task.durationDays));
     setPriority(task.priority);
     setDescription(task.description);
@@ -205,8 +193,6 @@ function TaskEditor({
     task.id,
     task.title,
     task.status,
-    task.estimatedCost,
-    task.actualCost,
     task.durationDays,
     task.priority,
     task.description,
@@ -214,7 +200,6 @@ function TaskEditor({
     task.assignedRosterId,
     task.renovationPhase,
     task.roomIds,
-    task.fundedByConstructionDepot,
   ]);
 
   const assigneeLabel =
@@ -234,10 +219,7 @@ function TaskEditor({
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{task.title}</div>
           <div className="mt-1 text-xs text-renovation-concrete">
-            {linkedRoomNames} •{" "}
-            {formatEstimatedCostDisplay(task.estimatedCost, formatCost, t("projectDetail.noEstimate"))}{" "}
-            {t("projectDetail.estShort")} • {formatCost(task.actualCost)}{" "}
-            {t("projectDetail.actualShort")} • {task.durationDays}d
+            {linkedRoomNames} • {task.durationDays}d
           </div>
           <div className="mt-1 text-xs text-renovation-concrete">
             {t(`renovationPhase.${task.renovationPhase}`)}
@@ -305,30 +287,6 @@ function TaskEditor({
                 <option value="doing">{t("task.status.doing")}</option>
                 <option value="done">{t("task.status.done")}</option>
               </select>
-            </div>
-            <div>
-              <label htmlFor={`task-edit-${task.id}-est`} className={FORM_FIELD_LABEL_CLASS}>
-                {t("projectDetail.estimatedCost")}
-              </label>
-              <input
-                id={`task-edit-${task.id}-est`}
-                value={estimatedCost}
-                onChange={(e) => setEstimatedCost(e.target.value)}
-                inputMode="decimal"
-                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-              />
-            </div>
-            <div>
-              <label htmlFor={`task-edit-${task.id}-act`} className={FORM_FIELD_LABEL_CLASS}>
-                {t("projectDetail.actualCost")}
-              </label>
-              <input
-                id={`task-edit-${task.id}-act`}
-                value={actualCost}
-                onChange={(e) => setActualCost(e.target.value)}
-                inputMode="decimal"
-                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-              />
             </div>
             <div>
               <label htmlFor={`task-edit-${task.id}-dur`} className={FORM_FIELD_LABEL_CLASS}>
@@ -411,18 +369,6 @@ function TaskEditor({
             selectedIds={selectedRoomIds}
             onChange={setSelectedRoomIds}
           />
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={fundedByConstructionDepot}
-              onChange={(e) => setFundedByConstructionDepot(e.target.checked)}
-              className="rounded border-renovation-border"
-            />
-            {t("constructionDepot.taskFundedLabel")}
-          </label>
-          {fundedByConstructionDepot ? (
-            <p className="text-xs text-renovation-concrete">{t("constructionDepot.taskDeclaratieHint")}</p>
-          ) : null}
           <div>
             <label htmlFor={`task-edit-${task.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
               {t("projectDetail.description")}
@@ -445,8 +391,6 @@ function TaskEditor({
                   const parsed = taskFormFieldsSchema.safeParse({
                     title,
                     roomIds: selectedRoomIds,
-                    estimatedCost,
-                    actualCost,
                     durationDays,
                     description,
                     startDate,
@@ -467,8 +411,6 @@ function TaskEditor({
                       id: task.id,
                       title: d.title,
                       status: d.status,
-                      estimatedCost: d.estimatedCost,
-                      actualCost: d.actualCost,
                       durationDays: d.durationDays,
                       priority: d.priority,
                       description: d.description.trim(),
@@ -476,7 +418,6 @@ function TaskEditor({
                       roomIds: d.roomIds,
                       assignedRosterId: d.assignedRosterId.trim() || null,
                       renovationPhase: d.renovationPhase,
-                      fundedByConstructionDepot,
                     });
                     if (ok) {
                       setOpen(false);
@@ -823,22 +764,17 @@ function RoomCard({
     projectId?: ID;
     roomIds: ID[];
     status: TaskStatus;
-    estimatedCost: number | null;
-    actualCost: number;
     durationDays: number;
     priority: TaskPriority;
     description: string;
     startDate: string | null;
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
-    fundedByConstructionDepot?: boolean;
   }) => Promise<boolean>;
   onUpdateTask: (input: {
     id: ID;
     title?: string;
     status?: TaskStatus;
-    estimatedCost?: number | null;
-    actualCost?: number;
     durationDays?: number;
     priority?: TaskPriority;
     description?: string;
@@ -847,7 +783,6 @@ function RoomCard({
     sortOrder?: number;
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
-    fundedByConstructionDepot?: boolean;
   }) => Promise<boolean>;
   onDeleteTask: (id: ID) => void;
   onDeleteRoom: (roomId: ID) => void;
@@ -862,8 +797,6 @@ function RoomCard({
   const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<TaskStatus>("todo");
-  const [estimatedCost, setEstimatedCost] = useState("");
-  const [actualCost, setActualCost] = useState("");
   const [durationDays, setDurationDays] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [description, setDescription] = useState("");
@@ -871,11 +804,9 @@ function RoomCard({
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [newTaskPhase, setNewTaskPhase] = useState<RenovationPhase>(DEFAULT_RENOVATION_PHASE);
   const [newTaskRoomIds, setNewTaskRoomIds] = useState<ID[]>([room.id]);
-  const [newTaskFundedByDepot, setNewTaskFundedByDepot] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const sortedTasks = useMemo(() => sortTasksForPlanning(tasks), [tasks]);
-  const roomEstimatedTotal = useMemo(() => sumEstimatedCostsForRoom(tasks), [tasks]);
   const roomNameById = useMemo(() => new Map(projectRooms.map((r) => [r.id, r.name])), [projectRooms]);
 
   function confirmRemoveRoom() {
@@ -898,8 +829,6 @@ function RoomCard({
           <div className="text-sm font-semibold">{room.name}</div>
           <div className="mt-1 text-xs text-renovation-concrete">
             {tasks.length === 1 ? t("projectDetail.taskCountOne") : t("projectDetail.taskCountMany", { count: tasks.length })}
-            {" • "}
-            {t("projectDetail.roomEstimatedTotal", { amount: formatCost(roomEstimatedTotal) })}
           </div>
         </div>
         <button
@@ -959,8 +888,6 @@ function RoomCard({
             const parsed = taskFormFieldsSchema.safeParse({
               title,
               roomIds: newTaskRoomIds,
-              estimatedCost,
-              actualCost,
               durationDays,
               description,
               startDate,
@@ -980,15 +907,12 @@ function RoomCard({
               projectId: room.projectId,
               roomIds,
               status: d.status,
-              estimatedCost: d.estimatedCost,
-              actualCost: d.actualCost,
               durationDays: d.durationDays,
               priority: d.priority,
               description: d.description.trim(),
               startDate: d.startDate.trim() || null,
               assignedRosterId: d.assignedRosterId.trim() || null,
               renovationPhase: d.renovationPhase,
-              fundedByConstructionDepot: newTaskFundedByDepot,
             });
             if (!ok) {
               setError(t("projectDetail.taskSaveError"));
@@ -996,8 +920,6 @@ function RoomCard({
             }
             setTitle("");
             setStatus("todo");
-            setEstimatedCost("");
-            setActualCost("");
             setDurationDays("");
             setPriority("medium");
             setDescription("");
@@ -1005,7 +927,6 @@ function RoomCard({
             setNewTaskAssignee("");
             setNewTaskPhase(DEFAULT_RENOVATION_PHASE);
             setNewTaskRoomIds([room.id]);
-            setNewTaskFundedByDepot(false);
             setError(null);
           })();
         }}
@@ -1040,31 +961,7 @@ function RoomCard({
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label htmlFor={`new-task-${room.id}-est`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.estimatedCost")}
-            </label>
-            <input
-              id={`new-task-${room.id}-est`}
-              value={estimatedCost}
-              onChange={(e) => setEstimatedCost(e.target.value)}
-              inputMode="decimal"
-              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-            />
-          </div>
-          <div>
-            <label htmlFor={`new-task-${room.id}-act`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.actualCost")}
-            </label>
-            <input
-              id={`new-task-${room.id}-act`}
-              value={actualCost}
-              onChange={(e) => setActualCost(e.target.value)}
-              inputMode="decimal"
-              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-            />
-          </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label htmlFor={`new-task-${room.id}-dur`} className={FORM_FIELD_LABEL_CLASS}>
               {t("projectDetail.durationDays")}
@@ -1097,18 +994,6 @@ function RoomCard({
           selectedIds={newTaskRoomIds}
           onChange={setNewTaskRoomIds}
         />
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={newTaskFundedByDepot}
-            onChange={(e) => setNewTaskFundedByDepot(e.target.checked)}
-            className="rounded border-renovation-border"
-          />
-          {t("constructionDepot.taskFundedLabel")}
-        </label>
-        {newTaskFundedByDepot ? (
-          <p className="text-xs text-renovation-concrete">{t("constructionDepot.taskDeclaratieHint")}</p>
-        ) : null}
         <div>
           <label htmlFor={`new-task-${room.id}-desc`} className={FORM_FIELD_LABEL_CLASS}>
             {t("projectDetail.description")}
