@@ -11,6 +11,7 @@ const sampleProject: Project = {
   constructionDepotTotal: null,
   address: "",
   expectedKeyHandover: null,
+  planningStartDate: null,
   notes: "",
 };
 

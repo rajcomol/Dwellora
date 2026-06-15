@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { appendProjectQuery } from "@/components/layout/tab-nav-config";
 import { useI18n } from "@/i18n/provider";
-import { formatTaskDateRange, taskEndDate } from "@/lib/renovation/taskDates";
 import type { Task } from "@/lib/renovation/types";
 
 type Props = {
@@ -18,8 +17,10 @@ export default function TaskDetailPanel({ task, roomLabel, projectId, onClose }:
 
   if (!task) return null;
 
-  const end = taskEndDate(task);
-  const editHref = appendProjectQuery(`/dashboard/projects/${projectId}/overview`, projectId);
+  const primaryRoomId = task.roomIds[0];
+  const editHref = primaryRoomId
+    ? appendProjectQuery(`/dashboard/rooms/${primaryRoomId}`, projectId)
+    : appendProjectQuery(`/dashboard/projects/${projectId}/planning`, projectId);
 
   return (
     <>
@@ -60,12 +61,8 @@ export default function TaskDetailPanel({ task, roomLabel, projectId, onClose }:
             <p className="mt-1 text-sm">{t(`task.status.${task.status}`)}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-renovation-concrete">Periode</p>
-            <p className="mt-1 text-sm">{formatTaskDateRange(task.startDate, end, t)}</p>
-          </div>
-          <div>
             <p className="text-xs font-medium text-renovation-concrete">{t("projectDetail.durationDays")}</p>
-            <p className="mt-1 text-sm">{task.durationDays}d</p>
+            <p className="mt-1 text-sm">{t("projectDetail.plannedDays", { days: task.durationDays })}</p>
           </div>
           {task.description ? (
             <div>
@@ -79,7 +76,7 @@ export default function TaskDetailPanel({ task, roomLabel, projectId, onClose }:
             href={editHref}
             className="text-sm font-medium text-renovation-steel underline dark:text-renovation-accent"
           >
-            {t("planning.taskPanel.editInProject")}
+            {t("rooms.detail.back")}
           </Link>
         </div>
       </aside>

@@ -114,7 +114,12 @@ export default function DashboardStatGrid() {
         testId="budget-remaining-stat"
       />
       <StatCard label={t("dashboard.stats.depotRemaining")} value={display.depot} />
-      <StatCard label={t("dashboard.stats.keyDate")} value={display.key} hint={display.keyHint} />
+      <StatCard
+        label={t("dashboard.stats.keyDate")}
+        value={display.key}
+        hint={display.keyHint}
+        testId="dashboard-key-date-stat"
+      />
     </div>
   );
 }

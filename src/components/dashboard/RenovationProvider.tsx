@@ -82,7 +82,7 @@ async function validateRoomIdsBelongToProject(roomIds: ID[], projectId: ID): Pro
 }
 
 const PROJECT_SELECT =
-  "id,name,total_budget,own_contribution,construction_depot_total,address,expected_key_handover,notes,created_at";
+  "id,name,total_budget,own_contribution,construction_depot_total,address,expected_key_handover,planning_start_date,notes,created_at";
 
 const DECLARATIE_SELECT =
   "id,project_id,user_id,omschrijving,bedrag,status,ingediend_op,uitbetaald_op,taak_id,notities,aangemaakt_op,bijgewerkt_op";
@@ -104,6 +104,7 @@ type CreateProjectInput = {
   constructionDepotTotal?: number | null;
   address?: string;
   expectedKeyHandover?: string | null;
+  planningStartDate?: string | null;
   notes?: string;
 };
 
@@ -114,6 +115,7 @@ type UpdateProjectInput = {
   constructionDepotTotal?: number | null;
   address?: string;
   expectedKeyHandover?: string | null;
+  planningStartDate?: string | null;
   notes?: string;
 };
 
@@ -301,9 +303,11 @@ function mapProject(row: {
   construction_depot_total?: unknown;
   address?: unknown;
   expected_key_handover?: unknown;
+  planning_start_date?: unknown;
   notes?: unknown;
 }): Project {
   const ek = row.expected_key_handover;
+  const psd = row.planning_start_date;
   const own = parseNumericNullable(row.own_contribution);
   const depot = parseNumericNullable(row.construction_depot_total);
   const storedTotal =
@@ -319,6 +323,7 @@ function mapProject(row: {
     constructionDepotTotal: depot,
     address: String(row.address ?? ""),
     expectedKeyHandover: ek == null || ek === "" ? null : String(ek),
+    planningStartDate: psd == null || psd === "" ? null : String(psd),
     notes: String(row.notes ?? ""),
   };
 }
@@ -879,6 +884,7 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       user_id: uid,
       address: (input.address ?? "").trim(),
       expected_key_handover: input.expectedKeyHandover?.trim() || null,
+      planning_start_date: input.planningStartDate?.trim() || null,
       notes: (input.notes ?? "").trim(),
     };
 
@@ -929,6 +935,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
       if (input.address !== undefined) patch.address = input.address.trim();
       if (input.expectedKeyHandover !== undefined) {
         patch.expected_key_handover = input.expectedKeyHandover?.trim() || null;
+      }
+      if (input.planningStartDate !== undefined) {
+        patch.planning_start_date = input.planningStartDate?.trim() || null;
       }
       if (input.notes !== undefined) patch.notes = input.notes.trim();
       if (Object.keys(patch).length === 0) return;

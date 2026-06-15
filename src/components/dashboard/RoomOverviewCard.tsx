@@ -34,6 +34,7 @@ export default function RoomOverviewCard({
   const statuses = roomTasks.map((tk) => tk.status);
   const roomStatus = deriveRoomStatus(taskCount, completed, statuses);
   const hasTasks = taskCount > 0;
+  const remainingPreview = Math.max(0, taskCount - previewTasks.length);
 
   const datePill =
     summary.earliest_start_date && summary.latest_end_date
@@ -48,7 +49,7 @@ export default function RoomOverviewCard({
     <Link
       href={href}
       data-testid="rooms-overview-card"
-      className="flex flex-col rounded-xl bg-renovation-surface p-4 transition-shadow hover:shadow-md"
+      className="flex flex-col rounded-xl border border-renovation-border bg-renovation-surface p-4 transition-shadow hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-base font-semibold text-foreground">{roomName}</h2>
@@ -68,13 +69,18 @@ export default function RoomOverviewCard({
 
       {hasTasks ? (
         <>
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-4 space-y-1.5">
             {previewTasks.map((tk) => (
-              <li key={tk.id} className="truncate text-sm font-medium text-foreground">
+              <li key={tk.id} className="truncate text-sm text-foreground">
                 {tk.title}
               </li>
             ))}
           </ul>
+          {remainingPreview > 0 ? (
+            <p className="mt-1 text-xs font-medium text-renovation-concrete">
+              {t("rooms.moreTasksPreview", { count: remainingPreview })}
+            </p>
+          ) : null}
 
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full bg-renovation-muted px-2.5 py-0.5 text-xs font-medium text-renovation-concrete">
@@ -88,7 +94,15 @@ export default function RoomOverviewCard({
           </div>
         </>
       ) : (
-        <p className="mt-4 text-sm leading-relaxed text-renovation-concrete">{t("rooms.noTasksPreview")}</p>
+        <div className="mt-4">
+          <p className="text-sm leading-relaxed text-renovation-concrete">{t("rooms.noTasksPreview")}</p>
+          <span
+            data-testid="rooms-add-task-link"
+            className="mt-2 inline-block text-sm font-medium text-renovation-steel underline dark:text-renovation-accent"
+          >
+            {t("rooms.addTaskLink")}
+          </span>
+        </div>
       )}
     </Link>
   );

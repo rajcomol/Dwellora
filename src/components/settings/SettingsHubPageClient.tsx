@@ -6,13 +6,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import AccountSettingsContent from "@/components/settings/AccountSettingsContent";
 import ProjectSettingsForm from "@/components/settings/ProjectSettingsForm";
+import KeyHandoverChecklistSection from "@/components/settings/KeyHandoverChecklistSection";
 import SettingsSubtabNav, { type SettingsTab } from "@/components/settings/SettingsSubtabNav";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
 import type { ID } from "@/lib/renovation/types";
 
 function parseTab(value: string | null): SettingsTab {
-  return value === "account" ? "account" : "project";
+  if (value === "account") return "account";
+  if (value === "oplevering") return "oplevering";
+  return "project";
 }
 
 /** Consistente veldstijl voor nested project- en accountformulieren (light + dark). */
@@ -49,13 +52,13 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
 
   const setTab = useCallback(
     (tab: SettingsTab) => {
-      if (!hasProject && tab === "project") return;
+      if (!hasProject && (tab === "project" || tab === "oplevering")) return;
       setActiveTab(tab);
       const params = new URLSearchParams(searchParams.toString());
-      if (tab === "account") {
-        params.set("tab", "account");
-      } else {
+      if (tab === "project") {
         params.delete("tab");
+      } else {
+        params.set("tab", tab);
       }
       const qs = params.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
@@ -110,6 +113,10 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
 
       {activeTab === "project" && hasProject && projectId ? (
         <ProjectSettingsForm projectId={projectId} />
+      ) : null}
+
+      {activeTab === "oplevering" && hasProject && projectId ? (
+        <KeyHandoverChecklistSection projectId={projectId} />
       ) : null}
 
       {activeTab === "account" ? (

@@ -35,13 +35,20 @@ describe("buildPlanningRows", () => {
     expect(rows[1].dayEnd).toBe(5);
   });
 
-  it("adds indicative dates when first sorted task has startDate", () => {
-    const t1 = task({ id: "1", title: "A", roomIds: ["r"], sortOrder: 0, durationDays: 2, startDate: "2025-06-01" });
-    const t2 = task({ id: "2", title: "B", roomIds: ["r"], sortOrder: 1, durationDays: 1, startDate: null });
-    const { rows } = buildPlanningRows([t1, t2]);
+  it("adds indicative dates when project has planningStartDate", () => {
+    const t1 = task({ id: "1", title: "A", roomIds: ["r"], sortOrder: 0, durationDays: 2 });
+    const t2 = task({ id: "2", title: "B", roomIds: ["r"], sortOrder: 1, durationDays: 1 });
+    const { rows } = buildPlanningRows([t1, t2], "2025-06-01");
     expect(rows[0].estimatedStart).toBe("2025-06-01");
     expect(rows[0].estimatedEnd).toBe("2025-06-02");
     expect(rows[1].estimatedStart).toBe("2025-06-03");
     expect(rows[1].estimatedEnd).toBe("2025-06-03");
+  });
+
+  it("omits calendar dates without planningStartDate", () => {
+    const t1 = task({ id: "1", title: "A", roomIds: ["r"], sortOrder: 0, durationDays: 2 });
+    const { rows } = buildPlanningRows([t1], null);
+    expect(rows[0].estimatedStart).toBeUndefined();
+    expect(rows[0].estimatedEnd).toBeUndefined();
   });
 });

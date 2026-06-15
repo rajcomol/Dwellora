@@ -8,9 +8,6 @@ type CreateProjectOptions = {
 };
 
 type CreateTaskOptions = {
-  estimatedCost?: string;
-  actualCost?: string;
-  startDate?: string;
   durationDays?: string;
   extraRooms?: string[];
 };
@@ -102,6 +99,15 @@ export async function openPlanningPage(page: Page): Promise<void> {
   await gotoProjectPath(page, "/dashboard/planning", "**/planning**");
 }
 
+export async function openProjectPlanningPage(page: Page): Promise<void> {
+  const projectId = new URL(page.url()).searchParams.get("project");
+  if (!projectId) {
+    throw new Error("openProjectPlanningPage requires ?project= in the URL");
+  }
+  await gotoProjectPath(page, `/dashboard/projects/${projectId}/planning`, "**/planning**");
+  await expect(page.getByTestId("planning-page")).toBeVisible({ timeout: 60_000 });
+}
+
 export async function openReportsPage(page: Page): Promise<void> {
   if (await clickNavLink(page, "Financiën", "**/finances**")) return;
   const moreButton = page.getByTestId("bottom-nav-more");
@@ -173,17 +179,33 @@ export async function addRoom(page: Page, roomName: string): Promise<void> {
 }
 
 export async function openProjectOverview(page: Page): Promise<void> {
-  await killTour(page);
   await openRoomsPage(page);
-  await dismissOnboardingTour(page);
-  await page.getByTestId("nav-tab-projectoverzicht").dispatchEvent("click");
-  await page.waitForURL(/\/rooms.*tab=overzicht/, { timeout: 60_000 });
+}
+
+export async function openRoomDetail(page: Page, roomName: string): Promise<void> {
+  await openRoomsPage(page);
+  await getRoomOverviewCard(page, roomName).click();
+  await page.waitForURL(/\/dashboard\/rooms\/[^/?]+/, { timeout: 60_000 });
   await settleAfterNavigation(page);
-  await expect(page.getByText("Projectgegevens", { exact: true })).toBeVisible({ timeout: 60_000 });
+}
+
+export async function openProjectSettings(page: Page): Promise<void> {
+  await killTour(page);
+  const currentUrl = page.url();
+  let projectId: string | null = null;
+  try {
+    projectId = new URL(currentUrl).searchParams.get("project");
+  } catch {
+    projectId = null;
+  }
+  if (!projectId) {
+    throw new Error("openProjectSettings requires a selected project in the URL");
+  }
+  await gotoProjectPath(page, `/dashboard/projects/${projectId}/settings`, /\/settings/);
 }
 
 export function getProjectRoomCard(page: Page, roomName: string): Locator {
-  return page.getByTestId("project-room-card").filter({ hasText: roomName }).first();
+  return page.getByTestId("rooms-overview-card").filter({ hasText: roomName }).first();
 }
 
 export async function addTaskToRoom(
@@ -191,41 +213,24 @@ export async function addTaskToRoom(
   roomName: string,
   taskTitle: string,
   {
-    estimatedCost,
-    actualCost,
-    startDate,
     durationDays,
     extraRooms = [],
   }: CreateTaskOptions = {}
 ): Promise<void> {
-  const roomCard = getProjectRoomCard(page, roomName);
-  const titleInput = roomCard.getByLabel("Taaktitel");
+  void extraRooms;
 
-  await expect(roomCard).toBeVisible({ timeout: 60_000 });
-  await titleInput.fill(taskTitle);
+  await openRoomDetail(page, roomName);
 
-  if (estimatedCost !== undefined) {
-    await roomCard.getByLabel("Geschatte kosten").fill(estimatedCost);
-  }
-
-  if (actualCost !== undefined) {
-    await roomCard.getByLabel("Werkelijke kosten").fill(actualCost);
-  }
+  const form = page.getByTestId("room-task-form");
+  await expect(form).toBeVisible({ timeout: 60_000 });
+  await form.getByPlaceholder("Korte titel van de taak").fill(taskTitle);
 
   if (durationDays !== undefined) {
-    await roomCard.getByLabel("Duur (dagen)").fill(durationDays);
+    await form.getByLabel("Duur (dagen)").fill(durationDays);
   }
 
-  if (startDate !== undefined) {
-    await roomCard.getByLabel("Startdatum").fill(startDate);
-  }
-
-  for (const extraRoom of extraRooms) {
-    await roomCard.getByRole("checkbox", { name: extraRoom, exact: true }).check();
-  }
-
-  await roomCard.getByRole("button", { name: "Taak toevoegen" }).click();
-  await expect(roomCard.getByText(taskTitle, { exact: true })).toBeVisible({ timeout: 60_000 });
+  await form.getByRole("button", { name: "Opslaan" }).click();
+  await expect(page.getByText(taskTitle, { exact: true })).toBeVisible({ timeout: 60_000 });
 }
 
 export async function addLooseExpense(page: Page, title: string, amount: number): Promise<void> {

@@ -30,6 +30,7 @@ const sampleProject: Project = {
   totalBudget: 1000,
   address: "",
   expectedKeyHandover: null,
+  planningStartDate: null,
   notes: "",
 };
 

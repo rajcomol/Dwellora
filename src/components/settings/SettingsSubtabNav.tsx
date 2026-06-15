@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/i18n/provider";
 
-export type SettingsTab = "project" | "account";
+export type SettingsTab = "project" | "account" | "oplevering";
 
 type Props = {
   activeTab: SettingsTab;
@@ -28,11 +28,31 @@ export default function SettingsSubtabNav({ activeTab, onTabChange, showProjectT
       aria-label={t("projectSettings.subnavAria")}
     >
       {showProjectTab ? (
-        <button type="button" className={subtabClass(activeTab === "project")} onClick={() => onTabChange("project")}>
-          {t("projectSettings.tabProject")}
-        </button>
+        <>
+          <button
+            type="button"
+            data-testid="settings-tab-project"
+            className={subtabClass(activeTab === "project")}
+            onClick={() => onTabChange("project")}
+          >
+            {t("projectSettings.tabProject")}
+          </button>
+          <button
+            type="button"
+            data-testid="settings-tab-oplevering"
+            className={subtabClass(activeTab === "oplevering")}
+            onClick={() => onTabChange("oplevering")}
+          >
+            {t("projectSettings.tabHandover")}
+          </button>
+        </>
       ) : null}
-      <button type="button" className={subtabClass(activeTab === "account")} onClick={() => onTabChange("account")}>
+      <button
+        type="button"
+        data-testid="settings-tab-account"
+        className={subtabClass(activeTab === "account")}
+        onClick={() => onTabChange("account")}
+      >
         {t("projectSettings.tabAccount")}
       </button>
     </nav>

@@ -159,6 +159,12 @@
     "editInProject": "Taken bewerken in projectoverzicht"
   },
   "rooms": {
+    "headerMeta": "{{rooms}} ruimtes · {{tasks}} taken",
+    "emptyStateTitle": "Begin met je eerste ruimte",
+    "emptyStateBody": "Maak een ruimte aan zoals \"Keuken\" of \"Woonkamer\" en voeg er het werk aan toe dat je wil plannen. Je taken komen daarna automatisch in de planning terecht.",
+    "emptyStateButton": "Eerste ruimte aanmaken",
+    "moreTasksPreview": "+ {{count}} meer",
+    "addTaskLink": "+ Taak toevoegen",
     "subtitleProject": "Ruimtes in {{name}}",
     "tabRooms": "Ruimtes",
     "tabOverview": "Projectoverzicht",
@@ -187,6 +193,7 @@
   "projectSettings": {
     "notFound": "Project niet gevonden.",
     "tabProject": "Projectgegevens",
+    "tabHandover": "Oplevering",
     "tabAccount": "Accountinstellingen",
     "accountOnlyHint": "Kies een project om projectgegevens te bewerken.",
     "subnavAria": "Instellingen secties"
@@ -417,9 +424,9 @@
       "tasksValue": "{{done}} / {{total}} voltooid",
       "budgetRemaining": "Budget resterend",
       "depotRemaining": "Bouwdepot over",
-      "keyDate": "Sleuteldatum",
+      "keyDate": "Opleverdatum",
       "noKeyDate": "Geen datum",
-      "daysUntilKey": "Nog {{days}} dagen",
+      "daysUntilKey": "{{days}} dagen te gaan",
       "daysPastKey": "{{days}} dagen geleden"
     },
     "heroEyebrow": "RenoTasker",
@@ -670,7 +677,8 @@
     "gantt": {
       "taskColumn": "Taak",
       "editTask": "Taak bewerken",
-      "noDateTooltip": "Geen datum ingesteld"
+      "noDateTooltip": "Geen datum ingesteld",
+      "setStartHint": "Stel hierboven een planningsstartdatum in om de tijdlijn te zien."
     },
     "taskPanel": {
       "title": "Taakdetails",
@@ -696,15 +704,16 @@
     "notFoundBody": "Dit project is niet beschikbaar.",
     "backToProjects": "Terug naar projecten",
     "eyebrow": "Planning",
-    "intro": "Alle taken in volgorde: eerst de renovatiefase per taak, daarna startdatum en handmatige volgorde. Dagentotalen zijn de som van geplande duur langs die volgorde.",
+    "intro": "Alle taken in volgorde: eerst de renovatiefase per taak, daarna handmatige volgorde. Dagentotalen zijn de som van geplande duur langs die volgorde.",
+    "planningStartLabel": "Planning start",
     "timelineTotal": "Tijdlijn totaal:",
     "days": "dagen",
     "openRemaining": "Open (te doen + bezig):",
     "openRemainingDays": "dagen",
     "projectOverview": "Projectoverzicht",
     "allProjects": "Alle projecten",
-    "hintDatesOn": "Indicatieve datums gaan uit van de startdatum van de eerste taak en aansluitende planning op basis van duur. Pas volgorde of duur aan om te verfijnen.",
-    "hintDatesOff": "Zet een startdatum op de eerste taak in deze volgorde om geschatte start/eind per rij te zien.",
+    "hintDatesOn": "Indicatieve datums gaan uit van de planningsstart en aansluitende volgorde op basis van duur. Pas volgorde of duur aan om te verfijnen.",
+    "hintDatesOff": "Stel een planningsstart in om geschatte start/eind per rij te zien.",
     "noTasks": "Nog geen taken in dit project.",
     "daySingle": "Dag {{n}}",
     "dayRange": "Dagen {{from}}–{{to}}",

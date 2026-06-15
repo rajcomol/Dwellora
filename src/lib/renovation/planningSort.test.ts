@@ -41,20 +41,9 @@ describe("sortTasksForPlanning", () => {
     expect(sortTasksForPlanning([a, b]).map((t) => t.id)).toEqual(["b", "a"]);
   });
 
-  it("within phase: dated tasks before undated, then sortOrder", () => {
-    const undatedEarly = task({ id: "u0", title: "U0", roomIds: ["r"], sortOrder: 0, startDate: null });
-    const dated = task({ id: "d", title: "D", roomIds: ["r"], sortOrder: 99, startDate: "2025-01-02" });
-    const undatedLate = task({ id: "u1", title: "U1", roomIds: ["r"], sortOrder: 1, startDate: null });
-    expect(sortTasksForPlanning([undatedEarly, dated, undatedLate]).map((t) => t.id)).toEqual([
-      "d",
-      "u0",
-      "u1",
-    ]);
-  });
-
-  it("within phase with dates: ascending by startDate", () => {
-    const t2 = task({ id: "2", title: "B", roomIds: ["r"], startDate: "2025-02-01", sortOrder: 0 });
-    const t1 = task({ id: "1", title: "A", roomIds: ["r"], startDate: "2025-01-01", sortOrder: 1 });
-    expect(sortTasksForPlanning([t2, t1]).map((t) => t.id)).toEqual(["1", "2"]);
+  it("within phase: sortOrder then title", () => {
+    const late = task({ id: "u1", title: "U1", roomIds: ["r"], sortOrder: 1 });
+    const early = task({ id: "u0", title: "U0", roomIds: ["r"], sortOrder: 0 });
+    expect(sortTasksForPlanning([late, early]).map((t) => t.id)).toEqual(["u0", "u1"]);
   });
 });

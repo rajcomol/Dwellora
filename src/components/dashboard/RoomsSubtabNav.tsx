@@ -1,5 +1,7 @@
 "use client";
 
+// TODO: verwijderen na opruiming — subtab-navigatie vervallen; Ruimtes toont direct het raster
+
 import { useI18n } from "@/i18n/provider";
 
 export type RoomsTab = "rooms" | "overzicht";

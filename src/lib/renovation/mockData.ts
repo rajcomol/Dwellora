@@ -11,6 +11,7 @@ export const initialRenovationState: RenovationState = {
       constructionDepotTotal: 10000,
       address: "",
       expectedKeyHandover: null,
+      planningStartDate: null,
       notes: "",
     },
     {
@@ -21,6 +22,7 @@ export const initialRenovationState: RenovationState = {
       constructionDepotTotal: null,
       address: "",
       expectedKeyHandover: null,
+      planningStartDate: null,
       notes: "",
     },
   ],

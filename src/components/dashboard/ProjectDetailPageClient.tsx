@@ -1,5 +1,7 @@
 "use client";
 
+// TODO: verwijderen na opruiming — projectoverzicht verplaatst naar Instellingen / Planning / Ruimtes-detail
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { filterTasksForProject, useRenovation } from "@/components/dashboard/RenovationProvider";
@@ -25,7 +27,6 @@ import type { TranslateFn } from "@/i18n/create-translator";
 import { useI18n } from "@/i18n/provider";
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
 import {
-  checklistItemTitleSchema,
   projectUpdateFormSchema,
   rosterEntryFormSchema,
   roomNameFormSchema,
@@ -134,7 +135,6 @@ function TaskEditor({
     durationDays?: number;
     priority?: TaskPriority;
     description?: string;
-    startDate?: string | null;
     roomIds?: ID[];
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
@@ -159,7 +159,6 @@ function TaskEditor({
   const [durationDays, setDurationDays] = useState(String(task.durationDays));
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [description, setDescription] = useState(task.description);
-  const [startDate, setStartDate] = useState(task.startDate ?? "");
   const [renovationPhase, setRenovationPhase] = useState<RenovationPhase>(task.renovationPhase);
   const [assignedRosterId, setAssignedRosterId] = useState(task.assignedRosterId ?? "");
   const [depPick, setDepPick] = useState("");
@@ -186,7 +185,6 @@ function TaskEditor({
     setDurationDays(String(task.durationDays));
     setPriority(task.priority);
     setDescription(task.description);
-    setStartDate(task.startDate ?? "");
     setRenovationPhase(task.renovationPhase);
     setAssignedRosterId(task.assignedRosterId ?? "");
   }, [
@@ -196,7 +194,6 @@ function TaskEditor({
     task.durationDays,
     task.priority,
     task.description,
-    task.startDate,
     task.assignedRosterId,
     task.renovationPhase,
     task.roomIds,
@@ -225,7 +222,6 @@ function TaskEditor({
             {t(`renovationPhase.${task.renovationPhase}`)}
             {" • "}
             {t(`task.priority.${task.priority}`)}
-            {task.startDate ? ` • ${t("projectDetail.startsOn", { date: formatDisplayDate(task.startDate) })}` : ""}
             {" • "}
             {assigneeLabel}
           </div>
@@ -297,18 +293,6 @@ function TaskEditor({
                 value={durationDays}
                 onChange={(e) => setDurationDays(e.target.value)}
                 inputMode="numeric"
-                className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-              />
-            </div>
-            <div>
-              <label htmlFor={`task-edit-${task.id}-start`} className={FORM_FIELD_LABEL_CLASS}>
-                {t("projectDetail.labelStartDate")}
-              </label>
-              <input
-                id={`task-edit-${task.id}-start`}
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
                 className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-2 py-1.5 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
               />
             </div>
@@ -393,7 +377,6 @@ function TaskEditor({
                     roomIds: selectedRoomIds,
                     durationDays,
                     description,
-                    startDate,
                     status,
                     priority,
                     renovationPhase,
@@ -414,7 +397,6 @@ function TaskEditor({
                       durationDays: d.durationDays,
                       priority: d.priority,
                       description: d.description.trim(),
-                      startDate: d.startDate.trim() || null,
                       roomIds: d.roomIds,
                       assignedRosterId: d.assignedRosterId.trim() || null,
                       renovationPhase: d.renovationPhase,
@@ -767,7 +749,6 @@ function RoomCard({
     durationDays: number;
     priority: TaskPriority;
     description: string;
-    startDate: string | null;
     assignedRosterId?: ID | null;
     renovationPhase?: RenovationPhase;
   }) => Promise<boolean>;
@@ -778,7 +759,6 @@ function RoomCard({
     durationDays?: number;
     priority?: TaskPriority;
     description?: string;
-    startDate?: string | null;
     roomIds?: ID[];
     sortOrder?: number;
     assignedRosterId?: ID | null;
@@ -800,7 +780,6 @@ function RoomCard({
   const [durationDays, setDurationDays] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [newTaskPhase, setNewTaskPhase] = useState<RenovationPhase>(DEFAULT_RENOVATION_PHASE);
   const [newTaskRoomIds, setNewTaskRoomIds] = useState<ID[]>([room.id]);
@@ -890,7 +869,6 @@ function RoomCard({
               roomIds: newTaskRoomIds,
               durationDays,
               description,
-              startDate,
               status,
               priority,
               renovationPhase: newTaskPhase,
@@ -910,7 +888,6 @@ function RoomCard({
               durationDays: d.durationDays,
               priority: d.priority,
               description: d.description.trim(),
-              startDate: d.startDate.trim() || null,
               assignedRosterId: d.assignedRosterId.trim() || null,
               renovationPhase: d.renovationPhase,
             });
@@ -923,7 +900,6 @@ function RoomCard({
             setDurationDays("");
             setPriority("medium");
             setDescription("");
-            setStartDate("");
             setNewTaskAssignee("");
             setNewTaskPhase(DEFAULT_RENOVATION_PHASE);
             setNewTaskRoomIds([room.id]);
@@ -971,18 +947,6 @@ function RoomCard({
               value={durationDays}
               onChange={(e) => setDurationDays(e.target.value)}
               inputMode="numeric"
-              className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-            />
-          </div>
-          <div>
-            <label htmlFor={`new-task-${room.id}-start`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.labelStartDate")}
-            </label>
-            <input
-              id={`new-task-${room.id}-start`}
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
               className="w-full rounded-md border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
             />
           </div>
@@ -1082,7 +1046,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     expenseDocuments,
     taskDependencies,
     taskAttachments,
-    checklistItems,
     teamRoster,
     createRoom,
     deleteRoom,
@@ -1094,9 +1057,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
     removeTaskDependency,
     uploadTaskAttachment,
     removeTaskAttachment,
-    addChecklistItem,
-    updateChecklistItem,
-    deleteChecklistItem,
     addTeamRosterEntry,
     deleteTeamRosterEntry,
     isRenovationDataReady,
@@ -1129,14 +1089,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
 
   const timelineTasks = useMemo(() => sortTasksForPlanning(projectTasks), [projectTasks]);
 
-  const checklistForProject = useMemo(
-    () =>
-      checklistItems
-        .filter((c) => c.projectId === projectId)
-        .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)),
-    [checklistItems, projectId]
-  );
-
   const rosterForProject = useMemo(
     () =>
       teamRoster
@@ -1163,8 +1115,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
   const [roomName, setRoomName] = useState("");
   const [roomError, setRoomError] = useState<string | null>(null);
 
-  const [checkTitle, setCheckTitle] = useState("");
-  const [checkError, setCheckError] = useState<string | null>(null);
   const [rosterName, setRosterName] = useState("");
   const [rosterEmail, setRosterEmail] = useState("");
   const [rosterRole, setRosterRole] = useState("");
@@ -1256,62 +1206,6 @@ export default function ProjectDetailPageClient({ projectId }: { projectId: stri
             {t("projectDetail.openFullPlanning")}
           </Link>
         </div>
-      </section>
-
-      <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">
-        <h2 className="text-base font-semibold">{t("projectDetail.checklistTitle")}</h2>
-        <form
-          className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const parsed = checklistItemTitleSchema.safeParse({ title: checkTitle });
-            if (!parsed.success) {
-              setCheckError(t("projectDetail.checklistItemRequired"));
-              return;
-            }
-            setCheckError(null);
-            addChecklistItem(projectId, parsed.data.title);
-            setCheckTitle("");
-          }}
-        >
-          <div className="min-w-0 flex-1">
-            <label htmlFor={`checklist-${projectId}`} className={FORM_FIELD_LABEL_CLASS}>
-              {t("projectDetail.labelChecklistItem")}
-            </label>
-            <input
-              id={`checklist-${projectId}`}
-              value={checkTitle}
-              onChange={(e) => {
-                setCheckTitle(e.target.value);
-                setCheckError(null);
-              }}
-              placeholder={t("projectDetail.checklistPlaceholder")}
-              className="w-full rounded-md border border-renovation-border px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-            />
-          </div>
-          <Button type="submit">{t("projectDetail.checklistAdd")}</Button>
-        </form>
-        {checkError ? <div className="mt-2 text-xs text-red-600 dark:text-red-400">{checkError}</div> : null}
-        <ul className="mt-4 space-y-2">
-          {checklistForProject.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 rounded-md border border-renovation-border px-3 py-2 dark:border-renovation-border">
-              <input
-                type="checkbox"
-                checked={item.isDone}
-                onChange={(e) => updateChecklistItem({ id: item.id, isDone: e.target.checked })}
-              />
-              <span className={item.isDone ? "flex-1 text-sm line-through text-renovation-concrete" : "flex-1 text-sm"}>{item.title}</span>
-              <button
-                type="button"
-                className="text-xs text-red-600 dark:text-red-400"
-                onClick={() => deleteChecklistItem(item.id)}
-              >
-                {t("projectDetail.checklistDelete")}
-              </button>
-            </li>
-          ))}
-          {checklistForProject.length === 0 ? <li className="text-sm text-renovation-concrete">{t("projectDetail.checklistEmpty")}</li> : null}
-        </ul>
       </section>
 
       <section className="rounded-xl border border-renovation-border bg-renovation-elevated p-5 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated">

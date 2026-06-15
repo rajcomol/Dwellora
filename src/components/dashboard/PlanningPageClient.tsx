@@ -18,7 +18,7 @@ function swapSortOrder(taskA: Task, taskB: Task, updateTask: (input: { id: ID; s
 
 export default function PlanningPageClient({ projectId }: { projectId: string }) {
   const { t } = useI18n();
-  const { projects, rooms, tasks, teamRoster, updateTask, isRenovationDataReady } = useRenovation();
+  const { projects, rooms, tasks, teamRoster, updateProject, updateTask, isRenovationDataReady } = useRenovation();
 
   const project = useMemo(() => projects.find((p) => p.id === projectId), [projects, projectId]);
   const roomsForProject = useMemo(() => rooms.filter((r) => r.projectId === projectId), [rooms, projectId]);
@@ -34,9 +34,13 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
   );
 
   const timelineTasks = useMemo(() => sortTasksForPlanning(projectTasks), [projectTasks]);
-  const { rows, totalDays, remainingDays } = useMemo(() => buildPlanningRows(projectTasks), [projectTasks]);
+  const planningStartDate = project?.planningStartDate ?? null;
+  const { rows, totalDays, remainingDays } = useMemo(
+    () => buildPlanningRows(projectTasks, planningStartDate),
+    [projectTasks, planningStartDate]
+  );
 
-  const showIndicativeDates = Boolean(timelineTasks[0]?.startDate);
+  const showIndicativeDates = Boolean(planningStartDate);
 
   if (!isRenovationDataReady) {
     return <PlanningPageSkeleton />;
@@ -58,7 +62,7 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="planning-page">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-renovation-steel">
@@ -66,6 +70,24 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{project.name}</h1>
           <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("planning.intro")}</p>
+          <div className="mt-4">
+            <label htmlFor="planning-start-date" className="mb-1 block text-xs font-medium text-renovation-concrete">
+              {t("planning.planningStartLabel")}
+            </label>
+            <input
+              id="planning-start-date"
+              data-testid="planning-start-date"
+              type="date"
+              value={planningStartDate ?? ""}
+              onChange={(e) =>
+                updateProject({
+                  id: projectId,
+                  planningStartDate: e.target.value.trim() || null,
+                })
+              }
+              className="rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
+            />
+          </div>
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
             <span className="rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-1.5 font-medium tabular-nums dark:border-renovation-border dark:bg-renovation-elevated">
               {t("planning.timelineTotal")}{" "}
@@ -94,15 +116,19 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
       </div>
 
       {showIndicativeDates ? (
-        <p className="text-xs text-renovation-concrete">{t("planning.hintDatesOn")}</p>
+        <p className="text-xs text-renovation-concrete" data-testid="planning-dates-hint-on">
+          {t("planning.hintDatesOn")}
+        </p>
       ) : (
-        <p className="text-xs text-renovation-concrete">{t("planning.hintDatesOff")}</p>
+        <p className="text-xs text-renovation-concrete" data-testid="planning-dates-hint-off">
+          {t("planning.hintDatesOff")}
+        </p>
       )}
 
       {rows.length === 0 ? (
         <p className="text-sm text-renovation-concrete">{t("planning.noTasks")}</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2" data-testid="planning-timeline">
           {rows.map((row, idx) => {
             const task = row.task;
             const dayLabel =
@@ -119,6 +145,8 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
             return (
               <li
                 key={task.id}
+                data-testid="planning-row"
+                data-task-title={task.title}
                 className="rounded-xl border border-renovation-border bg-renovation-elevated p-4 shadow-sm dark:border-renovation-border dark:bg-renovation-elevated"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -135,21 +163,18 @@ export default function PlanningPageClient({ projectId }: { projectId: string })
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-renovation-concrete">
-                      <span className="tabular-nums font-medium text-renovation-steel">{dayLabel}</span>
+                      <span className="tabular-nums font-medium text-renovation-steel" data-testid="planning-day-label">
+                        {dayLabel}
+                      </span>
                       {row.estimatedStart && row.estimatedEnd ? (
-                        <span>
+                        <span data-testid="planning-date-range">
                           {t("planning.estRange", {
                             from: formatDisplayDate(row.estimatedStart),
                             to: formatDisplayDate(row.estimatedEnd),
                           })}
                         </span>
                       ) : null}
-                      <span>
-                        {task.startDate
-                          ? t("projectDetail.startsOn", { date: formatDisplayDate(task.startDate) })
-                          : t("planning.noStartDate")}{" "}
-                        • {assignee}
-                      </span>
+                      <span>{assignee}</span>
                     </div>
                   </div>
 

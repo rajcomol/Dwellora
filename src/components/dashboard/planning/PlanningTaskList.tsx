@@ -2,13 +2,15 @@
 
 import { useMemo } from "react";
 import { useI18n } from "@/i18n/provider";
-import { compareTasksByStartDate, formatTaskDateRange, taskEndDate } from "@/lib/renovation/taskDates";
+import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
+import type { PlanningRow } from "@/lib/renovation/planningSchedule";
 import { LOOSE_TASK_BAR_CLASS, roomBarColorClass, roomBarTextClass } from "@/lib/renovation/roomColors";
 import type { Task } from "@/lib/renovation/types";
 
 type Props = {
   tasks: Task[];
   roomNameById: Map<string, string>;
+  planningRows?: PlanningRow[];
   onTaskClick: (task: Task) => void;
 };
 
@@ -22,8 +24,13 @@ function statusBadgeClass(status: Task["status"]): string {
   return "bg-renovation-muted text-renovation-concrete";
 }
 
-export default function PlanningTaskList({ tasks, roomNameById, onTaskClick }: Props) {
+export default function PlanningTaskList({ tasks, roomNameById, planningRows = [], onTaskClick }: Props) {
   const { t } = useI18n();
+
+  const rowByTaskId = useMemo(
+    () => new Map(planningRows.map((row) => [row.task.id, row])),
+    [planningRows]
+  );
 
   const orderedRoomIds = useMemo(() => {
     const ids = new Set<string>();
@@ -33,7 +40,7 @@ export default function PlanningTaskList({ tasks, roomNameById, onTaskClick }: P
     return [...ids].sort();
   }, [tasks]);
 
-  const sorted = [...tasks].sort(compareTasksByStartDate);
+  const sorted = useMemo(() => sortTasksForPlanning(tasks), [tasks]);
 
   if (sorted.length === 0) {
     return <p className="text-sm text-renovation-concrete">{t("planning.empty")}</p>;
@@ -56,7 +63,13 @@ export default function PlanningTaskList({ tasks, roomNameById, onTaskClick }: P
             ? LOOSE_TASK_BAR_CLASS
             : roomBarColorClass(primaryRoom ?? null, roomName, orderedRoomIds);
         const roomTextColor = roomBarTextClass(roomColor);
-        const end = taskEndDate(tk);
+        const row = rowByTaskId.get(tk.id);
+        const dayLabel =
+          row != null
+            ? row.dayStart === row.dayEnd
+              ? t("planning.daySingle", { n: row.dayStart })
+              : t("planning.dayRange", { from: row.dayStart, to: row.dayEnd })
+            : null;
 
         return (
           <li key={tk.id}>
@@ -81,7 +94,11 @@ export default function PlanningTaskList({ tasks, roomNameById, onTaskClick }: P
                 </span>
               </div>
               <p className="mt-1.5 text-xs text-renovation-concrete">
-                {formatTaskDateRange(tk.startDate, end, t)}
+                {dayLabel ? (
+                  <span className="font-medium tabular-nums text-renovation-steel">{dayLabel}</span>
+                ) : (
+                  t("projectDetail.plannedDays", { days: tk.durationDays })
+                )}
               </p>
             </button>
           </li>

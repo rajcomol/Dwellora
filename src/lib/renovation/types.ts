@@ -18,6 +18,8 @@ export interface Project {
   address: string;
   /** ISO date string (YYYY-MM-DD) or null */
   expectedKeyHandover: string | null;
+  /** ISO date string (YYYY-MM-DD) or null — anchors the project planning timeline */
+  planningStartDate: string | null;
   notes: string;
 }
 

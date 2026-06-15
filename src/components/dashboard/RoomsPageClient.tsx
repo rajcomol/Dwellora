@@ -1,10 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import ProjectDetailPageClient from "@/components/dashboard/ProjectDetailPageClient";
+import { useMemo, useState } from "react";
 import RoomOverviewCard from "@/components/dashboard/RoomOverviewCard";
-import RoomsSubtabNav, { type RoomsTab } from "@/components/dashboard/RoomsSubtabNav";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import Button from "@/components/ui/Button";
@@ -17,46 +14,13 @@ import {
 } from "@/lib/dashboard/roomOverview";
 import { roomNameFormSchema } from "@/lib/validation/schemas";
 
-function parseTab(value: string | null | undefined): RoomsTab {
-  return value === "overzicht" ? "overzicht" : "rooms";
-}
-
-type Props = {
-  initialTab?: string | null;
-};
-
-export default function RoomsPageClient({ initialTab }: Props) {
+export default function RoomsPageClient() {
   const { t } = useI18n();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { selectedProjectId, selectedProject } = useSelectedProject();
-  const { rooms, tasks, createRoom, isRenovationDataReady } = useRenovation();
+  const { selectedProjectId } = useSelectedProject();
+  const { rooms, tasks, createRoom, projects, isRenovationDataReady } = useRenovation();
   const [showAddForm, setShowAddForm] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  const tabFromUrl = parseTab(searchParams.get("tab") ?? initialTab ?? null);
-  const [activeTab, setActiveTab] = useState<RoomsTab>(() => tabFromUrl);
-
-  useEffect(() => {
-    setActiveTab(tabFromUrl);
-  }, [tabFromUrl]);
-
-  const setTab = useCallback(
-    (tab: RoomsTab) => {
-      setActiveTab(tab);
-      const params = new URLSearchParams(searchParams.toString());
-      if (tab === "overzicht") {
-        params.set("tab", "overzicht");
-      } else {
-        params.delete("tab");
-      }
-      const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    },
-    [pathname, router, searchParams]
-  );
 
   const projectRooms = useMemo(
     () =>
@@ -73,42 +37,52 @@ export default function RoomsPageClient({ initialTab }: Props) {
     );
   }, [tasks, selectedProjectId, projectRooms]);
 
+  const planningStartDate = useMemo(() => {
+    if (!selectedProjectId) return null;
+    return projects.find((p) => p.id === selectedProjectId)?.planningStartDate ?? null;
+  }, [projects, selectedProjectId]);
+
   const summaryByRoomId = useMemo(() => {
     const map = new Map<string, ReturnType<typeof buildRoomSummariesFromTasks>[number]>();
-    for (const s of buildRoomSummariesFromTasks(projectRooms, projectTasks)) {
+    for (const s of buildRoomSummariesFromTasks(projectRooms, projectTasks, planningStartDate)) {
       map.set(s.room_id, s);
     }
     return map;
-  }, [projectRooms, projectTasks]);
+  }, [projectRooms, projectTasks, planningStartDate]);
+
+  function openAddRoomForm() {
+    setShowAddForm(true);
+  }
 
   if (!isRenovationDataReady) {
     return <DashboardPageSkeleton />;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="rooms-page">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("nav.tabs.rooms")}</h1>
-          <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">
-            {selectedProject
-              ? t("rooms.subtitleProject", { name: selectedProject.name })
-              : t("layout.topBar.chooseProject")}
-          </p>
+          {selectedProjectId ? (
+            <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">
+              {t("rooms.headerMeta", {
+                rooms: projectRooms.length,
+                tasks: projectTasks.length,
+              })}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm leading-relaxed text-renovation-concrete">{t("layout.topBar.chooseProject")}</p>
+          )}
         </div>
-        {selectedProjectId && activeTab === "rooms" ? (
-          <Button type="button" onClick={() => setShowAddForm((v) => !v)}>
+        {selectedProjectId ? (
+          <Button type="button" data-testid="rooms-new-room-button" onClick={openAddRoomForm}>
             {t("rooms.newRoom")}
           </Button>
         ) : null}
       </div>
 
-      {selectedProjectId ? <RoomsSubtabNav activeTab={activeTab} onTabChange={setTab} /> : null}
-
       {!selectedProjectId ? (
         <p className="text-sm text-renovation-concrete">{t("layout.topBar.chooseProject")}</p>
-      ) : activeTab === "overzicht" ? (
-        <ProjectDetailPageClient projectId={selectedProjectId} />
       ) : (
         <>
           {showAddForm ? (
@@ -144,9 +118,28 @@ export default function RoomsPageClient({ initialTab }: Props) {
           ) : null}
 
           {projectRooms.length === 0 ? (
-            <p className="text-sm text-renovation-concrete">{t("rooms.empty")}</p>
+            <div
+              data-testid="rooms-empty-state"
+              className="flex flex-col items-center rounded-xl border border-dashed border-renovation-border bg-renovation-elevated px-6 py-12 text-center dark:border-renovation-border dark:bg-renovation-elevated"
+            >
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-renovation-muted text-renovation-steel"
+                aria-hidden="true"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-6 w-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+              </div>
+              <h2 className="mt-4 text-lg font-semibold text-foreground">{t("rooms.emptyStateTitle")}</h2>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-renovation-concrete">
+                {t("rooms.emptyStateBody")}
+              </p>
+              <Button type="button" className="mt-6" data-testid="rooms-empty-create-button" onClick={openAddRoomForm}>
+                {t("rooms.emptyStateButton")}
+              </Button>
+            </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="rooms-grid">
               {projectRooms.map((room) => {
                 const summary = summaryByRoomId.get(room.id) ?? {
                   room_id: room.id,
@@ -158,13 +151,14 @@ export default function RoomsPageClient({ initialTab }: Props) {
                   earliest_start_date: null,
                   latest_end_date: null,
                 };
+                const roomTasks = tasksForRoom(projectTasks, room.id);
                 return (
                   <RoomOverviewCard
                     key={room.id}
                     summary={summary}
                     roomName={room.name}
-                    roomTasks={tasksForRoom(projectTasks, room.id)}
-                    previewTasks={previewTasksForRoom(projectTasks, room.id)}
+                    roomTasks={roomTasks}
+                    previewTasks={previewTasksForRoom(projectTasks, room.id, 2)}
                     projectId={selectedProjectId}
                   />
                 );

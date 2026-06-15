@@ -1,4 +1,5 @@
-import { taskEndDate } from "@/lib/renovation/taskDates";
+import { buildPlanningRows } from "@/lib/renovation/planningSchedule";
+import { compareTasksForPlanning } from "@/lib/renovation/planningSort";
 import type { Room, Task } from "@/lib/renovation/types";
 
 export type RoomTaskSummaryRow = {
@@ -12,24 +13,26 @@ export type RoomTaskSummaryRow = {
   latest_end_date: string | null;
 };
 
-function compareTasksForPreview(a: Task, b: Task): number {
-  if (!a.startDate && !b.startDate) return a.title.localeCompare(b.title);
-  if (!a.startDate) return 1;
-  if (!b.startDate) return -1;
-  return a.startDate.localeCompare(b.startDate);
-}
-
 /** Tasks linked to a room via task_rooms (roomIds on Task). */
 export function tasksForRoom(tasks: Task[], roomId: string): Task[] {
   return (tasks ?? []).filter((tk) => (tk.roomIds ?? []).includes(roomId));
 }
 
 export function previewTasksForRoom(tasks: Task[], roomId: string, limit = 3): Task[] {
-  return [...tasksForRoom(tasks, roomId)].sort(compareTasksForPreview).slice(0, limit);
+  return [...tasksForRoom(tasks, roomId)].sort(compareTasksForPlanning).slice(0, limit);
 }
 
 /** Client-side aggregates aligned with task_rooms (same source as preview list). */
-export function buildRoomSummariesFromTasks(rooms: Room[], tasks: Task[]): RoomTaskSummaryRow[] {
+export function buildRoomSummariesFromTasks(
+  rooms: Room[],
+  tasks: Task[],
+  planningStartDate: string | null = null
+): RoomTaskSummaryRow[] {
+  const { rows } = buildPlanningRows(tasks, planningStartDate);
+  const datesByTaskId = new Map(
+    rows.map((row) => [row.task.id, { start: row.estimatedStart ?? null, end: row.estimatedEnd ?? null }])
+  );
+
   return (rooms ?? []).map((room) => {
     const roomTasks = tasksForRoom(tasks, room.id);
     let estimatedCostSum = 0;
@@ -40,10 +43,12 @@ export function buildRoomSummariesFromTasks(rooms: Room[], tasks: Task[]): RoomT
       if (tk.estimatedCost != null) {
         estimatedCostSum += tk.estimatedCost;
       }
-      if (tk.startDate) {
-        if (!earliest || tk.startDate < earliest) earliest = tk.startDate;
-        const end = taskEndDate(tk);
-        if (end && (!latest || end > latest)) latest = end;
+      const dates = datesByTaskId.get(tk.id);
+      if (dates?.start) {
+        if (!earliest || dates.start < earliest) earliest = dates.start;
+      }
+      if (dates?.end) {
+        if (!latest || dates.end > latest) latest = dates.end;
       }
     }
 

@@ -5,7 +5,7 @@ import {
   addTaskToRoom,
   createProjectAndSelect,
   openFinancesPage,
-  openProjectOverview,
+  openRoomDetail,
   uniqueName,
 } from "./helpers/dashboard";
 import { formatCurrency } from "../../src/lib/format/currency";
@@ -110,10 +110,9 @@ test.describe("kostenposten financieel overzicht", () => {
       { timeout: 60_000 }
     );
 
-    await openProjectOverview(page);
-    const roomCard = page.getByTestId("project-room-card").filter({ hasText: roomName });
-    await expect(roomCard.getByLabel("Geschatte kosten")).toHaveCount(0);
-    await expect(roomCard.getByLabel("Werkelijke kosten")).toHaveCount(0);
-    await expect(roomCard.getByText("Koppel aan bouwdepot")).toHaveCount(0);
+    await openRoomDetail(page, roomName);
+    await expect(page.getByLabel("Geschatte kosten")).toHaveCount(0);
+    await expect(page.getByLabel("Werkelijke kosten")).toHaveCount(0);
+    await expect(page.getByText("Koppel aan bouwdepot")).toHaveCount(0);
   });
 });

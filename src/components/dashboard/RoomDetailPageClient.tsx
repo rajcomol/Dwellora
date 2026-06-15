@@ -1,19 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import RoomTaskForm from "@/components/dashboard/RoomTaskForm";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { appendProjectQuery } from "@/components/layout/tab-nav-config";
-import Button from "@/components/ui/Button";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
 import { deriveRoomStatus, roomStatusBadgeClass, roomStatusLabelKey } from "@/lib/dashboard/roomStatus";
-import { formatCurrency } from "@/lib/format/currency";
-import { formatDisplayDate } from "@/lib/format/dateDisplay";
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
-import { taskEndDate } from "@/lib/renovation/taskDates";
-import type { TaskStatus } from "@/lib/renovation/types";
 import { DEFAULT_RENOVATION_PHASE } from "@/lib/renovation/phases";
 
 type Props = { roomId: string };
@@ -21,7 +17,7 @@ type Props = { roomId: string };
 export default function RoomDetailPageClient({ roomId }: Props) {
   const { t } = useI18n();
   const { selectedProjectId } = useSelectedProject();
-  const { rooms, tasks, createTask, deleteRoom, deleteTask, updateTask, isRenovationDataReady } =
+  const { rooms, tasks, teamRoster, createTask, deleteRoom, deleteTask, updateTask, isRenovationDataReady } =
     useRenovation();
 
   const room = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
@@ -29,9 +25,10 @@ export default function RoomDetailPageClient({ roomId }: Props) {
     () => (room ? sortTasksForPlanning(tasks.filter((tk) => tk.roomIds.includes(room.id))) : []),
     [room, tasks]
   );
-
-  const [title, setTitle] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const rosterOptions = useMemo(
+    () => (room ? teamRoster.filter((r) => r.projectId === room.projectId) : []),
+    [room, teamRoster]
+  );
 
   const completed = roomTasks.filter((tk) => tk.status === "done").length;
   const roomStatus = deriveRoomStatus(
@@ -79,99 +76,57 @@ export default function RoomDetailPageClient({ roomId }: Props) {
           <li className="text-sm text-renovation-concrete">{t("rooms.noTasksPreview")}</li>
         ) : (
           roomTasks.map((tk) => (
-            <li
+            <RoomTaskForm
               key={tk.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-renovation-border px-4 py-3 dark:border-renovation-border"
-            >
-              <div>
-                <div className="font-medium">{tk.title}</div>
-                <div className="text-xs text-renovation-concrete">
-                  {t(`task.status.${tk.status}`)}
-                  {tk.estimatedCost != null ? ` • ${formatCurrency(tk.estimatedCost)}` : ""}
-                  {tk.startDate
-                    ? ` • ${formatDisplayDate(tk.startDate)}${taskEndDate(tk) ? ` – ${formatDisplayDate(taskEndDate(tk)!)}` : ""}`
-                    : ""}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <select
-                  className="rounded border border-renovation-border bg-renovation-elevated px-2 py-1 text-xs dark:border-renovation-border dark:bg-renovation-elevated"
-                  value={tk.status}
-                  onChange={(e) => {
-                    void updateTask({ id: tk.id, status: e.target.value as TaskStatus });
-                  }}
-                  aria-label={t("planning.gantt.editTask")}
-                >
-                  <option value="todo">{t("task.status.todo")}</option>
-                  <option value="doing">{t("task.status.doing")}</option>
-                  <option value="done">{t("task.status.done")}</option>
-                </select>
-                <button
-                  type="button"
-                  className="text-xs text-red-600 hover:underline dark:text-red-400"
-                  onClick={() => {
-                    if (typeof window !== "undefined" && window.confirm(`${t("common.delete")}?`)) {
-                      deleteTask(tk.id);
-                    }
-                  }}
-                >
-                  {t("common.delete")}
-                </button>
-              </div>
-            </li>
+              mode="edit"
+              task={tk}
+              rosterOptions={rosterOptions}
+              onSubmit={async (values) =>
+                updateTask({
+                  id: values.id,
+                  title: values.title,
+                  durationDays: values.durationDays,
+                  priority: values.priority,
+                  renovationPhase: values.renovationPhase,
+                  status: values.status,
+                  assignedRosterId: values.assignedRosterId,
+                  description: values.description,
+                })
+              }
+              onDelete={() => {
+                if (typeof window !== "undefined" && window.confirm(`${t("common.delete")}?`)) {
+                  deleteTask(tk.id);
+                }
+              }}
+            />
           ))
         )}
       </ul>
 
-      <form
-        className="space-y-3 rounded-xl border border-renovation-border bg-renovation-elevated p-4 dark:border-renovation-border dark:bg-renovation-elevated"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const trimmed = title.trim();
-          if (!trimmed) {
-            setError(t("validation.generic"));
-            return;
-          }
-          setError(null);
-          void (async () => {
-            const ok = await createTask({
-              title: trimmed,
-              projectId: room.projectId,
-              roomIds: [room.id],
-              status: "todo",
-              estimatedCost: null,
-              durationDays: 1,
-              priority: "medium",
-              renovationPhase: DEFAULT_RENOVATION_PHASE,
-            });
-            if (!ok) {
-              setError(t("projectDetail.taskSaveError"));
-              return;
-            }
-            setTitle("");
-          })();
-        }}
-      >
-        <h2 className="text-sm font-semibold">{t("projectDetail.addTask")}</h2>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("projectDetail.taskTitlePlaceholder")}
-          className="w-full rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-        />
-        {error ? <p className="text-xs text-red-600">{error}</p> : null}
-        <Button type="submit">{t("common.save")}</Button>
-      </form>
+      <RoomTaskForm
+        mode="create"
+        roomId={room.id}
+        projectId={room.projectId}
+        rosterOptions={rosterOptions}
+        onSubmit={async (values) =>
+          createTask({
+            title: values.title,
+            projectId: room.projectId,
+            roomIds: [room.id],
+            status: values.status,
+            estimatedCost: null,
+            durationDays: values.durationDays,
+            priority: values.priority,
+            renovationPhase: values.renovationPhase ?? DEFAULT_RENOVATION_PHASE,
+            description: values.description,
+            assignedRosterId: values.assignedRosterId,
+          })
+        }
+      />
 
       <div className="flex flex-wrap gap-3">
         <Link
-          href={appendProjectQuery(`/dashboard/rooms?tab=overzicht`, room.projectId)}
-          className="text-sm font-medium text-renovation-steel underline dark:text-renovation-accent"
-        >
-          {t("rooms.fullProjectView")}
-        </Link>
-        <Link
-          href={`/dashboard/finances?tab=overzicht&project=${encodeURIComponent(room.projectId)}&room_id=${encodeURIComponent(room.id)}`}
+          href={appendProjectQuery("/dashboard/finances", room.projectId)}
           className="text-sm font-medium text-renovation-steel underline dark:text-renovation-accent"
         >
           {t("rooms.detail.viewRoomFinances")}

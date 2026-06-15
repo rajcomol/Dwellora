@@ -9,27 +9,37 @@ import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
 import { useI18n } from "@/i18n/provider";
 import { filterTasksForProjectId } from "@/lib/dashboard/projectBudget";
-import { roomMapById } from "@/lib/renovation/planningSort";
-import { compareTasksByStartDate } from "@/lib/renovation/taskDates";
+import { buildPlanningRows } from "@/lib/renovation/planningSchedule";
+import { roomMapById, sortTasksForPlanning } from "@/lib/renovation/planningSort";
 import type { Task } from "@/lib/renovation/types";
 
 export default function PlanningHubPageClient() {
   const { t } = useI18n();
   const { selectedProjectId, selectedProject } = useSelectedProject();
-  const { rooms, tasks, isRenovationDataReady } = useRenovation();
+  const { rooms, tasks, updateProject, isRenovationDataReady } = useRenovation();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const roomById = useMemo(() => roomMapById(rooms), [rooms]);
 
-  const { linkedTasks, looseTasks } = useMemo(() => {
-    if (!selectedProjectId) return { linkedTasks: [] as Task[], looseTasks: [] as Task[] };
+  const projectTasks = useMemo(() => {
+    if (!selectedProjectId) return [] as Task[];
     const roomIds = new Set(rooms.filter((r) => r.projectId === selectedProjectId).map((r) => r.id));
-    const projectTasks = filterTasksForProjectId(tasks, selectedProjectId, roomIds).sort(compareTasksByStartDate);
+    return sortTasksForPlanning(filterTasksForProjectId(tasks, selectedProjectId, roomIds));
+  }, [selectedProjectId, rooms, tasks]);
+
+  const planningStartDate = selectedProject?.planningStartDate ?? null;
+
+  const { rows: planningRows, totalDays } = useMemo(
+    () => buildPlanningRows(projectTasks, planningStartDate),
+    [projectTasks, planningStartDate]
+  );
+
+  const { linkedTasks, looseTasks } = useMemo(() => {
     return {
       linkedTasks: projectTasks.filter((tk) => tk.roomIds.length > 0),
       looseTasks: projectTasks.filter((tk) => tk.roomIds.length === 0),
     };
-  }, [selectedProjectId, rooms, tasks]);
+  }, [projectTasks]);
 
   const roomLabelForTask = (task: Task): string => {
     if (task.roomIds.length === 0) return t("planning.looseTask");
@@ -46,6 +56,7 @@ export default function PlanningHubPageClient() {
   }
 
   const allEmpty = linkedTasks.length === 0 && looseTasks.length === 0;
+  const roomNameById = new Map([...roomById.entries()].map(([id, r]) => [id, r.name]));
 
   return (
     <div className="space-y-6">
@@ -64,18 +75,48 @@ export default function PlanningHubPageClient() {
         <p className="text-sm text-renovation-concrete">{t("planning.empty")}</p>
       ) : (
         <>
+          <div className="space-y-3 rounded-xl border border-renovation-border bg-renovation-elevated p-4 dark:border-renovation-border dark:bg-renovation-elevated">
+            <div>
+              <label htmlFor="planning-hub-start-date" className="mb-1 block text-xs font-medium text-renovation-concrete">
+                {t("planning.planningStartLabel")}
+              </label>
+              <input
+                id="planning-hub-start-date"
+                data-testid="planning-start-date"
+                type="date"
+                value={planningStartDate ?? ""}
+                onChange={(e) => {
+                  if (!selectedProjectId) return;
+                  updateProject({
+                    id: selectedProjectId,
+                    planningStartDate: e.target.value.trim() || null,
+                  });
+                }}
+                className="rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
+              />
+            </div>
+            <p className="text-sm tabular-nums text-renovation-concrete">
+              {t("planning.timelineTotal")}{" "}
+              <strong className="text-foreground">{totalDays}</strong> {t("planning.days")}
+            </p>
+          </div>
+
           <div className="hidden md:block">
             <PlanningGantt
               linkedTasks={linkedTasks}
               looseTasks={looseTasks}
-              roomNameById={new Map([...roomById.entries()].map(([id, r]) => [id, r.name]))}
+              roomNameById={roomNameById}
+              planningStartDate={planningStartDate}
+              planningRows={planningRows}
+              totalDays={totalDays}
               onTaskClick={setSelectedTask}
             />
           </div>
           <div className="md:hidden">
             <PlanningTaskList
               tasks={[...linkedTasks, ...looseTasks]}
-              roomNameById={new Map([...roomById.entries()].map(([id, r]) => [id, r.name]))}
+              roomNameById={roomNameById}
+              planningRows={planningRows}
               onTaskClick={setSelectedTask}
             />
           </div>

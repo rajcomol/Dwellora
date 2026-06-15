@@ -155,7 +155,19 @@ export const taskFormFieldsSchema = z.object({
     .transform((s) => (s.trim() === "" ? 0 : Number.parseInt(s, 10)))
     .pipe(z.number().int().min(0)),
   description: z.string(),
-  startDate: z.string(),
+  status: taskStatusSchema,
+  priority: taskPrioritySchema,
+  renovationPhase: renovationPhaseSchema,
+  assignedRosterId: z.string(),
+});
+
+export const roomTaskFormSchema = z.object({
+  title: z.string().trim().min(1),
+  durationDays: z
+    .string()
+    .transform((s) => (s.trim() === "" ? 0 : Number.parseInt(s, 10)))
+    .pipe(z.number().int().min(1)),
+  description: z.string(),
   status: taskStatusSchema,
   priority: taskPrioritySchema,
   renovationPhase: renovationPhaseSchema,

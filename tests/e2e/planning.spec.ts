@@ -19,8 +19,6 @@ async function seedPlanningTask(
   await addRoom(page, roomName);
   await openProjectOverview(page);
   await addTaskToRoom(page, roomName, taskTitle, {
-    estimatedCost: "1200",
-    startDate: "2026-06-15",
     durationDays: "3",
   });
 }

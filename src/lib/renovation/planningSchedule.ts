@@ -7,7 +7,7 @@ export type PlanningRow = {
   dayStart: number;
   /** Inclusive end day index. */
   dayEnd: number;
-  /** Present only when the first task in the sorted list has `startDate`. */
+  /** Present only when the project has a planning start date. */
   estimatedStart?: string;
   estimatedEnd?: string;
 };
@@ -26,15 +26,18 @@ function spanDays(durationDays: number): number {
 
 /**
  * Builds timeline rows with cumulative day ranges and optional indicative calendar dates
- * when the first task in sort order has `startDate`.
+ * when the project has a `planningStartDate`.
  */
-export function buildPlanningRows(tasks: Task[]): {
+export function buildPlanningRows(
+  tasks: Task[],
+  planningStartDate: string | null = null
+): {
   rows: PlanningRow[];
   totalDays: number;
   remainingDays: number;
 } {
   const sorted = sortTasksForPlanning(tasks);
-  const anchor = sorted[0]?.startDate ?? null;
+  const anchor = planningStartDate?.trim() || null;
 
   let cumulative = 0;
   let cursorDate: string | null = anchor;
