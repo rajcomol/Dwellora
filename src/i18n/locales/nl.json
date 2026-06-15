@@ -44,45 +44,43 @@
     "saving": "Opslaan…",
     "saved": "Kamer opgeslagd.",
     "visual": {
-      "uploadTitle": "Foto's per element",
       "uploadCta": "Klik om te uploaden",
       "removeImage": "Verwijderen",
-      "zones": {
-        "kamer": {
-          "label": "Jouw huidige kamer",
-          "hint": "De structuur van deze foto blijft exact intact — ramen, deuren, indeling"
-        },
-        "vloer": {
-          "label": "Vloer of tegels",
-          "hint": "Upload een foto van je gewenste vloer of tegels — de AI neemt exact dit materiaal over"
-        },
-        "muur": {
-          "label": "Muurkleur",
-          "hint": "Upload een foto van je gewenste muurkleur of verfstaal — muren en plafond krijgen exact deze kleur"
-        },
-        "tvwand": {
-          "label": "Tv wand / Feature wall",
-          "hint": "Upload een inspiratiefoto van je gewenste tv wand of accentmuur"
-        }
+      "basis": {
+        "label": "Jouw huidige situatie",
+        "hint": "Upload een foto van je huidige situatie — kamer, voordeur, gevel, tuin of iets anders. De structuur van deze foto blijft intact."
+      },
+      "references": {
+        "label": "Referentie- & inspiratiefoto's",
+        "hint": "Optioneel: voeg foto's toe van materialen, kleuren of stijlen die je wilt overnemen.",
+        "addPhoto": "+ Foto toevoegen",
+        "noteLabel": "Waarvoor is deze foto?",
+        "notePlaceholder": "bijv. houtkleur deur"
       },
       "optional": "Optioneel",
       "required": "Verplicht",
-      "extraWishesLabel": "Extra wensen (optioneel)",
-      "extraWishesPlaceholder": "Bijv. meer planten, warmer licht, specifieke meubels...",
-      "kamerRequired": "Upload minimaal een foto van je huidige kamer",
-      "roomTypeLabel": "Kamertype",
-      "generate": "Visualiseer mijn kamer",
-      "generating": "AI analyseert je foto's en genereert varianten...",
-      "generatingHint": "Dit duurt ongeveer 30-60 seconden",
+      "changeLabel": "Wat wil je veranderen?",
+      "changePlaceholder": "Beschrijf wat je anders wilt zien in je situatie…",
+      "basisRequired": "Upload minimaal een foto van je huidige situatie",
+      "generate": "Visualiseer mijn situatie",
+      "generating": "Je sfeerbeeld wordt gemaakt…",
+      "generatingHint": "Dit duurt ongeveer een minuut.",
       "error": "Er is iets misgegaan bij het genereren. Probeer het opnieuw of gebruik een andere foto.",
-      "viewerEmpty": "Upload een foto van je huidige kamer en klik op 'Visualiseer mijn kamer' voor drie fotorealistische varianten.",
+      "resultHeading": "Jouw nieuwe situatie",
+      "viewerEmpty": "Upload je huidige situatie en beschrijf wat je wilt veranderen. Je krijgt één fotorealistisch sfeerbeeld te zien.",
       "download": "Download",
       "close": "Sluiten",
-      "labels": {
-        "structuur": "Behoud structuur",
-        "gebalanceerd": "Gebalanceerd",
-        "maximaal": "Maximale transformatie"
-      }
+      "step1Title": "Stap 1: Je situatie opzetten",
+      "step1Complete": "Stap 1 voltooid — pas het resultaat rechts aan of start opnieuw.",
+      "step2Title": "Stap 2: Bijsturen op het resultaat",
+      "refineTitle": "Iets aanpassen aan dit beeld?",
+      "refinePlaceholder": "bijv. \"maak de muur warmer\"",
+      "refineSubmit": "Bijwerken",
+      "refining": "Beeld bijwerken…",
+      "refineRequired": "Vul een aanpassing in",
+      "refineError": "Er is iets misgegaan bij het bijwerken. Probeer het opnieuw.",
+      "startOver": "Nieuwe visualisatie",
+      "versionLabel": "v{{n}}"
     }
   },
   "layout": {

@@ -2,18 +2,23 @@ import { test, expect, type Page } from "@playwright/test";
 import { loginAsTestUser, testUserCredentialsConfigured } from "./helpers/auth";
 import { createProjectAndSelect, gotoProjectPath, uniqueName } from "./helpers/dashboard";
 
-// 1x1 PNG zodat de tests geen externe afbeeldingen of ReimagineHome/OpenAI nodig hebben.
+// 1x1 PNG zodat de tests geen externe afbeeldingen of OpenAI-calls nodig hebben.
 const TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 const TINY_PNG_DATA_URL = `data:image/png;base64,${TINY_PNG_BASE64}`;
 const TINY_PNG_BUFFER = Buffer.from(TINY_PNG_BASE64, "base64");
 
+const MOCK_FOLDER = "test-folder-abc123";
+
 const MOCK_VISUALISATIE = {
-  renders: [
-    { url: TINY_PNG_DATA_URL, hoek: "structuur" },
-    { url: TINY_PNG_DATA_URL, hoek: "gebalanceerd" },
-    { url: TINY_PNG_DATA_URL, hoek: "maximaal" },
-  ],
+  url: TINY_PNG_DATA_URL,
+  folder: MOCK_FOLDER,
+  version: 1,
+};
+
+const MOCK_REFINE = {
+  url: TINY_PNG_DATA_URL,
+  version: 2,
 };
 
 async function openPlannerPage(page: Page): Promise<void> {
@@ -29,40 +34,65 @@ async function uploadPhoto(page: Page, testid: string, fileName: string): Promis
   });
 }
 
+async function mockVisualisatieApis(page: Page): Promise<void> {
+  await page.route("**/api/planner/visualiseer", async (route) => {
+    if (route.request().url().includes("/verfijn")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_REFINE),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_VISUALISATIE),
+    });
+  });
+
+  await page.route("**/api/planner/visualiseer/verfijn", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_REFINE),
+    });
+  });
+}
+
 test.describe("AI Kamervisualisatie", () => {
   test.beforeEach(async ({ page }) => {
     test.skip(!testUserCredentialsConfigured, "Set TEST_USER_EMAIL and TEST_USER_PASSWORD");
     await loginAsTestUser(page);
   });
 
-  test("pagina laadt met vier upload zones, extra wensen en genereer knop", async ({ page }, testInfo) => {
+  test("pagina laadt met basisfoto, optionele referenties en beschrijving", async ({ page }, testInfo) => {
     const projectName = uniqueName("PW Visual", testInfo);
     await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
 
     await openPlannerPage(page);
 
-    // Vier upload zones zichtbaar met de juiste labels.
-    await expect(page.getByTestId("upload-kamer")).toBeVisible();
-    await expect(page.getByTestId("upload-vloer")).toBeVisible();
-    await expect(page.getByTestId("upload-muur")).toBeVisible();
-    await expect(page.getByTestId("upload-tvwand")).toBeVisible();
-    await expect(page.getByTestId("upload-kamer").getByText("Jouw huidige kamer", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("upload-vloer").getByText("Vloer of tegels", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("upload-muur").getByText("Muurkleur", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("upload-tvwand").getByText("Tv wand / Feature wall", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("render-canvas-heading")).toHaveText("Jouw nieuwe situatie");
+    await expect(page.getByTestId("render-empty-state")).toBeVisible();
+    await expect(page.getByTestId("render-empty-state")).toContainText("Upload je huidige situatie");
 
-    // Extra wensen (optioneel) invulbaar.
+    await expect(page.getByTestId("planner-step1-title")).toHaveText("Stap 1: Je situatie opzetten");
+
+    await expect(page.getByTestId("upload-basis")).toBeVisible();
+    await expect(page.getByTestId("upload-basis").getByText("Jouw huidige situatie", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("reference-photos-section")).toBeVisible();
+    await expect(page.getByTestId("add-reference-photo")).toBeVisible();
+
     const beschrijving = page.getByTestId("planner-beschrijving");
     await expect(beschrijving).toBeVisible();
-    await beschrijving.fill("Meer planten en warmer licht");
-    await expect(beschrijving).toHaveValue("Meer planten en warmer licht");
+    await beschrijving.fill("Vervang de vloer door hout en maak het warmer");
+    await expect(beschrijving).toHaveValue("Vervang de vloer door hout en maak het warmer");
 
-    // Genereer knop aanwezig.
     await expect(page.getByTestId("planner-generate")).toBeVisible();
     await expect(page.getByTestId("planner-generate")).toBeEnabled();
   });
 
-  test("validatie blokkeert generatie zonder kamerfoto", async ({ page }, testInfo) => {
+  test("validatie blokkeert generatie zonder basisfoto", async ({ page }, testInfo) => {
     const projectName = uniqueName("PW Visual Validatie", testInfo);
     await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
 
@@ -71,39 +101,84 @@ test.describe("AI Kamervisualisatie", () => {
     await page.getByTestId("planner-generate").click();
 
     await expect(page.getByTestId("planner-error")).toContainText(
-      "Upload minimaal een foto van je huidige kamer"
+      "Upload minimaal een foto van je huidige situatie"
     );
   });
 
-  test("na upload + generatie is de render galerij met 3 renders zichtbaar", async ({ page }, testInfo) => {
-    const projectName = uniqueName("PW Visual Render", testInfo);
+  test("genereren werkt met alleen basisfoto en beschrijving", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Visual Basis", testInfo);
     await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
 
-    // Visualisatie-API mocken (geen echte ReimagineHome/OpenAI call).
-    await page.route("**/api/planner/visualiseer", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(MOCK_VISUALISATIE),
-      });
-    });
+    await mockVisualisatieApis(page);
+    await openPlannerPage(page);
+
+    await uploadPhoto(page, "upload-basis", "situatie.png");
+    await page.getByTestId("planner-beschrijving").fill("Maak de gevel modern wit");
+    await page.getByTestId("planner-generate").click();
+
+    await expect(page.getByTestId("render-main")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("refine-panel")).toBeVisible();
+    await expect(page.getByTestId("version-thumb")).toHaveCount(1);
+  });
+
+  test("referentiefoto's zijn optioneel en kunnen worden toegevoegd", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Visual Refs", testInfo);
+    await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
 
     await openPlannerPage(page);
 
-    // Verplichte kamerfoto uploaden.
-    await uploadPhoto(page, "upload-kamer", "kamer.png");
+    await page.getByTestId("add-reference-photo").click();
+    await page.getByTestId("reference-file-input").setInputFiles({
+      name: "deur.png",
+      mimeType: "image/png",
+      buffer: TINY_PNG_BUFFER,
+    });
 
+    await expect(page.getByTestId("reference-photo")).toHaveCount(1);
+    await page.getByTestId("reference-note").fill("houtkleur deur");
+    await expect(page.getByTestId("reference-note")).toHaveValue("houtkleur deur");
+  });
+
+  test("na generatie verschijnt bijstuur-blok en versiehistorie", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Visual Render", testInfo);
+    await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
+
+    await mockVisualisatieApis(page);
+    await openPlannerPage(page);
+
+    await uploadPhoto(page, "upload-basis", "situatie.png");
     await page.getByTestId("planner-generate").click();
 
-    // Render galerij toont 3 renders met de juiste labels.
-    await expect(page.getByTestId("render-image")).toHaveCount(3, { timeout: 30_000 });
-    const labels = page.getByTestId("render-label");
-    await expect(labels.nth(0)).toContainText("Behoud structuur");
-    await expect(labels.nth(1)).toContainText("Gebalanceerd");
-    await expect(labels.nth(2)).toContainText("Maximale transformatie");
+    await expect(page.getByTestId("render-main")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("refine-panel")).toBeVisible();
+    await expect(page.getByTestId("refine-input")).toBeVisible();
+    await expect(page.getByTestId("refine-submit")).toBeVisible();
+    await expect(page.getByTestId("planner-step2-title")).toHaveText("Stap 2: Bijsturen op het resultaat");
+    await expect(page.getByTestId("version-label")).toHaveText("v1");
 
-    // Klik op een render opent fullscreen.
-    await page.getByTestId("render-image").first().click();
+    await page.getByTestId("render-main").click();
     await expect(page.getByTestId("render-fullscreen")).toBeVisible();
+    await page.getByRole("button", { name: "Sluiten" }).click();
+  });
+
+  test("bijsturing voegt versie toe en oudere versie kan opnieuw actief worden", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Visual Refine", testInfo);
+    await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
+
+    await mockVisualisatieApis(page);
+    await openPlannerPage(page);
+
+    await uploadPhoto(page, "upload-basis", "situatie.png");
+    await page.getByTestId("planner-generate").click();
+    await expect(page.getByTestId("render-main")).toBeVisible({ timeout: 30_000 });
+
+    await page.getByTestId("refine-input").fill("maak de muur warmer");
+    await page.getByTestId("refine-submit").click();
+
+    await expect(page.getByTestId("version-thumb")).toHaveCount(2, { timeout: 30_000 });
+    await expect(page.getByTestId("version-label").nth(1)).toHaveText("v2");
+
+    await page.getByTestId("version-thumb").first().click();
+    await expect(page.getByTestId("version-thumb").first()).toHaveAttribute("aria-pressed", "true");
   });
 });

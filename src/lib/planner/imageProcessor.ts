@@ -112,6 +112,18 @@ export async function processImageToBuffer(base64: string): Promise<Buffer> {
   return fallbackJpeg();
 }
 
+/** Laadt een afbeelding uit een data-URL of publieke HTTP(S)-URL als genormaliseerde JPEG-bytes. */
+export async function loadImageToBuffer(source: string): Promise<Buffer> {
+  if (source.startsWith("http://") || source.startsWith("https://")) {
+    const res = await fetch(source);
+    if (!res.ok) throw new Error("Kon basisafbeelding niet laden.");
+    const mime = res.headers.get("content-type") ?? "image/jpeg";
+    const b64 = Buffer.from(await res.arrayBuffer()).toString("base64");
+    return processImageToBuffer(`data:${mime};base64,${b64}`);
+  }
+  return processImageToBuffer(source);
+}
+
 /** Hulp voor tests: leest afmetingen uit een base64/data-URL string. */
 export async function imageDimensionsFromBase64(base64: string): Promise<{ width: number; height: number }> {
   const { buffer } = parseBase64(base64);

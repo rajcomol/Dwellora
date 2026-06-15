@@ -1,7 +1,8 @@
 import OpenAI from "openai";
+import { getCompareMaxOutputTokens, getComparePdfMaxCharsPerDoc, truncateTextForModel } from "@/lib/ai/limits";
+import { buildOpenAIChatCompletionBody } from "@/lib/ai/openaiChatCompletionParams";
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
-import { getCompareMaxOutputTokens, getComparePdfMaxCharsPerDoc, truncateTextForModel } from "@/lib/ai/limits";
 import { extractPdfTextOrPlaceholder } from "@/lib/documents/pdfExtract";
 import { requireAccessibleProject } from "@/lib/supabase/project-access";
 import { jsonValidationError, readJsonUnknown } from "@/lib/validation/http";
@@ -17,44 +18,28 @@ type DocumentRow = {
 
 function mockComparison(nameA: string, nameB: string) {
   return [
-    "Scope in offerte A",
-    `- Algemene renovatieposten voor ${nameA} (details niet beschikbaar in fallback).`,
+    `Ik kan **${nameA}** en **${nameB}** nu niet inhoudelijk naast elkaar zetten — de tekst is niet betrouwbaar uitgelezen. Geen winnaar kiezen op basis van dit fallback-antwoord.`,
     "",
-    "Scope in offerte B",
-    `- Algemene renovatieposten voor ${nameB} (details niet beschikbaar in fallback).`,
+    "Wat je wél kunt doen: leg beide PDF's naast elkaar en vergelijk per post wat inbegrepen is, welke stelposten er staan, hoe meerwerk is geregeld, en of planning, garantie en betaaltermijnen even expliciet zijn.",
     "",
-    "Waarschijnlijk ontbrekende onderdelen",
-    "- Vergelijk expliciet: meerwerk, afvoer, vergunningen, planning en garanties.",
-    "",
-    "Prijs- of scopeverschillen (indien genoemd)",
-    "- Geen betrouwbare tekstextractie; vraag schriftelijke specificaties na.",
-    "",
-    "Risico's / onduidelijke formuleringen",
-    "- Controleer uitsluitingen, indexatie en betalingsvoorwaarden in beide offertes.",
-    "",
-    "Vragen voor de aannemer",
-    "- Welke posten zijn inbegrepen vs. meerwerk?",
-    "- Wat is de planning en wie levert materialen?",
+    "Vragen die ik bij twijfel altijd stel:",
+    "- Waarom wijkt de totaalprijs af — andere scope, andere materialen, of ontbrekende posten?",
+    "- Welke offerte is completer over afvoer, vergunning en nazorg?",
+    "- Wat is de geldigheidsduur en welke betalingstermijnen gelden per offerte?",
   ].join("\n");
 }
 
 const COMPARISON_SYSTEM_PROMPT = [
-  "Je vergelijkt twee renovatie-offertes op basis van de meegeleverde tekstfragmenten.",
-  "Gebruik plain text met de volgende sectiekoppen (elk op een eigen regel, daarna de inhoud):",
-  "Scope in offerte A",
-  "Scope in offerte B",
-  "Sterke punten offerte A",
-  "Sterke punten offerte B",
-  "Waar welke offerte beter lijkt te passen",
-  "Waarschijnlijk ontbrekende onderdelen",
-  "Prijs- of scopeverschillen (indien genoemd)",
-  "Risico's / onduidelijke formuleringen",
-  "Als je nog twijfelt — vergelijkingsvragen",
-  "Vragen voor de aannemer",
-  "Wees grondig en concreet: trek citaten of parafraas wat er echt in de tekst staat. Richtlijn lengte: ongeveer 500–800 woorden wanneer de bron dat toelaat; liever inhoudelijk dan oppervlakkig.",
-  "Prijzen en bedragen: nooit verzinnen. Als er geen prijzen in de tekst staan, zeg dat expliciet.",
-  "Bij ‘Waar welke offerte beter lijkt te passen’: denk in termen van snelheid, scope, prijs-kwaliteit, garanties, planning — alleen als de documenten dat toelaten. Voeg een korte disclaimer toe: geen juridisch advies; jouw oordeel is ondersteuning bij lezen, geen vervanging van eigen controle of een second opinion.",
-  "Onder elke kop: bullets of korte alinea’s, wat het leesbaarst is.",
+  "Je vergelijkt twee renovatie-offertes voor een goede vriend, als ervaren bouwkundige: direct, concreet, met een echt oordeel. Nuchter Nederlands, geen marketingtaal, geen formele AI-toon.",
+  "Begin met je overall oordeel: welke offerte zou je nu kiezen, of blijf je twijfelend — en waarom? Durf een standpunt in te nemen waar de tekst dat toelaat.",
+  "Verwijs naar wat er écht in beide offertes staat: specifieke posten, bedragen, formuleringen. Geen clichés die op elke offerte slaan.",
+  "Leg de echte verschillen bloot: scope, prijs (alleen als bedragen in de tekst staan), planning, garanties, meerwerkregeling, stelposten — niet alles hoeft aan bod als het niet speelt.",
+  "Wat ontbreekt: noem concreet wat je bij dít soort werk zou verwachten en in één of beide offertes mist — alleen waar relevant.",
+  "Vermijd AI-tics: geen holle opening- of slotzinnen, geen 'het is belangrijk om…' / 'zorg ervoor dat…', geen overdreven disclaimers of herhaling.",
+  "Geen vast skelet met dezelfde koppen elke keer. Gebruik markdown-koppen (##) alleen waar ze helpen; laat de inhoud leiden. Elke zin moet iets toevoegen.",
+  "Wees uitgebreid genoeg om echt te helpen (richtlijn 500–900 woorden als de bron dat toelaat). Liever scherpe observaties dan oppervlakkige bullets.",
+  "Sluit af met 2–3 scherpe vragen die je aan déze aannemer(s) zou stellen, toegespitst op verschillen en lacunes die je ziet.",
+  "Verzin nooit bedragen of voorwaarden die niet in de tekst staan. Kun je iets niet beoordelen, zeg dat eerlijk.",
 ].join("\n");
 
 export async function POST(req: Request) {
@@ -128,7 +113,7 @@ export async function POST(req: Request) {
   }
 
   const openai = new OpenAI({ apiKey });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const model = process.env.OPENAI_MODEL ?? "gpt-5.4";
 
   const userContent = [
     `Offerte A (${docA.file_name}, id ${docA.id}):`,
@@ -139,15 +124,17 @@ export async function POST(req: Request) {
   ].join("\n");
 
   try {
-    const completion = await openai.chat.completions.create({
-      model,
-      temperature: 0.55,
-      max_tokens: getCompareMaxOutputTokens(),
-      messages: [
-        { role: "system", content: COMPARISON_SYSTEM_PROMPT },
-        { role: "user", content: userContent },
-      ],
-    });
+    const completion = await openai.chat.completions.create(
+      buildOpenAIChatCompletionBody({
+        model,
+        maxTokens: getCompareMaxOutputTokens(),
+        temperature: 0.55,
+        messages: [
+          { role: "system", content: COMPARISON_SYSTEM_PROMPT },
+          { role: "user", content: `Vergelijk deze twee offertes en geef je oordeel:\n\n${userContent}` },
+        ],
+      })
+    );
 
     const comparison = completion.choices?.[0]?.message?.content?.trim();
     return Response.json({

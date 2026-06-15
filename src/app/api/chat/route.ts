@@ -1,10 +1,5 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildProjectContext } from "@/lib/ai/buildProjectContext";
 import { completeChat, type ChatMessageParam } from "@/lib/ai/completeChat";
-import {
-  CHAT_CONTEXT_MAX_TASKS_PER_ROOM,
-  getProjectContextMaxChars,
-  truncateTextForModel,
-} from "@/lib/ai/limits";
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
 import { createUserSupabaseFromRequest } from "@/lib/supabase/api-auth";
 import { isUuid } from "@/lib/supabase/project-access";
@@ -28,18 +23,24 @@ function mockAssistantReply(message: string) {
 export const runtime = "nodejs";
 
 const RENOVATION_COACH_SYSTEM_PROMPT = [
-  "Je bent een ervaren, warme renovatie-assistent in deze app: je helpt bij plannen, keuzes en stress rond de klus — als een goede vriend: empathisch en direct, zonder marketingpraat of overdreven formaliteit.",
+  "Je bent een ervaren verbouw-vriend die meedenkt over het project van de gebruiker in RenoTasker: direct, concreet, met een echt oordeel. Nuchter Nederlands, geen marketingtaal, geen formele AI-toon — je vertelt het alsof je naast iemand zit, geen rapport dat je invult.",
   "Antwoord standaard in het Nederlands, tenzij de gebruiker duidelijk in een andere taal schrijft; schakel dan mee in die taal.",
-  "Domein: woningrenovatie en alles wat daarbij hoort: volgorde van werk, afhankelijkheden, aannemer vs. zelf doen, vergunningen en regels, materialen en kwaliteit, planning en buffer, budget en inschattingen (altijd voorzichtig), stress en prioriteit — ook als er weinig data in de app staat. Gebruik projectcontext als die er is; vul aan met algemene, realistische richtlijnen.",
-  "App-uitleg: je krijgt een aparte kennisbank met RenoTasker-help. Gebruik die om vragen over navigatie, schermen, offertes, financiën, Kluscoach, samenwerking en instellingen nauwkeurig te beantwoorden. Verzin geen functies of menu’s die niet in die kennisbank staan; als iets ontbreekt, zeg dat eerlijk.",
-  "Structuur: geen verplichte vaste koppen bij elk antwoord. Gebruik alleen tussenkopjes of bullets als ze de leesbaarheid echt verbeteren; anders vloeiende alinea’s.",
-  "Lengte: wees uitgebreid genoeg om echt te helpen (richtlijn ongeveer 250–400 woorden wanneer de vraag dat rechtvaardigt). Wees niet eindeloos; liever kernachtig dan opvullen.",
-  "Veiligheid en eerlijkheid gaan vóór ‘gezelligheid’: waarschuw voor risico’s (bijv. elektriciteit, dragende constructies, vocht, gas) en verzin geen prijzen, maten of garanties die niet in de context staan.",
-  "Kosten: geen verzonnen bedragen; spreek van indicaties of globale inschattingen en wat de gebruiker in de app kan aanvullen (budget, taken, offertes).",
-  "Als projectdata ontbreekt of onvolledig is: zeg wat er mist en wat de gebruiker concreet kan toevoegen (kamers, taken, budget, duration_days, prioriteit, losse uitgaven).",
-  "Scope: renovatie/verbouwen/offertes/planning in deze app én uitleg over hoe RenoTasker werkt (zie kennisbank). Geen antwoorden op puur privé-, medische, relationele of algemene levensvragen zonder link met de klus of de app. Bij zulke vragen: kort en vriendelijk doorverwijzen (bijv. stress rond de verbouwing structureren is wél oké; relatieadvies niet). Geen losse chit-chat zonder verbouw- of app-link.",
-  "Opmaak: schrijf elk assistent-antwoord in GitHub Flavored Markdown — gebruik ## of ### voor koppen waar nuttig, genummerde of bulletlijsten, **vet** voor nadruk; geen raw HTML.",
-  "Toon: warm en steunend, maar realistisch en nuchter.",
+  "VORM — default is lopende tekst: een paar korte alinea's, zoals een verbouw-vriend die iets uitlegt. Koppen (##) en bullets zijn de uitzondering, niet de norm.",
+  "Gebruik koppen of lijsten ALLEEN als er echt veel losse, gelijkwaardige punten te ordenen zijn (bijv. een echte stappenlijst). Voor de meeste vragen: geen koppen, hooguit één.",
+  "Noem nooit dezelfde cijfers of conclusie twee keer. Geen losse 'Conclusie'- of samenvattingssectie die herhaalt wat al gezegd is.",
+  "Schaal de lengte naar wat er te zeggen valt. Lengte volgt de inhoud; korte vraag of weinig data (bijv. leeg project) = kort, eerlijk antwoord — niet oppompen tot een rapport met meerdere secties.",
+  "Varieer de opbouw per vraag; geen vast stramien of vaste koppenreeks.",
+  "Gebruik de meegestuurde projectcontext concreet: verwijs naar het échte budget, besteed/resterend, bouwdepot (gebruikt/ingediend/uitbetaald/resterend), kostenposten per categorie en geüploade offertes — geen algemeenheden waar data beschikbaar is.",
+  "Offerte-expertise waar relevant: inbegrepen vs. meerwerk, stelposten, planning, garanties, betaaltermijnen — met concrete vragen aan de aannemer als dat past.",
+  "Wees proactief waar het zinvol is: benoem risico's, ontbrekende data en vervolgstappen — kort verweven in de tekst, niet als aparte checklist tenzij de vraag daarom vraagt.",
+  "App-uitleg: je krijgt een aparte kennisbank met RenoTasker-help. Gebruik die voor navigatie, schermen en instellingen. Verzin geen functies die daar niet staan.",
+  "Vermijd AI-tics: geen holle opening- of slotzinnen, geen 'het is belangrijk om…' / 'zorg ervoor dat…', geen overdreven disclaimers of herhaling. Elke zin moet iets toevoegen.",
+  "Gebruik nooit technische veld- of kolomnamen uit de app. Spreek altijd in natuurlijk Nederlands dat een huiseigenaar begrijpt.",
+  "Veiligheid en eerlijkheid gaan vóór gezelligheid: waarschuw voor risico's (elektriciteit, dragende constructies, vocht, gas). Verzin geen prijzen, maten of garanties die niet in de context staan.",
+  "Kosten: nooit bedragen verzinnen; gebruik alleen cijfers uit de projectcontext of spreek van indicaties als data ontbreekt.",
+  "Als projectdata ontbreekt: zeg kort wat er mist en wat de gebruiker kan toevoegen — zonder een lang opsommingrapport.",
+  "Scope: renovatie/verbouwen/offertes/planning/financiën in deze app én uitleg over RenoTasker. Geen antwoorden op puur privé-, medische of relationele vragen zonder link met de klus of app.",
+  "Opmaak: markdown alleen waar het echt helpt (**vet** voor nadruk); geen raw HTML.",
 ].join("\n");
 
 export async function GET(req: Request) {
@@ -102,140 +103,6 @@ export async function GET(req: Request) {
       updatedAt: String(t.updated_at ?? ""),
     })),
   });
-}
-
-async function buildProjectContext(
-  supabase: SupabaseClient,
-  projectId: string
-): Promise<{ ok: true; text: string } | { ok: false; status: number; error: string }> {
-  const [projectRes, roomsRes, docsRes, expensesRes] = await Promise.all([
-    supabase
-      .from("projects")
-      .select("id,name,total_budget,address,expected_key_handover,notes")
-      .eq("id", projectId)
-      .maybeSingle(),
-    supabase.from("rooms").select("id,name,project_id").eq("project_id", projectId),
-    supabase.from("documents").select("file_name,ai_summary").eq("project_id", projectId),
-    supabase.from("project_expenses").select("title,amount,spent_on,notes").eq("project_id", projectId),
-  ]);
-
-  if (projectRes.error) {
-    console.error("Chat project context", { projectError: projectRes.error.message });
-    return { ok: false, status: 500, error: "Failed to load project." };
-  }
-  if (!projectRes.data) {
-    return { ok: false, status: 404, error: "Project not found." };
-  }
-
-  if (roomsRes.error) {
-    console.error("Chat project context", { roomsError: roomsRes.error.message });
-    return { ok: false, status: 500, error: "Failed to load rooms." };
-  }
-
-  let tasksRes: {
-    data: Array<Record<string, unknown>> | null;
-    error: { message: string } | null;
-  } = { data: [], error: null };
-
-  const rooms = roomsRes.data ?? [];
-  const roomIdList = rooms.map((room) => String(room.id));
-
-  const taskRoomsByTask = new Map<string, string[]>();
-  if (roomIdList.length > 0) {
-    const trRes = await supabase.from("task_rooms").select("task_id,room_id").in("room_id", roomIdList);
-    if (trRes.error) {
-      console.error("Chat project context", { taskRoomsError: trRes.error.message });
-      return { ok: false, status: 500, error: "Failed to load task rooms." };
-    }
-    for (const row of trRes.data ?? []) {
-      const tid = String(row.task_id);
-      const rid = String(row.room_id);
-      const arr = taskRoomsByTask.get(tid) ?? [];
-      arr.push(rid);
-      taskRoomsByTask.set(tid, arr);
-    }
-    const taskIdList = [...taskRoomsByTask.keys()];
-    if (taskIdList.length > 0) {
-      tasksRes = await supabase
-        .from("tasks")
-        .select(
-          "id,title,status,duration_days,priority,description,sort_order,start_date"
-        )
-        .in("id", taskIdList);
-    }
-  }
-
-  if (tasksRes.error) {
-    console.error("Chat project context", { tasksError: tasksRes.error.message });
-    return { ok: false, status: 500, error: "Failed to load tasks." };
-  }
-
-  const scopedTasks = tasksRes.data ?? [];
-
-  const roomLines = rooms.map((room) => {
-    const tasksForRoom = scopedTasks
-      .filter((task) => (taskRoomsByTask.get(String(task.id)) ?? []).includes(String(room.id)))
-      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-      .slice(0, CHAT_CONTEXT_MAX_TASKS_PER_ROOM);
-    const taskSummary =
-      tasksForRoom.length === 0
-        ? "no tasks yet"
-        : tasksForRoom
-            .map(
-              (task) =>
-                `${task.title} [${task.status}, ${task.priority}, ${task.duration_days}d]`
-            )
-            .join("; ");
-    return `- ${room.name}: ${taskSummary}`;
-  });
-
-  const looseExpenses = expensesRes.error ? [] : (expensesRes.data ?? []);
-  const expenseLines =
-    looseExpenses.length === 0
-      ? ["- No loose project expenses recorded yet."]
-      : looseExpenses.map((row: { title?: unknown; amount?: unknown; spent_on?: unknown; notes?: unknown }) => {
-          const title = String(row.title ?? "");
-          const amt = row.amount ?? 0;
-          const when = row.spent_on != null && String(row.spent_on).trim() !== "" ? String(row.spent_on) : "no date";
-          const note = row.notes != null && String(row.notes).trim() !== "" ? ` — ${String(row.notes).slice(0, 80)}` : "";
-          return `- ${title}: ${amt} (${when})${note}`;
-        });
-
-  const docs = docsRes.error ? [] : (docsRes.data ?? []);
-  const docLines =
-    docs.length === 0
-      ? ["- No uploaded documents for this project."]
-      : docs.map((d: { file_name?: unknown; ai_summary?: unknown }) => {
-          const fn = String(d.file_name ?? "file");
-          const sum = d.ai_summary != null && String(d.ai_summary).trim() !== "";
-          return sum
-            ? `- ${fn} (summary): ${String(d.ai_summary).slice(0, 400)}${String(d.ai_summary).length > 400 ? "…" : ""}`
-            : `- ${fn} (run Summarize in Documents to add context)`;
-        });
-
-  const p = projectRes.data as Record<string, unknown>;
-  const text = [
-    `Selected project: ${p.name} (${p.id})`,
-    `Total budget: ${p.total_budget ?? 0}`,
-    p.address ? `Address: ${p.address}` : "",
-    p.expected_key_handover ? `Expected key handover: ${p.expected_key_handover}` : "",
-    p.notes ? `Notes: ${String(p.notes).slice(0, 500)}${String(p.notes).length > 500 ? "…" : ""}` : "",
-    `Rooms: ${rooms.length}`,
-    `Tasks: ${scopedTasks.length}`,
-    "Loose project expenses (hardware store, materials not tied to one task):",
-    ...expenseLines,
-    "Uploaded documents (for quote context):",
-    ...docLines,
-    "If any of these are missing, mention that clearly and ask the user to add them: rooms, tasks, total budget, duration_days, priority, and loose expenses if they shop outside tasks.",
-    `Per room at most ${CHAT_CONTEXT_MAX_TASKS_PER_ROOM} tasks are listed (sorted by sort_order).`,
-    "Room/task details:",
-    ...roomLines,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const capped = truncateTextForModel(text, getProjectContextMaxChars());
-  return { ok: true, text: capped.text };
 }
 
 export async function POST(req: Request) {
@@ -367,7 +234,7 @@ export async function POST(req: Request) {
       ? [
           {
             role: "system" as const,
-            content: `Use this project context when giving advice. Ground your answer in this data and highlight missing planning data explicitly:\n${projectContext}`,
+            content: `Gebruik onderstaande projectcontext bij je advies. Baseer je antwoord op deze data, gebruik de cijfers concreet in natuurlijk Nederlands (geen technische veldnamen) en benoem expliciet ontbrekende gegevens:\n${projectContext}`,
           },
         ]
       : []),

@@ -17,16 +17,28 @@ type DocumentRow = {
 
 function mockSummary(fileName: string) {
   return [
-    "Wat offerte waarschijnlijk bevat:",
-    `- Basisposten voor ${fileName} zoals materiaal en arbeid.`,
+    `Ik kan **${fileName}** nu niet inhoudelijk beoordelen — de tekst is niet betrouwbaar uitgelezen. Dit is dus geen oordeel over prijs of scope, alleen wat je zelf nog moet nalopen.`,
     "",
-    "Mogelijke ontbrekende onderdelen:",
-    "- Afvoer/afwerking, meerwerk, en planningdetails per fase.",
+    "Zonder de echte posten zie je niet of de offerte compleet is. Check in elk geval: staan stelposten en meerwerk expliciet geregeld, wie afvoer en vergunning doet, hoe btw is verwerkt, en tot wanneer de offerte geldt met welke betaaltermijnen.",
     "",
-    "Risico's / onduidelijkheden:",
-    "- Scope kan onvolledig zijn; controleer aannames, uitsluitingen en geldigheidsduur.",
+    "Vragen die ik nu al zou stellen:",
+    "- Welke posten zijn inclusief en wat rekent de aannemer als meerwerk?",
+    "- Zitten afvoer, opruimen en nazorg in de prijs?",
+    "- Wat is de geldigheidsduur en wanneer betaal je welk deel?",
   ].join("\n");
 }
+
+const SUMMARIZE_SYSTEM_PROMPT = [
+  "Je leest een renovatie-offerte alsof je een ervaren aannemer/bouwkundige bent die een goede vriend helpt: direct, concreet, met een echt oordeel. Nuchter Nederlands, geen marketingtaal, geen formele AI-toon.",
+  "Geef een echte conclusie vroeg in je antwoord: oogt dit compleet, redelijk, of scheef — en waarom? Durf een standpunt in te nemen waar de tekst dat toelaat; niet alleen neutraal beschrijven.",
+  "Verwijs naar wat er écht in de offerte staat: specifieke posten, bedragen, formuleringen. Geen clichés die op elke offerte slaan.",
+  "Wat ontbreekt: noem concreet wat je bij dít soort werk zou verwachten en hier mist (stelposten, afvoer, vergunning, meerwerkregeling, btw, geldigheidsduur, betaaltermijnen) — alleen waar het relevant is.",
+  "Vermijd AI-tics: geen holle opening- of slotzinnen, geen 'het is belangrijk om…' / 'zorg ervoor dat…', geen overdreven disclaimers of herhaling.",
+  "Geen vast skelet met dezelfde koppen elke keer. Gebruik markdown-koppen (##) alleen waar ze helpen; laat de inhoud leiden. Elke zin moet iets toevoegen.",
+  "Wees uitgebreid genoeg om echt te helpen (richtlijn 250–450 woorden als de bron dat toelaat). Liever scherpe, concrete observaties dan oppervlakkige bullets.",
+  "Sluit af met 2–3 scherpe vragen die je aan déze aannemer zou stellen, toegespitst op wat er in de offerte staat of mist.",
+  "Verzin nooit bedragen of voorwaarden die niet in de tekst staan. Kun je iets niet beoordelen (bijv. prijs zonder referentie), zeg dat eerlijk.",
+].join("\n");
 
 export async function POST(req: Request) {
   const ip = clientIpFromRequest(req);
@@ -80,19 +92,11 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: [
-            "Je vat renovatie-offertes samen voor gebruikers van deze app. Toon: warm en praktisch, nuchter, geen marketingtaal.",
-            "Antwoord in het Nederlands in plain text met exact deze koppen (elk op een eigen regel):",
-            "Wat de offerte bevat",
-            "Mogelijk ontbreekt",
-            "Risico of onduidelijk",
-            "Onder elke kop: 1–4 korte bullets. Totaal ongeveer 120–200 woorden; wees concreet.",
-            "Verzin geen bedragen, posten of voorwaarden die niet in de brontekst staan. Als iets onduidelijk is, zeg dat.",
-          ].join("\n"),
+          content: SUMMARIZE_SYSTEM_PROMPT,
         },
         {
           role: "user",
-          content: `Vat deze offertetekst samen:\n\n${extractedText}`,
+          content: `Lees deze offertetekst door en geef je oordeel:\n\n${extractedText}`,
         },
       ],
     });

@@ -3,7 +3,7 @@
  * Override via env in deployment (see `.env.example`).
  */
 
-const DEFAULT_CHAT_MAX_OUTPUT_TOKENS = 1200;
+const DEFAULT_CHAT_MAX_OUTPUT_TOKENS = 2000;
 const DEFAULT_COMPARE_MAX_OUTPUT_TOKENS = 2800;
 const DEFAULT_PROJECT_CONTEXT_MAX_CHARS = 32_000;
 /** Per PDF fragment passed to compare (each document). */
@@ -13,6 +13,9 @@ const DEFAULT_HELP_KB_MAX_CHARS = 28_000;
 
 /** Max tasks listed per room in chat project context (avoids huge dumps). */
 export const CHAT_CONTEXT_MAX_TASKS_PER_ROOM = 20;
+
+/** Max characters per offerte-samenvatting in chat project context. */
+export const CHAT_CONTEXT_QUOTE_SUMMARY_MAX_CHARS = 800;
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
