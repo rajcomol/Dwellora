@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import BudgetOverviewSection from "@/components/dashboard/BudgetOverviewSection";
 import DashboardStatGrid from "@/components/dashboard/DashboardStatGrid";
+import FirstStepsCard from "@/components/dashboard/FirstStepsCard";
 import LooseExpensesSection from "@/components/dashboard/LooseExpensesSection";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
@@ -40,6 +41,8 @@ export default function DashboardInsightsClient() {
 
   return (
     <div className="space-y-6">
+      <FirstStepsCard />
+
       <section
         data-tour="dashboard-hero"
         className="motion-safe-fade-in rounded-2xl border border-renovation-border bg-renovation-elevated p-6 shadow-renovation-card outline-none dark:border dark:border-renovation-border dark:bg-renovation-elevated sm:p-8"

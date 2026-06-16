@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
@@ -89,6 +90,18 @@ export default function ProjectSwitcher({ compact }: { compact?: boolean }) {
                 </button>
               </li>
             ))}
+            <li aria-hidden className="my-1 border-t border-renovation-border dark:border-renovation-border" />
+            <li>
+              <Link
+                href="/dashboard/projects"
+                role="option"
+                data-testid="project-switcher-new-project"
+                className="block w-full px-3 py-2 text-left text-sm font-medium text-renovation-steel hover:bg-renovation-muted dark:text-renovation-accent dark:hover:bg-renovation-muted"
+                onClick={() => setOpen(false)}
+              >
+                {t("layout.topBar.newProject")}
+              </Link>
+            </li>
           </ul>
         </>
       ) : null}

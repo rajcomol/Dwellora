@@ -1,5 +1,5 @@
-import DashboardInsightsClient from "@/components/dashboard/DashboardInsightsClient";
+import DashboardHomeClient from "@/components/dashboard/DashboardHomeClient";
 
 export default function DashboardPage() {
-  return <DashboardInsightsClient />;
+  return <DashboardHomeClient />;
 }

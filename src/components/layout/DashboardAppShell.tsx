@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import NoProjectGate from "@/components/dashboard/NoProjectGate";
 import BottomNav from "@/components/layout/BottomNav";
 import TabNav from "@/components/layout/TabNav";
 import TopBar from "@/components/layout/TopBar";
@@ -22,7 +23,7 @@ export default function DashboardAppShell({ children }: { children: ReactNode })
         data-tour="dashboard-main"
         className="min-w-0 flex-1 bg-renovation-app px-4 py-6 pb-24 sm:px-6 md:pb-6"
       >
-        {children}
+        <NoProjectGate>{children}</NoProjectGate>
       </main>
       <BottomNav />
       <footer className="hidden border-t border-renovation-border px-6 py-3 text-xs text-renovation-concrete md:block dark:border-renovation-border">

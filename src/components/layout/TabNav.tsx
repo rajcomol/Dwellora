@@ -32,6 +32,7 @@ export default function TabNav() {
             <Link
               key={item.href}
               href={href}
+              data-tour={item.tourTarget}
               className={tabNavLinkClass(active)}
               aria-current={active ? "page" : undefined}
             >

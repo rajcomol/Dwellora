@@ -1,5 +1,8 @@
 import { sortTasksForPlanning } from "@/lib/renovation/planningSort";
+import { uniqueTasksById } from "@/lib/renovation/sharedTask";
 import type { Task } from "@/lib/renovation/types";
+
+export { uniqueTasksById };
 
 export type PlanningRow = {
   task: Task;
@@ -36,7 +39,7 @@ export function buildPlanningRows(
   totalDays: number;
   remainingDays: number;
 } {
-  const sorted = sortTasksForPlanning(tasks);
+  const sorted = sortTasksForPlanning(uniqueTasksById(tasks));
   const anchor = planningStartDate?.trim() || null;
 
   let cumulative = 0;

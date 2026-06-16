@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import BouwdepotSectie from "@/components/dashboard/BouwdepotSectie";
 import KostenBewerkModal from "@/components/dashboard/KostenBewerkModal";
@@ -227,6 +228,7 @@ type CategoryGroup = {
 
 export default function FinancesPageClient() {
   const { t } = useI18n();
+  const searchParams = useSearchParams();
   const { selectedProject, selectedProjectId } = useSelectedProject();
   const { projects, projectExpenses, isRenovationDataReady, deleteProjectExpense } = useRenovation();
 
@@ -308,6 +310,12 @@ export default function FinancesPageClient() {
     setEditingRegel(null);
     setBewerkOpen(true);
   }
+
+  useEffect(() => {
+    if (searchParams.get("add") === "1" && projectId) {
+      openAddFlow();
+    }
+  }, [searchParams, projectId]);
 
   function openEdit(regel: KostenRegel) {
     setEditingRegel(regel);

@@ -1,3 +1,5 @@
+// Bij elke UI/functie-wijziging: werk het bijbehorende help-artikel hier én in nl.json bij (kennisbank mag niet verouderen).
+
 import type { HelpArticle, HelpArticleId, HelpCategoryId } from "./types";
 
 export type HelpCategoryDef = {
@@ -11,17 +13,27 @@ export const HELP_CATEGORIES: HelpCategoryDef[] = [
   {
     id: "getting-started",
     titleKey: "help.category.gettingStarted",
-    articleIds: ["welcome-overview", "navigation-sidebar", "dashboard-metrics"],
+    articleIds: ["welcome-overview", "projects-create", "navigation-sidebar", "dashboard-metrics"],
   },
   {
     id: "projects-rooms",
     titleKey: "help.category.projectsRooms",
-    articleIds: ["projects-create", "project-samenwerking", "rooms-tasks"],
+    articleIds: ["rooms-tasks", "tasks-manage"],
   },
   {
     id: "tasks-planning",
     titleKey: "help.category.tasksPlanning",
-    articleIds: ["planning-timeline", "tasks-dependencies"],
+    articleIds: ["planning-timeline"],
+  },
+  {
+    id: "sfeerbeeld",
+    titleKey: "help.category.sfeerbeeld",
+    articleIds: ["sfeerbeeld"],
+  },
+  {
+    id: "finances-budget",
+    titleKey: "help.category.financesBudget",
+    articleIds: ["finances-expenses", "bouwdepot"],
   },
   {
     id: "quotes-documents",
@@ -29,19 +41,9 @@ export const HELP_CATEGORIES: HelpCategoryDef[] = [
     articleIds: ["quotes-offertes"],
   },
   {
-    id: "finances-budget",
-    titleKey: "help.category.financesBudget",
-    articleIds: ["finances-expenses"],
-  },
-  {
     id: "ai-coach",
     titleKey: "help.category.aiCoach",
     articleIds: ["kluscoach-ai"],
-  },
-  {
-    id: "reports",
-    titleKey: "help.category.reports",
-    articleIds: ["reports-insights"],
   },
   {
     id: "settings-account",
@@ -58,55 +60,55 @@ export const HELP_CATEGORIES: HelpCategoryDef[] = [
 const ARTICLE_META: Record<HelpArticleId, Pick<HelpArticle, "categoryId" | "tags">> = {
   "welcome-overview": {
     categoryId: "getting-started",
-    tags: ["dashboard", "overzicht", "start", "welkom", "metrics", "hero"],
+    tags: ["dashboard", "overzicht", "start", "welkom", "volgende stap"],
   },
   "navigation-sidebar": {
     categoryId: "getting-started",
-    tags: ["menu", "navigatie", "projecten", "planning", "instellingen", "hamburger", "zijbalk"],
+    tags: ["menu", "navigatie", "tabbladen", "project", "help", "kluscoach"],
   },
   "dashboard-metrics": {
     categoryId: "getting-started",
-    tags: ["kerncijfers", "budget", "taken", "inzichten", "volgende stap", "grafiek"],
+    tags: ["kerncijfers", "budget", "taken", "bouwdepot", "opleverdatum", "volgende stap"],
   },
   "projects-create": {
-    categoryId: "projects-rooms",
-    tags: ["project", "aanmaken", "budget", "adres", "sleutel", "nieuw"],
-  },
-  "project-samenwerking": {
-    categoryId: "projects-rooms",
-    tags: ["samenwerken", "medebewoner", "uitnodigen", "eigenaar", "delen", "project"],
+    categoryId: "getting-started",
+    tags: ["project", "aanmaken", "kiezen", "switcher", "budget", "wisselen"],
   },
   "rooms-tasks": {
     categoryId: "projects-rooms",
-    tags: ["kamer", "ruimte", "taak", "prioriteit", "status", "kosten", "upload"],
+    tags: ["kamer", "ruimte", "kaart", "voortgang", "overzicht"],
+  },
+  "tasks-manage": {
+    categoryId: "projects-rooms",
+    tags: ["taak", "taken", "status", "prioriteit", "duur", "gedeeld", "multi-ruimte"],
   },
   "planning-timeline": {
     categoryId: "tasks-planning",
-    tags: ["planning", "tijdlijn", "volgorde", "doorlooptijd", "gantt"],
+    tags: ["planning", "tijdlijn", "startdatum", "volgorde", "gantt"],
   },
-  "tasks-dependencies": {
-    categoryId: "tasks-planning",
-    tags: ["afhankelijkheid", "blocked", "volgorde", "eerst", "dan"],
+  sfeerbeeld: {
+    categoryId: "sfeerbeeld",
+    tags: ["sfeerbeeld", "ai", "foto", "visualisatie", "planner", "gevel", "voordeur"],
   },
   "quotes-offertes": {
-    tags: ["offerte", "pdf", "document", "vergelijken", "upload", "samenvatting", "ai"],
     categoryId: "quotes-documents",
+    tags: ["offerte", "pdf", "document", "vergelijken", "upload", "samenvatting", "ai"],
   },
   "finances-expenses": {
     categoryId: "finances-budget",
-    tags: ["financiën", "uitgave", "bon", "factuur", "budget", "bewijsstuk"],
+    tags: ["financiën", "kostenpost", "budget", "uitgave", "categorie", "filter"],
+  },
+  bouwdepot: {
+    categoryId: "finances-budget",
+    tags: ["bouwdepot", "hypotheek", "depot", "ingediend", "uitbetaald", "bank"],
   },
   "kluscoach-ai": {
     categoryId: "ai-coach",
     tags: ["ai", "kluscoach", "chat", "hulp", "vragen", "thread", "project"],
   },
-  "reports-insights": {
-    categoryId: "reports",
-    tags: ["rapport", "kosten", "schatting", "werkelijk", "filter", "export"],
-  },
   "settings-security": {
     categoryId: "settings-account",
-    tags: ["instellingen", "wachtwoord", "thema", "account", "locale", "taal"],
+    tags: ["instellingen", "wachtwoord", "thema", "account", "checklist", "projectgegevens"],
   },
   "collaboration-invites": {
     categoryId: "settings-account",

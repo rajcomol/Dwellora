@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { dismissOnboardingTour, killTour, waitForDashboardAppReady } from "./auth";
+import { schedulePwProjectCleanup } from "./cleanup";
 
 type CreateProjectOptions = {
   name: string;
@@ -135,6 +136,7 @@ export async function createProject(
   if (!projectId) {
     throw new Error(`Could not determine project id for ${name}`);
   }
+  schedulePwProjectCleanup(name);
   return projectId;
 }
 
@@ -193,6 +195,20 @@ export function getProjectRoomCard(page: Page, roomName: string): Locator {
   return page.getByTestId("rooms-overview-card").filter({ hasText: roomName }).first();
 }
 
+export async function setTaskRooms(form: Locator, selectedRoomNames: string[], allRoomNames: string[]): Promise<void> {
+  const fieldset = form.getByTestId("task-room-select");
+  await expect(fieldset).toBeVisible({ timeout: 30_000 });
+  for (const roomName of allRoomNames) {
+    const checkbox = fieldset.getByRole("checkbox", { name: roomName, exact: true });
+    const shouldCheck = selectedRoomNames.includes(roomName);
+    if (shouldCheck) {
+      await checkbox.check();
+    } else {
+      await checkbox.uncheck();
+    }
+  }
+}
+
 export async function addTaskToRoom(
   page: Page,
   roomName: string,
@@ -202,8 +218,6 @@ export async function addTaskToRoom(
     extraRooms = [],
   }: CreateTaskOptions = {}
 ): Promise<void> {
-  void extraRooms;
-
   await openRoomDetail(page, roomName);
 
   const form = page.getByTestId("room-task-form");
@@ -212,6 +226,11 @@ export async function addTaskToRoom(
 
   if (durationDays !== undefined) {
     await form.getByLabel("Duur (dagen)").fill(durationDays);
+  }
+
+  if (extraRooms.length > 0) {
+    const allRooms = [roomName, ...extraRooms];
+    await setTaskRooms(form, allRooms, allRooms);
   }
 
   await form.getByRole("button", { name: "Opslaan" }).click();

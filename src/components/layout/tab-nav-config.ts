@@ -4,6 +4,8 @@ export type TabNavItem = {
   match: (pathname: string) => boolean;
   /** Shown in bottom nav (max 4 primary + more) */
   primaryMobile?: boolean;
+  /** Stable target for the optional Help-rondleiding */
+  tourTarget: string;
 };
 
 export function matchDashboard(path: string) {
@@ -38,13 +40,52 @@ export function matchSettings(path: string) {
 }
 
 export const TAB_NAV_ITEMS: TabNavItem[] = [
-  { href: "/dashboard", labelKey: "nav.tabs.dashboard", match: matchDashboard, primaryMobile: true },
-  { href: "/dashboard/rooms", labelKey: "nav.tabs.rooms", match: matchRooms, primaryMobile: true },
-  { href: "/dashboard/planning", labelKey: "nav.tabs.planning", match: matchPlanning, primaryMobile: true },
-  { href: "/dashboard/planner", labelKey: "nav.tabs.planner", match: matchPlanner },
-  { href: "/dashboard/finances", labelKey: "nav.tabs.finances", match: matchFinances, primaryMobile: true },
-  { href: "/dashboard/quotes", labelKey: "nav.tabs.quotes", match: matchQuotes },
-  { href: "/dashboard/settings", labelKey: "nav.tabs.settings", match: matchSettings },
+  {
+    href: "/dashboard",
+    labelKey: "nav.tabs.dashboard",
+    match: matchDashboard,
+    primaryMobile: true,
+    tourTarget: "tour-tab-dashboard",
+  },
+  {
+    href: "/dashboard/rooms",
+    labelKey: "nav.tabs.rooms",
+    match: matchRooms,
+    primaryMobile: true,
+    tourTarget: "tour-tab-rooms",
+  },
+  {
+    href: "/dashboard/planning",
+    labelKey: "nav.tabs.planning",
+    match: matchPlanning,
+    primaryMobile: true,
+    tourTarget: "tour-tab-planning",
+  },
+  {
+    href: "/dashboard/planner",
+    labelKey: "nav.tabs.planner",
+    match: matchPlanner,
+    tourTarget: "tour-tab-planner",
+  },
+  {
+    href: "/dashboard/finances",
+    labelKey: "nav.tabs.finances",
+    match: matchFinances,
+    primaryMobile: true,
+    tourTarget: "tour-tab-finances",
+  },
+  {
+    href: "/dashboard/quotes",
+    labelKey: "nav.tabs.quotes",
+    match: matchQuotes,
+    tourTarget: "tour-tab-quotes",
+  },
+  {
+    href: "/dashboard/settings",
+    labelKey: "nav.tabs.settings",
+    match: matchSettings,
+    tourTarget: "tour-tab-settings",
+  },
 ];
 
 export const MOBILE_PRIMARY_TABS = TAB_NAV_ITEMS.filter((t) => t.primaryMobile);

@@ -49,4 +49,12 @@ describe("buildPlanningRows", () => {
     expect(rows[0].estimatedStart).toBeUndefined();
     expect(rows[0].estimatedEnd).toBeUndefined();
   });
+
+  it("counts a shared task once when the input list contains duplicates", () => {
+    const shared = task({ id: "1", title: "Gedeeld", roomIds: ["r1", "r2"], sortOrder: 0, durationDays: 4 });
+    const duplicate = task({ id: "1", title: "Gedeeld", roomIds: ["r2"], sortOrder: 0, durationDays: 4 });
+    const { rows, totalDays } = buildPlanningRows([shared, duplicate]);
+    expect(rows).toHaveLength(1);
+    expect(totalDays).toBe(4);
+  });
 });

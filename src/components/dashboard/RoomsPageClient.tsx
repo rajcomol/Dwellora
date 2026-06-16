@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import RoomOverviewCard from "@/components/dashboard/RoomOverviewCard";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
@@ -12,10 +13,12 @@ import {
   previewTasksForRoom,
   tasksForRoom,
 } from "@/lib/dashboard/roomOverview";
+import { uniqueTasksById } from "@/lib/renovation/sharedTask";
 import { roomNameFormSchema } from "@/lib/validation/schemas";
 
 export default function RoomsPageClient() {
   const { t } = useI18n();
+  const searchParams = useSearchParams();
   const { selectedProjectId } = useSelectedProject();
   const { rooms, tasks, createRoom, projects, isRenovationDataReady } = useRenovation();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -32,8 +35,12 @@ export default function RoomsPageClient() {
 
   const projectTasks = useMemo(() => {
     if (!selectedProjectId) return [];
-    return tasks.filter(
-      (tk) => tk.projectId === selectedProjectId || tk.roomIds.some((rid) => projectRooms.some((r) => r.id === rid))
+    return uniqueTasksById(
+      tasks.filter(
+        (tk) =>
+          tk.projectId === selectedProjectId ||
+          tk.roomIds.some((rid) => projectRooms.some((r) => r.id === rid))
+      )
     );
   }, [tasks, selectedProjectId, projectRooms]);
 
@@ -53,6 +60,12 @@ export default function RoomsPageClient() {
   function openAddRoomForm() {
     setShowAddForm(true);
   }
+
+  useEffect(() => {
+    if (searchParams.get("addRoom") === "1") {
+      setShowAddForm(true);
+    }
+  }, [searchParams]);
 
   if (!isRenovationDataReady) {
     return <DashboardPageSkeleton />;

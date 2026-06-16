@@ -20,6 +20,7 @@ export default function BottomNav() {
   return (
     <>
       <nav
+        data-tour="bottom-nav"
         className="fixed inset-x-0 bottom-0 z-40 flex border-t border-renovation-border bg-renovation-elevated md:hidden dark:border-renovation-border dark:bg-renovation-elevated"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         aria-label={t("layout.bottomNav.ariaLabel")}
@@ -31,6 +32,7 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={href}
+              data-tour={item.tourTarget}
               className={[
                 "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium",
                 active ? "font-medium text-renovation-steel" : "text-renovation-concrete",

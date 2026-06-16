@@ -163,6 +163,7 @@ export const taskFormFieldsSchema = z.object({
 
 export const roomTaskFormSchema = z.object({
   title: z.string().trim().min(1),
+  roomIds: z.array(z.string().uuid()).min(1),
   durationDays: z
     .string()
     .transform((s) => (s.trim() === "" ? 0 : Number.parseInt(s, 10)))

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
 import RoomTaskForm from "@/components/dashboard/RoomTaskForm";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useSelectedProject } from "@/components/layout/SelectedProjectContext";
@@ -16,11 +17,23 @@ type Props = { roomId: string };
 
 export default function RoomDetailPageClient({ roomId }: Props) {
   const { t } = useI18n();
+  const searchParams = useSearchParams();
+  const createTaskFormRef = useRef<HTMLDivElement>(null);
   const { selectedProjectId } = useSelectedProject();
   const { rooms, tasks, teamRoster, createTask, deleteRoom, deleteTask, updateTask, isRenovationDataReady } =
     useRenovation();
 
   const room = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
+  const projectRooms = useMemo(
+    () =>
+      room
+        ? rooms
+            .filter((r) => r.projectId === room.projectId)
+            .sort((a, b) => a.name.localeCompare(b.name, "nl"))
+            .map((r) => ({ id: r.id, name: r.name }))
+        : [],
+    [room, rooms]
+  );
   const roomTasks = useMemo(
     () => (room ? sortTasksForPlanning(tasks.filter((tk) => tk.roomIds.includes(room.id))) : []),
     [room, tasks]
@@ -36,6 +49,11 @@ export default function RoomDetailPageClient({ roomId }: Props) {
     completed,
     roomTasks.map((tk) => tk.status)
   );
+
+  useEffect(() => {
+    if (searchParams.get("focus") !== "create-task") return;
+    createTaskFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [searchParams, room?.id]);
 
   if (!isRenovationDataReady) {
     return <DashboardPageSkeleton />;
@@ -80,11 +98,14 @@ export default function RoomDetailPageClient({ roomId }: Props) {
               key={tk.id}
               mode="edit"
               task={tk}
+              currentRoomId={room.id}
+              projectRooms={projectRooms}
               rosterOptions={rosterOptions}
               onSubmit={async (values) =>
                 updateTask({
                   id: values.id,
                   title: values.title,
+                  roomIds: values.roomIds,
                   durationDays: values.durationDays,
                   priority: values.priority,
                   renovationPhase: values.renovationPhase,
@@ -103,25 +124,28 @@ export default function RoomDetailPageClient({ roomId }: Props) {
         )}
       </ul>
 
-      <RoomTaskForm
-        mode="create"
-        roomId={room.id}
-        projectId={room.projectId}
-        rosterOptions={rosterOptions}
-        onSubmit={async (values) =>
-          createTask({
-            title: values.title,
-            projectId: room.projectId,
-            roomIds: [room.id],
-            status: values.status,
-            durationDays: values.durationDays,
-            priority: values.priority,
-            renovationPhase: values.renovationPhase ?? DEFAULT_RENOVATION_PHASE,
-            description: values.description,
-            assignedRosterId: values.assignedRosterId,
-          })
-        }
-      />
+      <div ref={createTaskFormRef}>
+        <RoomTaskForm
+          mode="create"
+          roomId={room.id}
+          projectId={room.projectId}
+          projectRooms={projectRooms}
+          rosterOptions={rosterOptions}
+          onSubmit={async (values) =>
+            createTask({
+              title: values.title,
+              projectId: room.projectId,
+              roomIds: values.roomIds,
+              status: values.status,
+              durationDays: values.durationDays,
+              priority: values.priority,
+              renovationPhase: values.renovationPhase ?? DEFAULT_RENOVATION_PHASE,
+              description: values.description,
+              assignedRosterId: values.assignedRosterId,
+            })
+          }
+        />
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <Link

@@ -250,12 +250,15 @@ export async function buildProjectContext(
   }
 
   const scopedTasks = tasksRes.data ?? [];
+  const uniqueTaskCount = new Set(scopedTasks.map((task) => String(task.id))).size;
   const project = mapProjectRow(projectRes.data as Record<string, unknown>);
   const expenses = expensesRes.error
     ? []
     : (expensesRes.data ?? []).map((row) => mapExpenseRow(row as Record<string, unknown>));
 
   const planningStart = project.planningStartDate ?? "niet ingesteld";
+
+  const roomNameById = new Map(rooms.map((room) => [String(room.id), String(room.name)]));
 
   const roomLines = rooms.map((room) => {
     const tasksForRoom = scopedTasks
@@ -270,11 +273,28 @@ export async function buildProjectContext(
               const status = STATUS_LABELS[(task.status as TaskStatus) ?? "todo"] ?? String(task.status);
               const priority =
                 PRIORITY_LABELS[(task.priority as TaskPriority) ?? "medium"] ?? String(task.priority);
-              return `${task.title} [${status}, prioriteit ${priority}, geschatte duur ca. ${task.duration_days} werkdagen]`;
+              const linkedRoomIds = taskRoomsByTask.get(String(task.id)) ?? [];
+              const sharedNote =
+                linkedRoomIds.length > 1
+                  ? ` (gedeeld met ${linkedRoomIds
+                      .filter((rid) => rid !== String(room.id))
+                      .map((rid) => roomNameById.get(rid) ?? rid)
+                      .join(", ")})`
+                  : "";
+              return `${task.title}${sharedNote} [${status}, prioriteit ${priority}, geschatte duur ca. ${task.duration_days} werkdagen]`;
             })
             .join("; ");
     return `- ${room.name}: ${taskSummary}`;
   });
+
+  const sharedTaskLines = scopedTasks
+    .filter((task) => (taskRoomsByTask.get(String(task.id)) ?? []).length > 1)
+    .map((task) => {
+      const names = (taskRoomsByTask.get(String(task.id)) ?? [])
+        .map((rid) => roomNameById.get(rid) ?? rid)
+        .join(", ");
+      return `- ${task.title}: ${names}`;
+    });
 
   const docs = docsRes.error ? [] : (docsRes.data ?? []);
   const docLines =
@@ -303,7 +323,7 @@ export async function buildProjectContext(
       ? `Notities: ${String(project.notes).slice(0, 500)}${String(project.notes).length > 500 ? "…" : ""}`
       : "",
     `Kamers: ${rooms.length}`,
-    `Taken: ${scopedTasks.length}`,
+    `Taken: ${uniqueTaskCount}`,
     ...formatBudgetOverview(project, expenses),
     "Kostenposten (per categorie):",
     ...groupExpensesByCategory(expenses),
@@ -311,6 +331,10 @@ export async function buildProjectContext(
     ...docLines,
     "Ontbrekende gegevens expliciet benoemen en vragen om aan te vullen waar nodig: kamers, taken, budget, eigen geld, bouwdepot, planning startdatum, geschatte duur per taak, prioriteit en kostenposten.",
     `Per kamer worden maximaal ${CHAT_CONTEXT_MAX_TASKS_PER_ROOM} taken getoond, in planningvolgorde.`,
+    sharedTaskLines.length > 0
+      ? "Gedeelde taken (één taak gekoppeld aan meerdere ruimtes; tel mee als één taak in totalen):"
+      : "",
+    ...(sharedTaskLines.length > 0 ? sharedTaskLines : []),
     "Kamers en taken:",
     ...roomLines,
   ]

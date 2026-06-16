@@ -1,5 +1,6 @@
 import { buildPlanningRows } from "@/lib/renovation/planningSchedule";
 import { compareTasksForPlanning } from "@/lib/renovation/planningSort";
+import { uniqueTasksById } from "@/lib/renovation/sharedTask";
 import type { Room, Task } from "@/lib/renovation/types";
 
 export type RoomTaskSummaryRow = {
@@ -27,7 +28,7 @@ export function buildRoomSummariesFromTasks(
   tasks: Task[],
   planningStartDate: string | null = null
 ): RoomTaskSummaryRow[] {
-  const { rows } = buildPlanningRows(tasks, planningStartDate);
+  const { rows } = buildPlanningRows(uniqueTasksById(tasks), planningStartDate);
   const datesByTaskId = new Map(
     rows.map((row) => [row.task.id, { start: row.estimatedStart ?? null, end: row.estimatedEnd ?? null }])
   );

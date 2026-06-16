@@ -11,6 +11,7 @@ import {
 } from "@/lib/dashboard/projectBudget";
 import { formatCurrency } from "@/lib/format/currency";
 import { formatDisplayDate } from "@/lib/format/dateDisplay";
+import { uniqueTasksById } from "@/lib/renovation/sharedTask";
 import type { Project, ProjectExpense, Task } from "@/lib/renovation/types";
 
 function StatCard({
@@ -46,7 +47,7 @@ function statsForProject(
   const overview = computeProjectSpendOverview(project, projectExpenses);
   const depotUsage = computeBouwdepotUsage(project, projectExpenses);
   const depotRemaining = depotUsage.remainingAmount;
-  const projectTasks = tasks.filter((tk) => tk.projectId === project.id);
+  const projectTasks = uniqueTasksById(tasks.filter((tk) => tk.projectId === project.id));
   const total = projectTasks.length;
   const done = projectTasks.filter((tk) => tk.status === "done").length;
   const days = daysUntilKeyHandover(project.expectedKeyHandover);

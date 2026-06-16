@@ -6,16 +6,19 @@ import type { HelpArticleId } from "@/content/help/types";
  */
 const ROUTE_TOPIC_RULES: { test: RegExp; topic: HelpArticleId }[] = [
   { test: /^\/dashboard\/?$/, topic: "welcome-overview" },
-  { test: /^\/dashboard\/projects\/?$/, topic: "projects-create" },
-  { test: /^\/dashboard\/projects\/[^/]+\/finances/, topic: "finances-expenses" },
-  { test: /^\/dashboard\/projects\/[^/]+\/planning/, topic: "planning-timeline" },
-  /** Projectoverzicht (tabs Overzicht / ruimtes & taken): samenwerking + structuur */
-  { test: /^\/dashboard\/projects\/[^/]+/, topic: "project-samenwerking" },
-  { test: /^\/dashboard\/planning/, topic: "planning-timeline" },
-  { test: /^\/dashboard\/quotes/, topic: "quotes-offertes" },
-  { test: /^\/dashboard\/reports/, topic: "reports-insights" },
-  { test: /^\/dashboard\/settings/, topic: "settings-security" },
   { test: /^\/dashboard\/help/, topic: "navigation-sidebar" },
+  { test: /^\/dashboard\/rooms\/[^/]+/, topic: "tasks-manage" },
+  { test: /^\/dashboard\/rooms/, topic: "rooms-tasks" },
+  { test: /^\/dashboard\/planner/, topic: "sfeerbeeld" },
+  { test: /^\/dashboard\/planning/, topic: "planning-timeline" },
+  { test: /^\/dashboard\/projects\/[^/]+\/planning/, topic: "planning-timeline" },
+  { test: /^\/dashboard\/projects\/[^/]+\/finances/, topic: "finances-expenses" },
+  { test: /^\/dashboard\/projects\/[^/]+\/settings/, topic: "settings-security" },
+  { test: /^\/dashboard\/finances/, topic: "finances-expenses" },
+  { test: /^\/dashboard\/bouwdepot/, topic: "bouwdepot" },
+  { test: /^\/dashboard\/quotes/, topic: "quotes-offertes" },
+  { test: /^\/dashboard\/settings/, topic: "settings-security" },
+  { test: /^\/dashboard\/projects\/?$/, topic: "projects-create" },
 ];
 
 export function helpTopicForPath(pathname: string): HelpArticleId | null {

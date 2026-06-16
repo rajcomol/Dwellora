@@ -1,120 +1,94 @@
 import type { Step } from "react-joyride";
-import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { TranslateFn } from "@/i18n/create-translator";
 import { getFirstVisibleTourTarget } from "@/lib/help/tour-targets";
 import { waitForElement } from "@/lib/help/wait-for-element";
 
 type BuildArgs = {
   t: TranslateFn;
-  router: AppRouterInstance;
-  /** Fresh pathname during multi-step navigation (use ref in caller). */
-  getPathname: () => string;
 };
 
-export function buildDashboardTourSteps({ t, router, getPathname }: BuildArgs): Step[] {
-  /** Stap 1: hero bestaat alleen op `/dashboard`; navigeer daarheen en wacht op het kaartje (niet op heel `<main>`). */
-  async function ensureDashboardHome() {
-    const p = getPathname().replace(/\/$/, "") || "/";
-    if (p !== "/dashboard") {
-      router.push("/dashboard");
-    }
-    const hero = await waitForElement('[data-tour="dashboard-hero"]', 15000);
-    if (!hero) {
-      await waitForElement('[data-tour="dashboard-main"]', 6000);
-    }
-  }
+function visibleTourTarget(selector: string): () => HTMLElement | null {
+  return () => getFirstVisibleTourTarget(selector);
+}
 
-  async function ensureDashboard() {
-    const p = getPathname().replace(/\/$/, "") || "/";
-    if (p === "/dashboard") return;
-    if (p.startsWith("/dashboard/projects")) {
-      router.push("/dashboard");
-      await waitForElement('[data-tour="dashboard-main"]');
-      return;
-    }
-    if (p.startsWith("/dashboard/")) return;
-    router.push("/dashboard");
-    await waitForElement('[data-tour="dashboard-main"]');
+/** Op mobiel staan Sfeerbeeld en Offertes in het Meer-menu; open dat vóór de stap. */
+async function ensureMobileMoreMenuFor(selector: string) {
+  if (typeof window === "undefined" || window.innerWidth >= 768) return;
+  if (getFirstVisibleTourTarget(selector)) return;
+  const more = document.querySelector('[data-testid="bottom-nav-more"]');
+  if (more instanceof HTMLElement) {
+    more.click();
+    await waitForElement(selector, 4000);
   }
+}
 
-  async function ensureProjects() {
-    const path = getPathname().replace(/\/$/, "") || "/";
-    if (path !== "/dashboard/projects") {
-      router.push("/dashboard/projects");
-      await waitForElement('[data-tour="projects-list"]');
-    }
-  }
+async function closeMobileMoreMenu() {
+  if (typeof window === "undefined" || window.innerWidth >= 768) return;
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  await new Promise((resolve) => window.setTimeout(resolve, 250));
+}
 
-  async function ensurePlanningHub() {
-    const p = getPathname().replace(/\/$/, "") || "/";
-    if (p === "/dashboard/planning" || p.startsWith("/dashboard/planning/")) return;
-    router.push("/dashboard/planning");
-    await waitForElement('[data-tour="planning-hub"]', 15000);
-  }
-
-  async function ensureQuotesHub() {
-    const p = getPathname().replace(/\/$/, "") || "/";
-    if (p.startsWith("/dashboard/quotes")) return;
-    router.push("/dashboard/quotes");
-    await waitForElement('[data-tour="quotes-hub"]', 15000);
-  }
-
+export function buildDashboardTourSteps({ t }: BuildArgs): Step[] {
   return [
     {
-      target: '[data-tour="dashboard-hero"]',
-      title: t("onboarding.stepWelcomeTitle"),
-      content: t("onboarding.stepWelcomeBody"),
+      target: visibleTourTarget('[data-tour="tab-nav"], [data-tour="bottom-nav"]'),
+      title: t("onboarding.stepTabsTitle"),
+      content: t("onboarding.stepTabsBody"),
       placement: "bottom",
-      before: ensureDashboardHome,
-      targetWaitTimeout: 16000,
+      targetWaitTimeout: 8000,
     },
     {
-      target: () =>
-        getFirstVisibleTourTarget('[data-tour="tab-nav"], [data-tour="project-switcher"]'),
-      title: t("onboarding.stepNavTitle"),
-      content: t("onboarding.stepNavBody"),
+      target: visibleTourTarget('[data-tour="tour-tab-rooms"]'),
+      title: t("onboarding.stepRoomsTitle"),
+      content: t("onboarding.stepRoomsBody"),
       placement: "bottom",
-      before: ensureDashboard,
-      targetWaitTimeout: 12000,
+      targetWaitTimeout: 8000,
     },
     {
-      target: '[data-tour="brand-home"]',
-      title: t("onboarding.stepLogoTitle"),
-      content: t("onboarding.stepLogoBody"),
-      placement: "bottom",
-      before: ensureDashboard,
-      targetWaitTimeout: 12000,
-    },
-    {
-      target: '[data-tour="projects-list"]',
-      title: t("onboarding.stepProjectsTitle"),
-      content: t("onboarding.stepProjectsBody"),
-      placement: "bottom",
-      before: ensureProjects,
-      targetWaitTimeout: 12000,
-    },
-    {
-      target: '[data-tour="planning-hub"]',
+      target: visibleTourTarget('[data-tour="tour-tab-planning"]'),
       title: t("onboarding.stepPlanningTitle"),
       content: t("onboarding.stepPlanningBody"),
       placement: "bottom",
-      before: ensurePlanningHub,
-      targetWaitTimeout: 16000,
+      targetWaitTimeout: 8000,
     },
     {
-      target: '[data-tour="quotes-hub"]',
+      target: visibleTourTarget('[data-tour="tour-tab-planner"]'),
+      title: t("onboarding.stepPlannerTitle"),
+      content: t("onboarding.stepPlannerBody"),
+      placement: "bottom",
+      before: () => ensureMobileMoreMenuFor('[data-tour="tour-tab-planner"]'),
+      targetWaitTimeout: 8000,
+    },
+    {
+      target: visibleTourTarget('[data-tour="tour-tab-finances"]'),
+      title: t("onboarding.stepFinancesTitle"),
+      content: t("onboarding.stepFinancesBody"),
+      placement: "bottom",
+      before: closeMobileMoreMenu,
+      targetWaitTimeout: 8000,
+    },
+    {
+      target: visibleTourTarget('[data-tour="tour-tab-quotes"]'),
       title: t("onboarding.stepQuotesTitle"),
       content: t("onboarding.stepQuotesBody"),
       placement: "bottom",
-      before: ensureQuotesHub,
-      targetWaitTimeout: 16000,
+      before: () => ensureMobileMoreMenuFor('[data-tour="tour-tab-quotes"]'),
+      targetWaitTimeout: 8000,
     },
     {
       target: '[data-tour="kluscoach-fab"]',
-      title: t("onboarding.stepChatTitle"),
-      content: t("onboarding.stepChatBody"),
+      title: t("onboarding.stepKluscoachTitle"),
+      content: t("onboarding.stepKluscoachBody"),
       placement: "left",
-      targetWaitTimeout: 12000,
+      before: closeMobileMoreMenu,
+      targetWaitTimeout: 8000,
+    },
+    {
+      target: '[data-tour="help-button"]',
+      title: t("onboarding.stepHelpTitle"),
+      content: t("onboarding.stepHelpBody"),
+      placement: "bottom",
+      targetWaitTimeout: 8000,
     },
   ];
 }

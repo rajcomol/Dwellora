@@ -29,7 +29,10 @@
     "supabase:functions:deploy-email:staging": "npm run supabase:functions:deploy-invite:staging && npm run supabase:functions:deploy-auth-email:staging",
     "supabase:functions:deploy-email:prod": "npm run supabase:functions:deploy-invite:prod && npm run supabase:functions:deploy-auth-email:prod",
     "sync:supabase-storage": "node scripts/sync-supabase-storage-documents.mjs",
-    "brand:logo": "node scripts/build-renotasker-logo-transparent.mjs"
+    "brand:logo": "node scripts/build-renotasker-logo-transparent.mjs",
+    "cleanup:pw-e2e": "node scripts/cleanup-pw-e2e-projects.mjs",
+    "cleanup:pw-e2e:dry-run": "node scripts/cleanup-pw-e2e-projects.mjs --dry-run",
+    "export:bouwdepot-declaraties": "node scripts/export-bouwdepot-declaraties.mjs"
   },
   "dependencies": {
     "@microsoft/clarity": "^1.0.2",

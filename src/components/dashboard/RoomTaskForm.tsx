@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/i18n/provider";
 import { RENOVATION_PHASE_ORDER } from "@/lib/renovation/phases";
+import { isSharedTask, otherRoomNamesForTask } from "@/lib/renovation/sharedTask";
 import type { ID, RenovationPhase, Task, TaskPriority, TaskStatus, TeamRosterEntry } from "@/lib/renovation/types";
 import { roomTaskFormSchema } from "@/lib/validation/schemas";
 import type { ZodError } from "zod";
 
 const FORM_FIELD_LABEL_CLASS = "mb-1 block text-xs font-medium text-renovation-concrete";
+
+type ProjectRoomOption = { id: ID; name: string };
 
 type TranslateFn = ReturnType<typeof useI18n>["t"];
 
@@ -16,40 +19,38 @@ function roomTaskFormZodMessage(t: TranslateFn, err: ZodError): string {
   const issue = err.issues[0];
   if (!issue) return t("validation.generic");
   if (issue.path[0] === "title") return t("validation.required");
+  if (issue.path[0] === "roomIds") return t("projectDetail.taskRoomsRequired");
   if (issue.path[0] === "durationDays") return t("validation.positiveInteger");
   return t("validation.generic");
 }
+
+type TaskFormValues = {
+  title: string;
+  roomIds: ID[];
+  durationDays: number;
+  priority: TaskPriority;
+  renovationPhase: RenovationPhase;
+  status: TaskStatus;
+  assignedRosterId: ID | null;
+  description: string;
+};
 
 type CreateProps = {
   mode: "create";
   roomId: ID;
   projectId: ID;
+  projectRooms: ProjectRoomOption[];
   rosterOptions: TeamRosterEntry[];
-  onSubmit: (values: {
-    title: string;
-    durationDays: number;
-    priority: TaskPriority;
-    renovationPhase: RenovationPhase;
-    status: TaskStatus;
-    assignedRosterId: ID | null;
-    description: string;
-  }) => Promise<boolean>;
+  onSubmit: (values: TaskFormValues) => Promise<boolean>;
 };
 
 type EditProps = {
   mode: "edit";
   task: Task;
+  currentRoomId: ID;
+  projectRooms: ProjectRoomOption[];
   rosterOptions: TeamRosterEntry[];
-  onSubmit: (values: {
-    id: ID;
-    title: string;
-    durationDays: number;
-    priority: TaskPriority;
-    renovationPhase: RenovationPhase;
-    status: TaskStatus;
-    assignedRosterId: ID | null;
-    description: string;
-  }) => Promise<boolean>;
+  onSubmit: (values: TaskFormValues & { id: ID }) => Promise<boolean>;
   onDelete: () => void;
 };
 
@@ -59,8 +60,10 @@ export default function RoomTaskForm(props: Props) {
   const { t } = useI18n();
   const isEdit = props.mode === "edit";
   const task = isEdit ? props.task : null;
+  const defaultRoomIds = isEdit ? task!.roomIds : [props.roomId];
 
   const [title, setTitle] = useState(task?.title ?? "");
+  const [roomIds, setRoomIds] = useState<ID[]>(defaultRoomIds);
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "todo");
   const [durationDays, setDurationDays] = useState(String(task?.durationDays ?? 1));
   const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "medium");
@@ -75,9 +78,15 @@ export default function RoomTaskForm(props: Props) {
 
   const idPrefix = isEdit ? `room-task-edit-${task!.id}` : `room-task-new-${props.roomId}`;
 
+  const roomNameById = useMemo(
+    () => new Map(props.projectRooms.map((room) => [room.id, room.name])),
+    [props.projectRooms]
+  );
+
   useEffect(() => {
     if (!isEdit || !task) return;
     setTitle(task.title);
+    setRoomIds(task.roomIds);
     setStatus(task.status);
     setDurationDays(String(task.durationDays));
     setPriority(task.priority);
@@ -88,6 +97,7 @@ export default function RoomTaskForm(props: Props) {
     isEdit,
     task?.id,
     task?.title,
+    task?.roomIds,
     task?.status,
     task?.durationDays,
     task?.priority,
@@ -105,9 +115,24 @@ export default function RoomTaskForm(props: Props) {
       : t("projectDetail.assigneeUnassigned");
   }, [isEdit, task, rosterOptions, t]);
 
+  const sharedBadge = useMemo(() => {
+    if (!isEdit || !task || !isSharedTask(task)) return null;
+    const others = otherRoomNamesForTask(task, props.currentRoomId, roomNameById);
+    if (others.length === 0) return null;
+    return t("projectDetail.sharedTaskBadge", { rooms: others.join(", ") });
+  }, [isEdit, task, props, roomNameById, t]);
+
+  function toggleRoomId(roomId: ID, checked: boolean) {
+    setRoomIds((prev) => {
+      if (checked) return prev.includes(roomId) ? prev : [...prev, roomId];
+      return prev.filter((id) => id !== roomId);
+    });
+  }
+
   async function handleSave() {
     const parsed = roomTaskFormSchema.safeParse({
       title,
+      roomIds,
       durationDays,
       description,
       status,
@@ -122,30 +147,24 @@ export default function RoomTaskForm(props: Props) {
     setError(null);
     setBusy(true);
     const d = parsed.data;
+    const payload: TaskFormValues = {
+      title: d.title,
+      roomIds: d.roomIds,
+      durationDays: d.durationDays,
+      priority: d.priority,
+      renovationPhase: d.renovationPhase,
+      status: d.status,
+      assignedRosterId: d.assignedRosterId.trim() || null,
+      description: d.description.trim(),
+    };
     try {
       const ok =
         props.mode === "create"
-          ? await props.onSubmit({
-              title: d.title,
-              durationDays: d.durationDays,
-              priority: d.priority,
-              renovationPhase: d.renovationPhase,
-              status: d.status,
-              assignedRosterId: d.assignedRosterId.trim() || null,
-              description: d.description.trim(),
-            })
-          : await props.onSubmit({
-              id: props.task.id,
-              title: d.title,
-              durationDays: d.durationDays,
-              priority: d.priority,
-              renovationPhase: d.renovationPhase,
-              status: d.status,
-              assignedRosterId: d.assignedRosterId.trim() || null,
-              description: d.description.trim(),
-            });
+          ? await props.onSubmit(payload)
+          : await props.onSubmit({ id: props.task.id, ...payload });
       if (ok && props.mode === "create") {
         setTitle("");
+        setRoomIds([props.roomId]);
         setStatus("todo");
         setDurationDays("1");
         setPriority("medium");
@@ -173,6 +192,14 @@ export default function RoomTaskForm(props: Props) {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="font-medium">{task.title}</div>
+            {sharedBadge ? (
+              <div
+                className="mt-0.5 text-xs font-medium text-renovation-steel"
+                data-testid="shared-task-badge"
+              >
+                {sharedBadge}
+              </div>
+            ) : null}
             <div className="text-xs text-renovation-concrete">
               {t(`task.status.${task.status}`)} • {task.durationDays}d • {t(`renovationPhase.${task.renovationPhase}`)}
               {" • "}
@@ -194,6 +221,9 @@ export default function RoomTaskForm(props: Props) {
               idPrefix={idPrefix}
               title={title}
               setTitle={setTitle}
+              roomIds={roomIds}
+              toggleRoomId={toggleRoomId}
+              projectRooms={props.projectRooms}
               status={status}
               setStatus={setStatus}
               durationDays={durationDays}
@@ -241,6 +271,9 @@ export default function RoomTaskForm(props: Props) {
         idPrefix={idPrefix}
         title={title}
         setTitle={setTitle}
+        roomIds={roomIds}
+        toggleRoomId={toggleRoomId}
+        projectRooms={props.projectRooms}
         status={status}
         setStatus={setStatus}
         durationDays={durationDays}
@@ -267,6 +300,9 @@ function TaskFields({
   idPrefix,
   title,
   setTitle,
+  roomIds,
+  toggleRoomId,
+  projectRooms,
   status,
   setStatus,
   durationDays,
@@ -284,6 +320,9 @@ function TaskFields({
   idPrefix: string;
   title: string;
   setTitle: (v: string) => void;
+  roomIds: ID[];
+  toggleRoomId: (roomId: ID, checked: boolean) => void;
+  projectRooms: ProjectRoomOption[];
   status: TaskStatus;
   setStatus: (v: TaskStatus) => void;
   durationDays: string;
@@ -313,6 +352,29 @@ function TaskFields({
           placeholder={t("projectDetail.taskTitlePlaceholder")}
           className="w-full rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
         />
+      </div>
+      <div className="sm:col-span-2">
+        <fieldset data-testid="task-room-select">
+          <legend className={FORM_FIELD_LABEL_CLASS}>{t("projectDetail.labelTaskRooms")}</legend>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-2">
+            {projectRooms.map((room) => (
+              <label
+                key={room.id}
+                htmlFor={`${idPrefix}-room-${room.id}`}
+                className="inline-flex cursor-pointer items-center gap-2 text-sm text-foreground"
+              >
+                <input
+                  id={`${idPrefix}-room-${room.id}`}
+                  type="checkbox"
+                  checked={roomIds.includes(room.id)}
+                  onChange={(e) => toggleRoomId(room.id, e.target.checked)}
+                  className="h-4 w-4 rounded border-renovation-border text-renovation-accent focus:ring-renovation-accent"
+                />
+                {room.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </div>
       <div>
         <label htmlFor={`${idPrefix}-dur`} className={FORM_FIELD_LABEL_CLASS}>

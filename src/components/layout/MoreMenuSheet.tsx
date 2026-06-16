@@ -47,6 +47,7 @@ export default function MoreMenuSheet({ open, onClose }: Props) {
               <li key={item.href}>
                 <Link
                   href={href}
+                  data-tour={item.tourTarget}
                   className={`block w-full ${tabNavLinkClass(active)}`}
                   onClick={onClose}
                 >
