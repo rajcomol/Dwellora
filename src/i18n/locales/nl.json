@@ -699,6 +699,9 @@
   "planning": {
     "subtitleProject": "Planning voor {{name}}",
     "empty": "Nog geen taken in dit project.",
+    "filterAllRooms": "Alle ruimtes",
+    "filterRoomLabel": "Ruimte",
+    "groupNoRoom": "Overig",
     "looseSection": "Losse taken",
     "looseTask": "Los",
     "noDate": "Geen datum",
@@ -935,7 +938,7 @@
       "planning-timeline": {
         "title": "Planning: wanneer gebeurt wat",
         "summary": "Eén startdatum voor je project plus de duur per taak maken je tijdlijn.",
-        "body": "Op het tabblad Planning zie je wanneer welk werk aan de beurt is. Dat werkt met twee dingen samen: één startdatum voor je hele project, en de duur in dagen die je per taak invult.\n\nBovenaan stel je de startdatum in. De planning rekent dan vanaf die datum verder: de taken komen achter elkaar in hun volgorde, en elke taak duurt zoveel dagen als je hebt opgegeven. Zo zie je vanzelf wanneer elke taak ongeveer begint en klaar is.\n\nHeb je nog geen startdatum ingevuld, dan toont de planning alleen de volgorde en het aantal dagen, nog zonder echte kalenderdatums. Geef je taken een duur in dagen, anders kan de tijdlijn niet goed rekenen.\n\nOp een groot scherm zie je een balkenschema; op een telefoon zie je dezelfde planning als een overzichtelijke lijst."
+        "body": "Op het tabblad Planning zie je wanneer welk werk aan de beurt is. Dat werkt met twee dingen samen: één startdatum voor je hele project, en de duur in dagen die je per taak invult.\n\nBovenaan stel je de startdatum in. De planning rekent dan vanaf die datum verder: de taken komen achter elkaar in hun volgorde, en elke taak duurt zoveel dagen als je hebt opgegeven. Zo zie je vanzelf wanneer elke taak ongeveer begint en klaar is.\n\nMet het ruimtefilter kun je de planning beperken tot één kamer — handig als je veel ruimtes hebt. Standaard staat \"Alle ruimtes\" aan en zie je alles. Op een groot scherm staan de taken gegroepeerd per ruimte, met een kopregel per kamer; taken zonder ruimte staan onderaan bij \"Overig\".\n\nHeb je nog geen startdatum ingevuld, dan toont de planning alleen de volgorde en het aantal dagen, nog zonder echte kalenderdatums. Geef je taken een duur in dagen, anders kan de tijdlijn niet goed rekenen.\n\nOp een groot scherm zie je een balkenschema; op een telefoon zie je dezelfde planning als een overzichtelijke lijst."
       },
       "sfeerbeeld": {
         "title": "Sfeerbeeld: zie je nieuwe situatie vooraf",

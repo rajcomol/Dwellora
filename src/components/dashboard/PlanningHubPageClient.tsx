@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PlanningGantt from "@/components/dashboard/planning/PlanningGantt";
 import PlanningTaskList from "@/components/dashboard/planning/PlanningTaskList";
 import TaskDetailPanel from "@/components/dashboard/planning/TaskDetailPanel";
@@ -18,14 +18,31 @@ export default function PlanningHubPageClient() {
   const { selectedProjectId, selectedProject } = useSelectedProject();
   const { rooms, tasks, updateProject, isRenovationDataReady } = useRenovation();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedRoomFilter, setSelectedRoomFilter] = useState<string | null>(null);
 
   const roomById = useMemo(() => roomMapById(rooms), [rooms]);
 
-  const projectTasks = useMemo(() => {
+  const projectRooms = useMemo(() => {
+    if (!selectedProjectId) return [];
+    return rooms
+      .filter((r) => r.projectId === selectedProjectId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [rooms, selectedProjectId]);
+
+  useEffect(() => {
+    setSelectedRoomFilter(null);
+  }, [selectedProjectId]);
+
+  const allProjectTasks = useMemo(() => {
     if (!selectedProjectId) return [] as Task[];
-    const roomIds = new Set(rooms.filter((r) => r.projectId === selectedProjectId).map((r) => r.id));
+    const roomIds = new Set(projectRooms.map((r) => r.id));
     return sortTasksForPlanning(filterTasksForProjectId(tasks, selectedProjectId, roomIds));
-  }, [selectedProjectId, rooms, tasks]);
+  }, [selectedProjectId, projectRooms, tasks]);
+
+  const projectTasks = useMemo(() => {
+    if (!selectedRoomFilter) return allProjectTasks;
+    return allProjectTasks.filter((tk) => tk.roomIds.includes(selectedRoomFilter));
+  }, [allProjectTasks, selectedRoomFilter]);
 
   const planningStartDate = selectedProject?.planningStartDate ?? null;
 
@@ -56,7 +73,10 @@ export default function PlanningHubPageClient() {
   }
 
   const allEmpty = linkedTasks.length === 0 && looseTasks.length === 0;
-  const roomNameById = new Map([...roomById.entries()].map(([id, r]) => [id, r.name]));
+  const roomNameById = useMemo(
+    () => new Map([...roomById.entries()].map(([id, r]) => [id, r.name])),
+    [roomById]
+  );
 
   return (
     <div className="space-y-6">
@@ -76,24 +96,45 @@ export default function PlanningHubPageClient() {
       ) : (
         <>
           <div className="space-y-3 rounded-xl border border-renovation-border bg-renovation-elevated p-4 dark:border-renovation-border dark:bg-renovation-elevated">
-            <div>
-              <label htmlFor="planning-hub-start-date" className="mb-1 block text-xs font-medium text-renovation-concrete">
-                {t("planning.planningStartLabel")}
-              </label>
-              <input
-                id="planning-hub-start-date"
-                data-testid="planning-start-date"
-                type="date"
-                value={planningStartDate ?? ""}
-                onChange={(e) => {
-                  if (!selectedProjectId) return;
-                  updateProject({
-                    id: selectedProjectId,
-                    planningStartDate: e.target.value.trim() || null,
-                  });
-                }}
-                className="rounded-lg border border-renovation-border bg-renovation-elevated px-3 py-2 text-sm dark:border-renovation-border dark:bg-renovation-elevated"
-              />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="planning-hub-start-date" className="mb-1 block text-xs font-medium text-renovation-concrete">
+                  {t("planning.planningStartLabel")}
+                </label>
+                <input
+                  id="planning-hub-start-date"
+                  data-testid="planning-start-date"
+                  type="date"
+                  value={planningStartDate ?? ""}
+                  onChange={(e) => {
+                    if (!selectedProjectId) return;
+                    updateProject({
+                      id: selectedProjectId,
+                      planningStartDate: e.target.value.trim() || null,
+                    });
+                  }}
+                  className="w-full rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-renovation-accent/40 dark:border-renovation-border dark:bg-renovation-surface"
+                />
+              </div>
+              <div>
+                <label htmlFor="planning-room-filter" className="mb-1 block text-xs font-medium text-renovation-concrete">
+                  {t("planning.filterRoomLabel")}
+                </label>
+                <select
+                  id="planning-room-filter"
+                  data-testid="planning-room-filter"
+                  value={selectedRoomFilter ?? ""}
+                  onChange={(e) => setSelectedRoomFilter(e.target.value || null)}
+                  className="w-full rounded-lg border border-renovation-border bg-renovation-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-renovation-accent/40 dark:border-renovation-border dark:bg-renovation-surface"
+                >
+                  <option value="">{t("planning.filterAllRooms")}</option>
+                  {projectRooms.map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <p className="text-sm tabular-nums text-renovation-concrete">
               {t("planning.timelineTotal")}{" "}

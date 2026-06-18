@@ -84,7 +84,7 @@ const ARTICLE_META: Record<HelpArticleId, Pick<HelpArticle, "categoryId" | "tags
   },
   "planning-timeline": {
     categoryId: "tasks-planning",
-    tags: ["planning", "tijdlijn", "startdatum", "volgorde", "gantt"],
+    tags: ["planning", "tijdlijn", "startdatum", "volgorde", "gantt", "filter", "ruimte", "groepering"],
   },
   sfeerbeeld: {
     categoryId: "sfeerbeeld",
