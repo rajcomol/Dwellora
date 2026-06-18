@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import AccountSettingsContent from "@/components/settings/AccountSettingsContent";
 import ProjectSettingsForm from "@/components/settings/ProjectSettingsForm";
+import ProjectCollaborationSection from "@/components/dashboard/ProjectCollaborationSection";
 import KeyHandoverChecklistSection from "@/components/settings/KeyHandoverChecklistSection";
 import SettingsSubtabNav, { type SettingsTab } from "@/components/settings/SettingsSubtabNav";
 import { DashboardPageSkeleton } from "@/components/ui/Skeleton";
@@ -15,6 +16,7 @@ import type { ID } from "@/lib/renovation/types";
 function parseTab(value: string | null): SettingsTab {
   if (value === "account") return "account";
   if (value === "oplevering") return "oplevering";
+  if (value === "samenwerken") return "samenwerken";
   return "project";
 }
 
@@ -52,7 +54,7 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
 
   const setTab = useCallback(
     (tab: SettingsTab) => {
-      if (!hasProject && (tab === "project" || tab === "oplevering")) return;
+      if (!hasProject && (tab === "project" || tab === "oplevering" || tab === "samenwerken")) return;
       setActiveTab(tab);
       const params = new URLSearchParams(searchParams.toString());
       if (tab === "project") {
@@ -117,6 +119,10 @@ export default function SettingsHubPageClient({ projectId, initialTab }: Props) 
 
       {activeTab === "oplevering" && hasProject && projectId ? (
         <KeyHandoverChecklistSection projectId={projectId} />
+      ) : null}
+
+      {activeTab === "samenwerken" && hasProject && projectId ? (
+        <ProjectCollaborationSection projectId={projectId} />
       ) : null}
 
       {activeTab === "account" ? (

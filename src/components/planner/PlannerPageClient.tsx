@@ -59,6 +59,29 @@ function versionLabel(index: number): string {
   return `v${index + 1}`;
 }
 
+type PlannerQuotaState = {
+  used: number;
+  limit: number;
+  remaining: number;
+};
+
+type PlannerApiErrorBody = {
+  error?: string;
+  used?: number;
+  limit?: number;
+};
+
+function plannerApiErrorMessage(
+  json: PlannerApiErrorBody,
+  fallback: string,
+  dailyLimitMessage: string
+): string {
+  if (json.error === "daily_limit_reached") {
+    return dailyLimitMessage;
+  }
+  return json.error ?? fallback;
+}
+
 export default function PlannerPageClient() {
   const { t } = useI18n();
   const { selectedProjectId, selectedProject } = useSelectedProject();
@@ -83,9 +106,30 @@ export default function PlannerPageClient() {
   const [refineError, setRefineError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [quota, setQuota] = useState<PlannerQuotaState | null>(null);
 
   const hasResult = versions.length > 0;
   const step1Locked = hasResult;
+  const quotaExhausted = quota !== null && quota.remaining <= 0;
+
+  const fetchQuota = useCallback(async () => {
+    if (!selectedProjectId) return;
+    try {
+      const headers = await getBearerAuthHeaders();
+      const res = await fetch("/api/planner/quota", { headers, cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as PlannerQuotaState;
+      if (
+        typeof data.used === "number" &&
+        typeof data.limit === "number" &&
+        typeof data.remaining === "number"
+      ) {
+        setQuota(data);
+      }
+    } catch {
+      /* quota is optional UX; fail silently */
+    }
+  }, [selectedProjectId]);
 
   useEffect(() => {
     if (!selectedProjectId) return;
@@ -113,6 +157,14 @@ export default function PlannerPageClient() {
       cancelled = true;
     };
   }, [selectedProjectId]);
+
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setQuota(null);
+      return;
+    }
+    void fetchQuota();
+  }, [selectedProjectId, fetchQuota]);
 
   useEffect(() => {
     if (versions.length === 0) {
@@ -188,20 +240,25 @@ export default function PlannerPageClient() {
           beschrijving: beschrijving.trim() || undefined,
         }),
       });
-      const json = (await res.json()) as { error?: string; url?: string; folder?: string };
-      if (!res.ok) throw new Error(json.error ?? t("planner.visual.error"));
+      const json = (await res.json()) as PlannerApiErrorBody & { url?: string; folder?: string };
+      if (!res.ok) {
+        throw new Error(
+          plannerApiErrorMessage(json, t("planner.visual.error"), t("planner.visual.dailyLimitReached"))
+        );
+      }
       if (!json.url || !json.folder) throw new Error(t("planner.visual.error"));
 
       setRenderFolder(json.folder);
       setVersions([{ url: json.url, label: versionLabel(0), instruction: null }]);
       setActiveVersionIndex(0);
       setRefineInstruction("");
+      await fetchQuota();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("planner.visual.error"));
     } finally {
       setGenerating(false);
     }
-  }, [basisFoto, referenties, beschrijving, t]);
+  }, [basisFoto, referenties, beschrijving, t, fetchQuota]);
 
   const handleRefine = useCallback(async () => {
     const instruction = refineInstruction.trim();
@@ -227,8 +284,12 @@ export default function PlannerPageClient() {
           version: nextVersion,
         }),
       });
-      const json = (await res.json()) as { error?: string; url?: string };
-      if (!res.ok) throw new Error(json.error ?? t("planner.visual.refineError"));
+      const json = (await res.json()) as PlannerApiErrorBody & { url?: string };
+      if (!res.ok) {
+        throw new Error(
+          plannerApiErrorMessage(json, t("planner.visual.refineError"), t("planner.visual.dailyLimitReached"))
+        );
+      }
       if (!json.url) throw new Error(t("planner.visual.refineError"));
 
       setVersions((prev) => [
@@ -237,12 +298,13 @@ export default function PlannerPageClient() {
       ]);
       setActiveVersionIndex(versions.length);
       setRefineInstruction("");
+      await fetchQuota();
     } catch (e) {
       setRefineError(e instanceof Error ? e.message : t("planner.visual.refineError"));
     } finally {
       setRefining(false);
     }
-  }, [refineInstruction, versions, activeVersionIndex, renderFolder, t]);
+  }, [refineInstruction, versions, activeVersionIndex, renderFolder, t, fetchQuota]);
 
   const handleSave = useCallback(async () => {
     if (!selectedProjectId) return;
@@ -413,15 +475,30 @@ export default function PlannerPageClient() {
               </section>
 
               <section className="space-y-2">
-                <Button
-                  type="button"
-                  onClick={handleGenerate}
-                  disabled={generating || step1Locked}
-                  className="w-full bg-renovation-accent text-renovation-accent-foreground hover:bg-renovation-steel"
-                  data-testid="planner-generate"
-                >
-                  {generating ? t("planner.visual.generating") : t("planner.visual.generate")}
-                </Button>
+                {!quotaExhausted ? (
+                  <Button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={generating || step1Locked}
+                    className="w-full bg-renovation-accent text-renovation-accent-foreground hover:bg-renovation-steel"
+                    data-testid="planner-generate"
+                  >
+                    {generating ? t("planner.visual.generating") : t("planner.visual.generate")}
+                  </Button>
+                ) : null}
+                {quota && quota.remaining > 0 ? (
+                  <p className="text-xs text-renovation-concrete" data-testid="planner-quota">
+                    {t("planner.visual.quotaRemaining", {
+                      remaining: quota.remaining,
+                      limit: quota.limit,
+                    })}
+                  </p>
+                ) : null}
+                {quotaExhausted ? (
+                  <p className="text-sm text-renovation-concrete" data-testid="planner-daily-limit-message">
+                    {t("planner.visual.quotaExhausted", { limit: quota?.limit ?? 5 })}
+                  </p>
+                ) : null}
                 {error ? (
                   <p className="text-sm text-renovation-steel" data-testid="planner-error">
                     {error}
@@ -460,6 +537,12 @@ export default function PlannerPageClient() {
                 refineInstruction={refineInstruction}
                 refining={refining}
                 refineError={refineError}
+                quotaExhausted={quotaExhausted}
+                quotaExhaustedMessage={
+                  quotaExhausted
+                    ? t("planner.visual.quotaExhausted", { limit: quota?.limit ?? 5 })
+                    : null
+                }
                 onRefineInstructionChange={setRefineInstruction}
                 onRefine={handleRefine}
                 onSelectVersion={setActiveVersionIndex}
@@ -550,6 +633,8 @@ type ResultGalleryProps = {
   refineInstruction: string;
   refining: boolean;
   refineError: string | null;
+  quotaExhausted: boolean;
+  quotaExhaustedMessage: string | null;
   onRefineInstructionChange: (value: string) => void;
   onRefine: () => void;
   onSelectVersion: (index: number) => void;
@@ -567,6 +652,8 @@ function ResultGallery({
   refineInstruction,
   refining,
   refineError,
+  quotaExhausted,
+  quotaExhaustedMessage,
   onRefineInstructionChange,
   onRefine,
   onSelectVersion,
@@ -631,6 +718,11 @@ function ResultGallery({
         data-testid="refine-panel"
       >
         <p className="mb-3 text-sm font-semibold text-foreground">{refineTitle}</p>
+        {quotaExhausted && quotaExhaustedMessage ? (
+          <p className="mb-3 text-sm text-renovation-concrete" data-testid="planner-daily-limit-message-refine">
+            {quotaExhaustedMessage}
+          </p>
+        ) : null}
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
@@ -639,7 +731,7 @@ function ResultGallery({
             placeholder={refinePlaceholder}
             className={`${fieldClass} flex-1`}
             data-testid="refine-input"
-            disabled={refining}
+            disabled={refining || quotaExhausted}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -650,7 +742,7 @@ function ResultGallery({
           <Button
             type="button"
             onClick={onRefine}
-            disabled={refining}
+            disabled={refining || quotaExhausted}
             className="shrink-0 bg-renovation-accent text-renovation-accent-foreground hover:bg-renovation-steel"
             data-testid="refine-submit"
           >

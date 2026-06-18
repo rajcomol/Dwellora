@@ -1,4 +1,5 @@
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
+import { checkPlannerDailyLimitOrRespond, recordPlannerGeneration } from "@/lib/planner/dailyLimit";
 import { processImageToBuffer } from "@/lib/planner/imageProcessor";
 import {
   OpenAIImageError,
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
     );
   }
 
+  const dailyLimit = await checkPlannerDailyLimitOrRespond(auth.client, auth.userId);
+  if (dailyLimit) return dailyLimit;
+
   try {
     const folder = newRenderFolder();
 
@@ -82,6 +86,8 @@ export async function POST(req: Request) {
     });
 
     const url = await persistPlannerRender(auth.client, auth.userId, folder, "render-v1.png", outputBuffer);
+
+    await recordPlannerGeneration(auth.client, auth.userId, "visualiseer");
 
     return Response.json({ url, folder, version: 1 });
   } catch (e) {

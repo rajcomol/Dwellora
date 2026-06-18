@@ -1,4 +1,5 @@
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
+import { checkPlannerDailyLimitOrRespond, recordPlannerGeneration } from "@/lib/planner/dailyLimit";
 import { loadImageToBuffer } from "@/lib/planner/imageProcessor";
 import { OpenAIImageError, refinePlannerImage } from "@/lib/planner/openaiImageEdit";
 import { persistPlannerRender } from "@/lib/planner/renderStorage";
@@ -44,6 +45,9 @@ export async function POST(req: Request) {
     );
   }
 
+  const dailyLimit = await checkPlannerDailyLimitOrRespond(auth.client, auth.userId);
+  if (dailyLimit) return dailyLimit;
+
   try {
     const basisBuffer = await loadImageToBuffer(basisFoto);
     const outputBuffer = await refinePlannerImage({ basisBuffer, instruction: instructie });
@@ -54,6 +58,8 @@ export async function POST(req: Request) {
       `render-v${version}.png`,
       outputBuffer
     );
+
+    await recordPlannerGeneration(auth.client, auth.userId, "verfijn");
 
     return Response.json({ url, version });
   } catch (e) {

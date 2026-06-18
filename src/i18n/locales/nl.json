@@ -80,7 +80,10 @@
       "refineRequired": "Vul een aanpassing in",
       "refineError": "Er is iets misgegaan bij het bijwerken. Probeer het opnieuw.",
       "startOver": "Nieuwe visualisatie",
-      "versionLabel": "v{{n}}"
+      "versionLabel": "v{{n}}",
+      "quotaRemaining": "Nog {{remaining}} van {{limit}} sfeerbeelden vandaag beschikbaar",
+      "quotaExhausted": "Je hebt vandaag je limiet bereikt. Morgen kun je weer {{limit}} nieuwe sfeerbeelden maken.",
+      "dailyLimitReached": "Je dagelijkse limiet is bereikt. Kom morgen terug voor nieuwe sfeerbeelden."
     }
   },
   "welcome": {
@@ -214,6 +217,7 @@
     "notFound": "Project niet gevonden.",
     "tabProject": "Projectgegevens",
     "tabHandover": "Oplevering",
+    "tabCollaboration": "Samenwerken",
     "tabAccount": "Accountinstellingen",
     "accountOnlyHint": "Kies een project om projectgegevens te bewerken.",
     "subnavAria": "Instellingen secties"
@@ -936,7 +940,7 @@
       "sfeerbeeld": {
         "title": "Sfeerbeeld: zie je nieuwe situatie vooraf",
         "summary": "Upload een foto, beschrijf wat je wil veranderen, en krijg een realistisch beeld dat je kunt bijsturen.",
-        "body": "Met Sfeerbeeld maak je een realistisch beeld van hoe een ruimte, je voordeur of je gevel eruit kan gaan zien ná de verbouwing — handig om een idee te krijgen voordat je begint.\n\nZo werkt het:\n- Upload een foto van je huidige situatie. Dat is het enige dat verplicht is. Het kan een kamer zijn, maar ook je voordeur, gevel of tuin.\n- Wil je een bepaald materiaal of een bepaalde stijl overnemen? Voeg dan referentiefoto's toe (bijvoorbeeld de houtkleur die je mooi vindt) en zet bij elke foto een kort briefje wat het is.\n- Beschrijf bij \"Wat wil je veranderen?\" in gewone woorden wat je wil, bijvoorbeeld \"maak een houten voordeur in eiken\".\n- Klik op genereren. Je krijgt één beeld te zien dat zo veel mogelijk je echte ruimte aanhoudt.\n\nWil je daarna iets aanpassen, gebruik dan het veld \"Iets aanpassen aan dit beeld?\" — bijvoorbeeld \"maak de muur warmer\". Het beeld wordt bijgewerkt, en zo kun je blijven bijsturen tot het klopt. Elke versie blijft bewaard, dus je kunt terug naar een eerdere als een wijziging tegenvalt.\n\nHet maken van een beeld kan ongeveer een minuut duren, omdat de AI het zorgvuldig opbouwt."
+        "body": "Met Sfeerbeeld maak je een realistisch beeld van hoe een ruimte, je voordeur of je gevel eruit kan gaan zien ná de verbouwing — handig om een idee te krijgen voordat je begint.\n\nZo werkt het:\n- Upload een foto van je huidige situatie. Dat is het enige dat verplicht is. Het kan een kamer zijn, maar ook je voordeur, gevel of tuin.\n- Wil je een bepaald materiaal of een bepaalde stijl overnemen? Voeg dan referentiefoto's toe (bijvoorbeeld de houtkleur die je mooi vindt) en zet bij elke foto een kort briefje wat het is.\n- Beschrijf bij \"Wat wil je veranderen?\" in gewone woorden wat je wil, bijvoorbeeld \"maak een houten voordeur in eiken\".\n- Klik op genereren. Je krijgt één beeld te zien dat zo veel mogelijk je echte ruimte aanhoudt.\n\nWil je daarna iets aanpassen, gebruik dan het veld \"Iets aanpassen aan dit beeld?\" — bijvoorbeeld \"maak de muur warmer\". Het beeld wordt bijgewerkt, en zo kun je blijven bijsturen tot het klopt. Elke versie blijft bewaard, dus je kunt terug naar een eerdere als een wijziging tegenvalt.\n\nJe kunt maximaal 5 sfeerbeelden per dag maken (genereren én bijsturen tellen samen). Onder de knop zie je hoeveel je vandaag nog over hebt.\n\nHet maken van een beeld kan ongeveer een minuut duren, omdat de AI het zorgvuldig opbouwt."
       },
       "finances-expenses": {
         "title": "Financiën: je budget en uitgaven",
@@ -961,12 +965,12 @@
       "settings-security": {
         "title": "Instellingen en je account",
         "summary": "Weergave, taal, wachtwoord, projectgegevens en de opleveringschecklist.",
-        "body": "Onder Instellingen regel je je account en voorkeuren. Je kiest het thema (licht, donker of automatisch), je ziet het e-mailadres van je account, en je kunt je wachtwoord wijzigen of resetten als je het bent vergeten.\n\nHier vind je ook je projectgegevens (zoals naam, budget en opleverdatum) en de opleveringschecklist — een lijstje van dingen die geregeld moeten zijn rond de sleuteloverdracht.\n\nDaarnaast zit hier het onderdeel Samenwerken, waarmee je een medebewoner aan je project koppelt (zie het artikel \"Samenwerken\")."
+        "body": "Onder Instellingen regel je je account en voorkeuren. Je kiest het thema (licht, donker of automatisch), je ziet het e-mailadres van je account, en je kunt je wachtwoord wijzigen of resetten als je het bent vergeten.\n\nHeb je een project geselecteerd, dan zie je ook de tabs Projectgegevens, Oplevering en Samenwerken. Onder Projectgegevens pas je naam, budget en opleverdatum aan; onder Oplevering staat de checklist voor de sleuteloverdracht.\n\nVia het tabblad Samenwerken nodig je een medebewoner uit voor dat project (zie het artikel \"Samenwerken\")."
       },
       "collaboration-invites": {
         "title": "Samenwerken: iemand uitnodigen",
         "summary": "Een medebewoner toegang geven tot je project.",
-        "body": "Wil je samen met iemand aan hetzelfde project werken (bijvoorbeeld je partner), dan nodig je die persoon uit. Dat doe je als eigenaar onder Instellingen, bij Samenwerken.\n\nJe nodigt iemand uit op het e-mailadres waarmee diegene een RenoTasker-account heeft of aanmaakt — het moet exact hetzelfde adres zijn, anders kan de uitnodiging niet geaccepteerd worden. Per project kan er één medebewoner bij.\n\nNa het accepteren ziet de ander hetzelfde project als jij: ruimtes, taken, planning, financiën en offertes. Een uitnodiging verloopt na een tijdje; als eigenaar kun je een openstaande uitnodiging intrekken. Lukt accepteren niet, open de link dan in een gewone browser (Chrome of Safari) in plaats van in de browser van een mail-app."
+        "body": "Wil je samen met iemand aan hetzelfde project werken (bijvoorbeeld je partner), dan nodig je die persoon uit. Open als eigenaar Instellingen van je project en kies het tabblad Samenwerken. Vul het e-mailadres in en klik op Uitnodiging aanmaken.\n\nJe nodigt iemand uit op het e-mailadres waarmee diegene een RenoTasker-account heeft of aanmaakt — het moet exact hetzelfde adres zijn, anders kan de uitnodiging niet geaccepteerd worden. Per project kan er één medebewoner bij.\n\nNa het accepteren ziet de ander hetzelfde project als jij: ruimtes, taken, planning, financiën en offertes. Een uitnodiging verloopt na een tijdje; als eigenaar kun je een openstaande uitnodiging intrekken. Lukt accepteren niet, open de link dan in een gewone browser (Chrome of Safari) in plaats van in de browser van een mail-app."
       },
       "privacy-data": {
         "title": "Privacy en je gegevens",

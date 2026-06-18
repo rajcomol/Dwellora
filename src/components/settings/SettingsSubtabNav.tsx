@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/i18n/provider";
 
-export type SettingsTab = "project" | "account" | "oplevering";
+export type SettingsTab = "project" | "account" | "oplevering" | "samenwerken";
 
 type Props = {
   activeTab: SettingsTab;
@@ -44,6 +44,14 @@ export default function SettingsSubtabNav({ activeTab, onTabChange, showProjectT
             onClick={() => onTabChange("oplevering")}
           >
             {t("projectSettings.tabHandover")}
+          </button>
+          <button
+            type="button"
+            data-testid="settings-tab-samenwerken"
+            className={subtabClass(activeTab === "samenwerken")}
+            onClick={() => onTabChange("samenwerken")}
+          >
+            {t("projectSettings.tabCollaboration")}
           </button>
         </>
       ) : null}
