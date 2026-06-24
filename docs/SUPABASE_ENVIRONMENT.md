@@ -7,6 +7,39 @@
 | **Staging** (BUILD) | RenoTasker Staging | `cgvmclxglxhbuhuovedl` | `https://cgvmclxglxhbuhuovedl.supabase.co` |
 | **Production** (PROD) | RenoTasker PROD | `qvansiwlykvhgfdygisu` | `https://qvansiwlykvhgfdygisu.supabase.co` |
 
+## Database-discipline (BELANGRIJK)
+
+Twee aparte Postgres-databases. De **Supabase CLI-link** bepaalt waar `db push` naartoe gaat — niet `.env.local`. Daardoor kunnen migraties op PROD landen terwijl de dev-server Staging gebruikt.
+
+### Dagelijks (ontwikkeling)
+
+1. CLI staat **altijd** gelinkt aan **Staging** (`cgvmclxglxhbuhuovedl`).
+2. Vóór **elke** `db push`:
+   ```bash
+   npx supabase projects list
+   ```
+   Controleer dat de ● bij **RenoTasker Staging** staat — **niet** bij PROD.
+3. Schema alleen wijzigen via **migration files** in `supabase/migrations/` + `npm run supabase:db:push`.
+   **Nooit** ad hoc via SQL Editor of management API.
+4. Poort **5432** moet bereikbaar zijn (CLI → Postgres). Geblokkeerd netwerk → mobiele hotspot.
+
+### Release naar PROD (bewust ritueel)
+
+Alleen wanneer migraties bewust naar productie moeten:
+
+```bash
+npx supabase link --project-ref qvansiwlykvhgfdygisu
+npx supabase db push
+npx supabase link --project-ref cgvmclxglxhbuhuovedl   # DIRECT terug naar Staging
+npx supabase projects list                              # verifieer ● op Staging
+```
+
+Handige shortcuts: `npm run supabase:link:staging` en `npm run supabase:link:prod`.
+
+### Incident juni 2026
+
+CLI stond op PROD, app op Staging. Fixes (invite-digest, planner_generations) kwamen op de verkeerde DB terecht en leken lokaal “wel te werken maar dan toch niet”. Deze discipline voorkomt dat.
+
 ## Waar welke keys horen
 
 | Plaats | Supabase | `INVITE_EDGE_SECRET` |

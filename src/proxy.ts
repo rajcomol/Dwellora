@@ -48,9 +48,9 @@ export async function proxy(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (pathname === "/") {
+  if (pathname === "/" && user) {
     const url = request.nextUrl.clone();
-    url.pathname = user ? "/dashboard" : "/login";
+    url.pathname = "/dashboard";
     url.search = "";
     const redirectResponse = NextResponse.redirect(url);
     copyCookies(response, redirectResponse);

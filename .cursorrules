@@ -1,0 +1,127 @@
+# RenoTasker — Design & Frontend Rules
+
+Deze regels gelden voor al het frontend/UI-werk aan RenoTasker, in het bijzonder
+de publieke marketingpagina. Doel: een award-winning, "wauw"-gevoel zoals de beste
+Awwwards-sites, maar ingezet voor WARMTE en VERTROUWEN — niet voor spektakel.
+De bezoeker is een gewone (Nederlandse) huiseigenaar die gaat verbouwen en rust,
+overzicht en vertrouwen zoekt. Indruk maken mag nooit ten koste gaan van
+duidelijkheid, leesbaarheid of performance.
+
+==============================================================================
+## 0. Kernprincipe
+Elke animatie of effect moet een REDEN hebben: aandacht sturen, hiërarchie
+verduidelijken, een feature demonstreren, of het merk warmte geven. Animatie
+om de animatie is verboden. Bij twijfel: subtieler. "Premium" = rustig,
+zelfverzekerd en vloeiend, niet druk.
+
+==============================================================================
+## 1. Tech-stack & libraries
+- Next.js (App Router) + React + TypeScript + Tailwind CSS v4.
+- Animatie: GSAP + ScrollTrigger (al in gebruik). Gebruik `gsap.context()` en
+  `ctx.revert()` voor cleanup. Geen losse libraries die hetzelfde doen.
+- Smooth scroll: gebruik **Lenis** voor vloeiend scrollen als fundament onder
+  scroll-animaties (voorkomt schokkerig gevoel). Integreer Lenis netjes met
+  ScrollTrigger (lenis.on('scroll', ScrollTrigger.update) + gsap ticker).
+  Schakel Lenis uit bij prefers-reduced-motion.
+- Geen zware WebGL/Three.js cursor-distortie of shader-effecten op de
+  marketingpagina, tenzij expliciet gevraagd. Dat past niet bij de doelgroep
+  en kost te veel performance. (3D mag alleen als het een feature écht
+  verheldert en licht is.)
+
+==============================================================================
+## 2. Verplichte randvoorwaarden (NOOIT overslaan)
+- **prefers-reduced-motion: reduce** → ALLE niet-essentiële animatie uit
+  (geen pin, geen scrub, geen parallax, geen split-text reveal-beweging).
+  Content valt terug op een statische, volledig leesbare layout. Verplicht.
+- **Mobiel (< 768px)**: pin/scrub-effecten uit of sterk vereenvoudigd; nette
+  gestapelde layout; geen horizontale scroll; geen vastlopende scroll.
+- **Performance**: animeer alleen `transform` en `opacity`. Geen layout-
+  triggerende properties (width/height/top/left) in animaties. `will-change`
+  spaarzaam. Doel: 60fps desktop.
+- **Geen layout shift (CLS)**: reserveer ruimte voor beeld/animatie; gebruik
+  correcte pinSpacing; roep `ScrollTrigger.refresh()` aan na het laden van
+  afbeeldingen.
+- **Cleanup**: elke useEffect met GSAP/ScrollTrigger ruimt alles op bij unmount.
+- **Toegankelijkheid**: voldoende kleurcontrast (WCAG AA), zichtbare focus-states,
+  alle interactieve elementen toetsenbord-bedienbaar, alt-teksten op beelden,
+  semantische HTML (header/nav/main/section/footer).
+
+==============================================================================
+## 3. Visuele identiteit
+- **Kleur**: gebruik uitsluitend de bestaande renovation-* design tokens
+  (amber/oranje accent, warme beige/zand neutralen). Niets hardcoden. Voeg waar
+  nodig nieuwe tokens toe i.p.v. losse hex-waarden.
+- **Sfeer**: warm, licht, premium, rustig. Veel witruimte. Zachte schaduwen.
+  Afgeronde hoeken consistent (één radius-schaal).
+- **Typografie**: gebruik de bestaande lettertypes. Omarm OVERSIZED, zelfverzekerde
+  koppen tegen rustige achtergronden — type mag de compositie dragen. Houd een
+  duidelijke type-schaal aan (bv. display / h1 / h2 / body / small) en wees
+  consistent. Body tekst altijd ruim leesbaar (regelhoogte ~1.5).
+- **Beeld**: echte, warme interieurfoto's en app-screenshots. App-screenshots
+  in een net "app-frame" met zachte schaduw. Sfeerfoto's mogen full-width en
+  randloos doorlopen.
+
+==============================================================================
+## 4. Animatie-vocabulaire (de "wauw", goed gedoseerd)
+Gebruik deze technieken bewust en spaarzaam. Niet alles tegelijk op één pagina.
+
+- **Smooth scroll (Lenis)**: het fundament. Altijd aan (behalve reduced-motion).
+- **Scroll-reveal**: secties/elementen faden + schuiven subtiel omhoog bij
+  in-view, met stagger op opeenvolgende items. De standaard-reveal.
+- **Split-text reveal**: voor belangrijke koppen — woorden/regels komen
+  cascaderend in beeld. Gebruik GSAP SplitText (of een lichte eigen split).
+  Spaarzaam: alleen op hero en sectie-koppen, niet op elke paragraaf.
+- **Parallax**: zachte diepte — achtergrond beweegt langzamer dan voorgrond.
+  Subtiel, nooit overdreven.
+- **Pinned scroll-momenten**: maximaal 1-2 per pagina, voor een filmisch
+  hoogtepunt (bv. de Sfeerbeeld voor→na transformatie). Nooit de hele pagina pinnen.
+- **Meebewegende achtergrondpatronen**: subtiele, trage beweging van een
+  patroon/gradient in het amber/beige palet — sfeer, geen ruis. Laag contrast,
+  langzaam. Uit op reduced-motion.
+- **Motion-logo / floating nav**: het logo/nav mag subtiel mee-transformeren bij
+  scroll (compacter worden), maar blijft altijd leesbaar en bedienbaar.
+- **Micro-interacties**: hover-lift + zachte schaduw op kaarten/knoppen, soepele
+  transitions (ease-out, ~200-400ms). Knoppen voelen "tactiel".
+
+==============================================================================
+## 5. Navigatie & header
+- Floating, altijd zichtbare en bedienbare navigatie (geen content verbergen).
+- Logo + primaire CTA ("Gratis beginnen") en "Inloggen" altijd bereikbaar,
+  ook bovenaan vóór scrollen — een nieuwe bezoeker moet binnen 2 seconden zien
+  wát dit is en hoe je inlogt/aanmeldt.
+- Voldoende contrast in alle scroll-posities (blur + halftransparante achtergrond
+  achter zwevende elementen).
+- Mobiel: helder menu (hamburger), groot genoeg tikbaar (min. 44px touch-target).
+
+==============================================================================
+## 6. Structuur & code-organisatie
+- Marketingsecties als losse, herbruikbare componenten onder
+  `src/components/marketing/`. Eén component per sectie, makkelijk te herordenen.
+- Animatie-logica in eigen hooks (bv. `useMarketingScrollEffects`,
+  `useIsMobile`) zodat componenten leesbaar blijven.
+- Configureerbare data (features, beeld-URL's) in `constants.ts` met duidelijk
+  gemarkeerde placeholders, zodat content makkelijk te vervangen is.
+- Alle zichtbare teksten in het Nederlands, onder de `marketing.*`-tak in
+  `nl.json`.
+
+==============================================================================
+## 7. Werkwijze
+- Bouw animatie-werk INCREMENTEEL: eerst structuur + content (statisch en
+  leesbaar), dan animaties erop. Zo blijft alles testbaar en degradeert het
+  netjes.
+- Test elk effect op: desktop, mobiel (<768px), en met prefers-reduced-motion.
+- Voeg `data-testid`'s toe op sleutelelementen voor stabiele Playwright-tests;
+  tests toetsen op AANWEZIGHEID/leesbaarheid van content, niet op animatie-
+  eindstanden.
+- Standing rules van het project blijven gelden: elke nieuwe feature/wijziging
+  krijgt een Playwright-test (op basis van tests/e2e/TEMPLATE.spec.ts), en
+  UI/functie-wijzigingen werken het relevante kennisbank-artikel bij.
+- `npx tsc --noEmit` moet groen zijn; geen console-errors van GSAP/ScrollTrigger.
+
+==============================================================================
+## 8. Wat te vermijden
+- Animatie zonder doel; alles tegelijk laten bewegen; te lange of te trage pins.
+- Tekst die pas leesbaar wordt na een animatie (slecht voor SEO en toegankelijkheid).
+- Effecten die op mobiel of zwakke apparaten haperen.
+- Hardcoded kleuren/spacing buiten het token-systeem.
+- "Druk" design dat de gestreste verbouwer overweldigt. Bij twijfel: rustiger.

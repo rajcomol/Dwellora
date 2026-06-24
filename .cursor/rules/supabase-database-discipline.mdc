@@ -1,0 +1,42 @@
+---
+description: Supabase CLI must stay linked to Staging during development; PROD only via explicit release ritual
+alwaysApply: true
+---
+
+# Supabase database-discipline
+
+Er zijn **twee** Supabase-databases:
+
+| Omgeving | Naam | Project ref |
+|----------|------|-------------|
+| **Staging** | RenoTasker Staging | `cgvmclxglxhbuhuovedl` |
+| **PROD** | RenoTasker PROD | `qvansiwlykvhgfdygisu` |
+
+Lokaal en Vercel Preview draaien tegen **Staging**. Alleen Vercel Production gebruikt **PROD**.
+
+## Regels (altijd volgen)
+
+1. **Tijdens ontwikkeling staat de CLI ALTIJD gelinkt aan Staging.**
+   Vóór elke `db push`: `npx supabase projects list` — controleer dat de ● bij **RenoTasker Staging** staat, **niet** bij PROD.
+
+2. **Alle `db push` tijdens ontwikkeling gaat naar Staging.**
+   Gebruik `npm run supabase:db:push` alleen na die check.
+
+3. **Release naar PROD is een apart, bewust ritueel** (nooit als bijproduct van dev):
+   ```bash
+   npx supabase link --project-ref qvansiwlykvhgfdygisu
+   npx supabase db push
+   npx supabase link --project-ref cgvmclxglxhbuhuovedl   # DIRECT terug naar Staging
+   npx supabase projects list                              # verifieer ● op Staging
+   ```
+
+4. **Schema-wijzigingen alleen via migration files + `db push`.**
+   Nooit ad hoc via SQL Editor of management API. Nieuwe wijzigingen → nieuw bestand in `supabase/migrations/`.
+
+5. **Poort 5432** is vereist voor CLI-migratiecommando's. Op netwerken waar 5432 geblokkeerd is: gebruik mobiele hotspot.
+
+## Waarom
+
+In juni 2026 stond de CLI per ongeluk op PROD terwijl de app op Staging draaide. Fixes (invite-digest, planner_generations) landden op de verkeerde database en leken “wel te werken maar dan toch niet”.
+
+Zie **`docs/SUPABASE_ENVIRONMENT.md`** voor volledige omgevingsdocumentatie.

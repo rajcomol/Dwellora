@@ -14,7 +14,9 @@
     "signUpTitle": "Account aanmaken | RenoTasker",
     "signUpDescription": "Maak een account voor RenoTasker met je e-mailadres en een wachtwoord.",
     "inviteAcceptTitle": "Uitnodiging | RenoTasker",
-    "inviteAcceptDescription": "Accepteer een uitnodiging om samen aan een renovatieproject te werken."
+    "inviteAcceptDescription": "Accepteer een uitnodiging om samen aan een renovatieproject te werken.",
+    "marketingTitle": "RenoTasker — Jouw verbouwing, zonder de chaos",
+    "marketingDescription": "Alles-in-één verbouwapp voor planning, budget, offertes, AI-visualisatie en je persoonlijke kluscoach."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -373,6 +375,7 @@
     "emDash": "—"
   },
   "login": {
+    "backToWebsite": "Terug naar de website",
     "welcomeTitle": "Welkom terug",
     "welcomeSubtitle": "Log in om in RenoTasker projecten, taken en budgetten op één plek te beheren.",
     "loginSubtitle": "Log in op je RenoTasker account",
@@ -1018,5 +1021,122 @@
     "ai": "Als je de AI-assistent gebruikt met een externe dienst, worden berichten naar die dienst gestuurd volgens de instellingen van je project. Gebruik geen gegevens die je niet wilt delen.",
     "contact": "Voor vragen over verwerking: neem contact op met de beheerder van jouw RenoTasker-omgeving.",
     "back": "Terug naar dashboard"
+  },
+  "marketing": {
+    "nav": {
+      "features": "Functies",
+      "pricing": "Prijzen",
+      "login": "Inloggen",
+      "getStarted": "Gratis beginnen",
+      "menuOpen": "Menu openen",
+      "menuClose": "Menu sluiten",
+      "tagline": "Verbouwapp voor planning, budget & offertes"
+    },
+    "hero": {
+      "heading": "Jouw verbouwing, zonder de chaos",
+      "subtitle": "Alles-in-één verbouwapp die de lastige taken voor je uit handen neemt — van planning en budget tot offertes en visualisatie.",
+      "ctaPrimary": "Gratis beginnen",
+      "ctaSecondary": "Bekijk functies",
+      "revealHeading": "Een verbouwing voelt al snel als een tweede baan.",
+      "revealSubtitle": "Losse offertes, budgetstress en geen overzicht — herkenbaar?"
+    },
+    "problem": {
+      "heading": "Een verbouwing voelt al snel als een tweede baan.",
+      "cards": {
+        "quotes": {
+          "title": "Losse offertes en mailtjes",
+          "body": "PDF's in mappen, vergelijkingen in spreadsheets — en steeds opnieuw uitzoeken wat er ontbreekt."
+        },
+        "budget": {
+          "title": "Budget dat uit de hand loopt",
+          "body": "Eigen geld, bouwdepot en onverwachte kosten door elkaar. Geen realtime beeld van wat er nog over is."
+        },
+        "overview": {
+          "title": "Geen overzicht over taken",
+          "body": "Wie doet wat, wanneer? Zonder centraal plan verlies je snel het overzicht over planning en voortgang."
+        }
+      }
+    },
+    "stats": {
+      "modules": { "value": "5", "suffix": "", "label": "krachtige modules" },
+      "dashboard": { "value": "1", "suffix": "", "label": "overzichtelijk dashboard" },
+      "coach": { "value": "24", "suffix": "/7", "label": "AI-kluscoach" }
+    },
+    "sfeerbeeldShowcase": {
+      "title": "Sfeerbeeld — zie je verbouwing vóórdat je begint",
+      "body": "Upload een foto van je huidige ruimte en AI laat zien hoe het wordt.",
+      "beforeLabel": "Voor",
+      "afterLabel": "Na",
+      "beforeAlt": "Lege ruimte vóór de verbouwing",
+      "afterAlt": "AI-sfeerbeeld na de verbouwing"
+    },
+    "features": {
+      "heading": "Alles wat je nodig hebt, op één plek",
+      "enlargeHint": "Klik om te vergroten",
+      "lightboxClose": "Sluiten",
+      "ruimtes": {
+        "title": "Ruimtes & taken",
+        "body": "Verdeel je verbouwing per ruimte en houd precies bij wat er moet gebeuren. Van sloop tot oplevering, alles overzichtelijk per kamer."
+      },
+      "planning": {
+        "title": "Planning",
+        "body": "Zie in één tijdlijn wanneer alles gebeurt. Houd grip op de volgorde van klussen en je doorlooptijd."
+      },
+      "budget": {
+        "title": "Budget bewaken",
+        "body": "Houd grip op eigen geld én bouwdepot. Realtime overzicht van wat je hebt uitgegeven en wat er nog over is."
+      },
+      "offertes": {
+        "title": "Offertes vergelijken",
+        "body": "Upload offertes als PDF en laat AI ze samenvatten en vergelijken. Zie meteen wat ontbreekt of onduidelijk is."
+      },
+      "kluscoach": {
+        "title": "Kluscoach",
+        "body": "Een AI-assistent die je hele project kent. Stel vragen over planning, budget en keuzes — dag en nacht."
+      }
+    },
+    "howItWorks": {
+      "heading": "In drie stappen van chaos naar overzicht.",
+      "steps": {
+        "1": {
+          "title": "Maak je project aan",
+          "body": "Start met je verbouwing en geef je project een naam. Binnen een minuut heb je een plek voor al je plannen."
+        },
+        "2": {
+          "title": "Voeg ruimtes, taken en kosten toe",
+          "body": "Werk ruimte voor ruimte uit: taken, planning, budget en offertes — alles hangt aan elkaar."
+        },
+        "3": {
+          "title": "Behoud overzicht en laat AI je helpen",
+          "body": "Volg je voortgang, vergelijk offertes en stel je kluscoach vragen wanneer je vastloopt."
+        }
+      }
+    },
+    "pricing": {
+      "heading": "Prijzen",
+      "subtitle": "Binnenkort beschikbaar.",
+      "placeholder": "We werken aan transparante prijsplannen. Tot die tijd kun je RenoTasker gratis uitproberen.",
+      "cta": "Begin nu gratis",
+      "monthly": "Maandelijks",
+      "yearly": "Jaarlijks"
+    },
+    "about": {
+      "heading": "Gebouwd door iemand die zelf verbouwt.",
+      "placeholder": "TODO: persoonlijk verhaal + foto oprichter — hier komt het verhaal achter RenoTasker."
+    },
+    "finalCta": {
+      "heading": "Klaar om grip te krijgen op je verbouwing?",
+      "cta": "Gratis beginnen"
+    },
+    "footer": {
+      "tagline": "Jouw verbouwing, zonder de chaos.",
+      "product": "Product",
+      "company": "Bedrijf",
+      "contact": "Contact",
+      "aboutUs": "Over ons",
+      "privacy": "Privacy",
+      "contactEmail": "info@renotasker.nl",
+      "copyright": "© {year} RenoTasker. Alle rechten voorbehouden."
+    }
   }
 }
