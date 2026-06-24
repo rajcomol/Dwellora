@@ -1,4 +1,4 @@
-export const HERO_IMAGE = "/Marketing/woonkamer.png";
+export const HERO_IMAGE = "/marketing/woonkamer.png";
 
 export const SFEERBEELD_BEFORE = "/marketing/before.png";
 
