@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { authStyles } from "@/components/auth/auth-styles";
 import { useI18n } from "@/i18n/provider";
 import { signUpFormZodMessage } from "@/lib/validation/loginZodMessage";
@@ -19,6 +19,7 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit() {
+    if (busy) return;
     setMessage(null);
     const parsed = updatePasswordFormSchema.safeParse({ password, confirmPassword });
     if (!parsed.success) {
@@ -43,7 +44,14 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
       <h1 className="text-[1.5rem] font-medium text-[#1c1917]">{t("login.recoveryCardHeading")}</h1>
       <p className="mt-1 text-sm text-[#78716c]">{t("login.recoveryDescription")}</p>
 
-      <div className="mt-7 space-y-5">
+      <form
+        className="mt-7 space-y-5"
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          void handleSubmit();
+        }}
+        noValidate
+      >
         <div>
           <label htmlFor="recovery-password" className={authStyles.label}>
             {t("login.password")}
@@ -71,10 +79,10 @@ export default function RecoveryPasswordForm({ redirectTo }: Props) {
           />
         </div>
 
-        <button type="button" onClick={() => void handleSubmit()} disabled={busy} className={authStyles.button}>
+        <button type="submit" disabled={busy} className={authStyles.button}>
           {busy ? t("login.pleaseWait") : t("login.recoverySubmit")}
         </button>
-      </div>
+      </form>
 
       {message ? (
         <div role="alert" className={authStyles.alert(message.type)}>

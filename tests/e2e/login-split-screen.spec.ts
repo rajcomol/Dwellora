@@ -44,4 +44,62 @@ test.describe("login split-screen layout", () => {
     await expect(page.getByRole("heading", { name: "Welkom terug" })).toBeVisible();
     await expect(page.getByLabel("E-mail")).toBeVisible();
   });
+
+  test("terug-link op /login navigeert naar de marketingpagina", async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto("/login");
+
+    await page.getByTestId("auth-back-to-website").click();
+
+    await expect(page).toHaveURL("/");
+    await expect(page.getByTestId("marketing-hero")).toBeVisible();
+  });
+
+  test("logo op /login navigeert naar de marketingpagina", async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto("/login");
+
+    await page.getByTestId("auth-logo-home").click();
+
+    await expect(page).toHaveURL("/");
+    await expect(page.getByTestId("marketing-hero")).toBeVisible();
+  });
+
+  test("terug-link op registratie en wachtwoord-vergeten navigeert naar de marketingpagina", async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+
+    await page.goto("/login/register");
+    await page.getByTestId("auth-back-to-website").click();
+    await expect(page).toHaveURL("/");
+
+    await page.goto("/login/forgot");
+    await page.getByTestId("auth-back-to-website").click();
+    await expect(page).toHaveURL("/");
+  });
+
+  test("Enter in wachtwoordveld submit het inlogformulier", async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto("/login");
+
+    await page.getByLabel("E-mail").fill("test@voorbeeld.nl");
+    await page.getByLabel("Wachtwoord").fill("verkeerd-playwright-wachtwoord");
+    await page.getByLabel("Wachtwoord").press("Enter");
+
+    await expect(page.getByRole("alert")).toBeVisible({ timeout: 60_000 });
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("Enter in e-mailveld submit het inlogformulier", async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto("/login");
+
+    await page.getByLabel("E-mail").fill("test@voorbeeld.nl");
+    await page.getByLabel("Wachtwoord").fill("verkeerd-playwright-wachtwoord");
+    await page.getByLabel("E-mail").press("Enter");
+
+    await expect(page.getByRole("alert")).toBeVisible({ timeout: 60_000 });
+    await expect(page).toHaveURL(/\/login/);
+  });
 });

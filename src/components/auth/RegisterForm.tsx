@@ -68,6 +68,7 @@ export default function RegisterForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setMessage(null);
     const parsed = signUpFormSchema.safeParse({ email, password, confirmPassword });
     if (!parsed.success) {

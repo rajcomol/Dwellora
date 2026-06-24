@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import nl from "@/i18n/locales/nl.json";
 
 type Props = {
@@ -49,11 +50,15 @@ export default function LoginScreenChrome({ children }: Props) {
           aria-hidden
         />
 
-        {/* Logo linksboven */}
-        <div className="absolute left-7 top-7 flex items-center gap-2.5 text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]">
+        {/* Logo linksboven — terug naar marketingpagina */}
+        <Link
+          href="/"
+          data-testid="auth-logo-home"
+          className="absolute left-7 top-7 flex items-center gap-2.5 text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)] transition-opacity hover:opacity-90"
+        >
           <AuthLogoMark />
           <span style={{ fontSize: "18px", fontWeight: 500, letterSpacing: "-0.01em" }}>RenoTasker</span>
-        </div>
+        </Link>
 
         {/* Tekst + feature pills linksonder */}
         <div className="absolute inset-x-0 bottom-0 p-7 sm:p-10 lg:p-12">
@@ -92,7 +97,25 @@ export default function LoginScreenChrome({ children }: Props) {
 
       {/* Rechterkant: clean formulier op warme beige achtergrond, verticaal gecentreerd */}
       <main className="flex min-h-dvh w-full items-center justify-center bg-[#fafaf7] px-6 py-12 md:w-2/5">
-        <div className="w-full max-w-[320px]">{children}</div>
+        <div className="w-full max-w-[320px]">
+          <Link
+            href="/"
+            data-testid="auth-logo-home-mobile"
+            className="mb-6 inline-flex items-center gap-2.5 text-[#1c1917] transition-opacity hover:opacity-80 md:hidden"
+          >
+            <AuthLogoMark />
+            <span style={{ fontSize: "18px", fontWeight: 500, letterSpacing: "-0.01em" }}>RenoTasker</span>
+          </Link>
+          <Link
+            href="/"
+            data-testid="auth-back-to-website"
+            className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-[#78716c] transition-colors hover:text-[#d97706]"
+          >
+            <span aria-hidden="true">←</span>
+            {nl.login.backToWebsite}
+          </Link>
+          {children}
+        </div>
       </main>
     </div>
   );

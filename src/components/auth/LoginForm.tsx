@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -105,6 +105,7 @@ export default function LoginForm() {
   }
 
   async function handleSignIn() {
+    if (busy) return;
     setMessage(null);
     const creds = loginCredentialsSchema.safeParse({ email, password });
     if (!creds.success) {
@@ -124,6 +125,11 @@ export default function LoginForm() {
     persistRememberEmail(creds.data.email);
     setMessage({ type: "success", text: t("login.signInSuccess") });
     window.location.assign(safeNextPath(nextParam));
+  }
+
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void handleSignIn();
   }
 
   async function handleSignOut() {
@@ -186,7 +192,7 @@ export default function LoginForm() {
           </div>
         </div>
       ) : (
-        <div className="mt-7 space-y-5">
+        <form className="mt-7 space-y-5" onSubmit={handleSubmit} noValidate>
           <div>
             <label htmlFor="login-email" className={authStyles.label}>
               {t("login.email")}
@@ -231,12 +237,7 @@ export default function LoginForm() {
             </Link>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void handleSignIn()}
-            disabled={busy}
-            className={authStyles.button}
-          >
+          <button type="submit" disabled={busy} className={authStyles.button}>
             {busy ? t("login.pleaseWait") : t("login.signInButton")}
           </button>
 
@@ -246,7 +247,7 @@ export default function LoginForm() {
               {t("login.signUpLink")}
             </Link>
           </p>
-        </div>
+        </form>
       )}
 
       {message ? (

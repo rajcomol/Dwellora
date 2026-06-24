@@ -21,6 +21,7 @@ export default function ForgotPasswordForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setMessage(null);
     const parsed = forgotEmailSchema.safeParse({ email });
     if (!parsed.success) {
