@@ -93,6 +93,8 @@ export default function PlannerPageClient() {
   const [basisFoto, setBasisFoto] = useState<UploadedImage | null>(null);
   const [referenties, setReferenties] = useState<ReferencePhoto[]>([]);
   const referenceInputRef = useRef<HTMLInputElement>(null);
+  // Paden waarvoor al één keer een verse signed URL is opgehaald (voorkomt onError-loops).
+  const resignedPaths = useRef<Set<string>>(new Set());
 
   const [versions, setVersions] = useState<RenderVersion[]>([]);
   const [activeVersionIndex, setActiveVersionIndex] = useState(0);
@@ -217,6 +219,35 @@ export default function PlannerPageClient() {
     setReferenties((prev) => prev.filter((ref) => ref.id !== id));
   }, []);
 
+  // Signed URLs verlopen (privé bucket). Als een render-afbeelding niet laadt,
+  // halen we via het pad één keer een verse signed URL op en updaten die versie.
+  const handleRenderError = useCallback((index: number) => {
+    setVersions((prev) => {
+      const version = prev[index];
+      const path = version?.path;
+      if (!path || resignedPaths.current.has(path)) return prev;
+      resignedPaths.current.add(path);
+      void (async () => {
+        try {
+          const headers = await getBearerAuthHeaders();
+          const res = await fetch(`/api/planner/render-url?path=${encodeURIComponent(path)}`, {
+            headers,
+            cache: "no-store",
+          });
+          if (!res.ok) return;
+          const data = (await res.json()) as { url?: string };
+          if (!data.url) return;
+          setVersions((current) =>
+            current.map((v) => (v.path === path ? { ...v, url: data.url! } : v))
+          );
+        } catch {
+          /* laten staan; toont dan een gebroken beeld i.p.v. een crash */
+        }
+      })();
+      return prev;
+    });
+  }, []);
+
   const handleGenerate = useCallback(async () => {
     if (!basisFoto) {
       setError(t("planner.visual.basisRequired"));
@@ -240,7 +271,7 @@ export default function PlannerPageClient() {
           beschrijving: beschrijving.trim() || undefined,
         }),
       });
-      const json = (await res.json()) as PlannerApiErrorBody & { url?: string; folder?: string };
+      const json = (await res.json()) as PlannerApiErrorBody & { url?: string; folder?: string; path?: string | null };
       if (!res.ok) {
         throw new Error(
           plannerApiErrorMessage(json, t("planner.visual.error"), t("planner.visual.dailyLimitReached"))
@@ -249,7 +280,7 @@ export default function PlannerPageClient() {
       if (!json.url || !json.folder) throw new Error(t("planner.visual.error"));
 
       setRenderFolder(json.folder);
-      setVersions([{ url: json.url, label: versionLabel(0), instruction: null }]);
+      setVersions([{ url: json.url, path: json.path ?? null, label: versionLabel(0), instruction: null }]);
       setActiveVersionIndex(0);
       setRefineInstruction("");
       await fetchQuota();
@@ -274,17 +305,36 @@ export default function PlannerPageClient() {
     try {
       const headers = await getBearerAuthHeaders();
       const nextVersion = versions.length + 1;
+
+      // Signed URLs verlopen: haal voor het basisbeeld een verse signed URL op als we
+      // het pad kennen, zodat de server het beeld zeker kan laden (ook na lang openstaan).
+      let basisUrl = activeVersion.url;
+      if (activeVersion.path) {
+        try {
+          const signRes = await fetch(
+            `/api/planner/render-url?path=${encodeURIComponent(activeVersion.path)}`,
+            { headers, cache: "no-store" }
+          );
+          if (signRes.ok) {
+            const signJson = (await signRes.json()) as { url?: string };
+            if (signJson.url) basisUrl = signJson.url;
+          }
+        } catch {
+          /* val terug op de bestaande URL */
+        }
+      }
+
       const res = await fetch("/api/planner/visualiseer/verfijn", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({
-          basis_foto: activeVersion.url,
+          basis_foto: basisUrl,
           instructie: instruction,
           folder: renderFolder,
           version: nextVersion,
         }),
       });
-      const json = (await res.json()) as PlannerApiErrorBody & { url?: string };
+      const json = (await res.json()) as PlannerApiErrorBody & { url?: string; path?: string | null };
       if (!res.ok) {
         throw new Error(
           plannerApiErrorMessage(json, t("planner.visual.refineError"), t("planner.visual.dailyLimitReached"))
@@ -294,7 +344,7 @@ export default function PlannerPageClient() {
 
       setVersions((prev) => [
         ...prev,
-        { url: json.url!, label: versionLabel(prev.length), instruction },
+        { url: json.url!, path: json.path ?? null, label: versionLabel(prev.length), instruction },
       ]);
       setActiveVersionIndex(versions.length);
       setRefineInstruction("");
@@ -547,6 +597,7 @@ export default function PlannerPageClient() {
                 onRefine={handleRefine}
                 onSelectVersion={setActiveVersionIndex}
                 onOpenFullscreen={setFullscreenIndex}
+                onImageError={handleRenderError}
               />
             ) : (
               <EmptyCanvasState message={t("planner.visual.viewerEmpty")} />
@@ -585,6 +636,9 @@ export default function PlannerPageClient() {
               fill
               unoptimized
               className="object-contain"
+              onError={() => {
+                if (fullscreenIndex !== null) handleRenderError(fullscreenIndex);
+              }}
             />
           </div>
         </div>
@@ -639,6 +693,7 @@ type ResultGalleryProps = {
   onRefine: () => void;
   onSelectVersion: (index: number) => void;
   onOpenFullscreen: (index: number) => void;
+  onImageError: (index: number) => void;
 };
 
 function ResultGallery({
@@ -658,6 +713,7 @@ function ResultGallery({
   onRefine,
   onSelectVersion,
   onOpenFullscreen,
+  onImageError,
 }: ResultGalleryProps) {
   const active = versions[activeIndex];
   if (!active) return null;
@@ -684,6 +740,7 @@ function ResultGallery({
             sizes="(max-width: 1024px) 100vw, 40vw"
             className="object-contain"
             data-testid="render-main"
+            onError={() => onImageError(activeIndex)}
           />
         </button>
         <button
@@ -704,12 +761,13 @@ function ResultGallery({
               version={version}
               selected={index === activeIndex}
               onSelect={() => onSelectVersion(index)}
+              onImageError={() => onImageError(index)}
             />
           ))}
         </div>
       ) : (
         <div className="flex gap-2" data-testid="version-history">
-          <VersionThumbnail version={active} selected onSelect={() => undefined} />
+          <VersionThumbnail version={active} selected onSelect={() => undefined} onImageError={() => onImageError(activeIndex)} />
         </div>
       )}
 
@@ -763,9 +821,10 @@ type VersionThumbnailProps = {
   version: RenderVersion;
   selected: boolean;
   onSelect: () => void;
+  onImageError?: () => void;
 };
 
-function VersionThumbnail({ version, selected, onSelect }: VersionThumbnailProps) {
+function VersionThumbnail({ version, selected, onSelect, onImageError }: VersionThumbnailProps) {
   return (
     <button
       type="button"
@@ -779,7 +838,15 @@ function VersionThumbnail({ version, selected, onSelect }: VersionThumbnailProps
       data-testid="version-thumb"
     >
       <div className="relative aspect-square bg-renovation-muted/30">
-        <Image src={version.url} alt={version.label} fill unoptimized sizes="80px" className="object-cover" />
+        <Image
+          src={version.url}
+          alt={version.label}
+          fill
+          unoptimized
+          sizes="80px"
+          className="object-cover"
+          onError={onImageError}
+        />
       </div>
       <div className="border-t border-renovation-border px-2 py-1 text-center">
         <span className="block truncate text-[11px] font-medium text-foreground" data-testid="version-label">

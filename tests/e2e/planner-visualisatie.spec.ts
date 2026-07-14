@@ -12,12 +12,14 @@ const MOCK_FOLDER = "test-folder-abc123";
 
 const MOCK_VISUALISATIE = {
   url: TINY_PNG_DATA_URL,
+  path: `user-abc/${MOCK_FOLDER}/render-v1.png`,
   folder: MOCK_FOLDER,
   version: 1,
 };
 
 const MOCK_REFINE = {
   url: TINY_PNG_DATA_URL,
+  path: `user-abc/${MOCK_FOLDER}/render-v2.png`,
   version: 2,
 };
 
@@ -159,6 +161,51 @@ test.describe("AI Kamervisualisatie", () => {
     await page.getByTestId("render-main").click();
     await expect(page.getByTestId("render-fullscreen")).toBeVisible();
     await page.getByRole("button", { name: "Sluiten" }).click();
+  });
+
+  test("verlopen signed URL wordt automatisch opnieuw ondertekend", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Visual Resign", testInfo);
+    await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
+
+    const RENDER_PATH = `user-abc/${MOCK_FOLDER}/render-v1.png`;
+
+    // Eerste generatie geeft een 'verlopen' signed URL terug die niet laadt (404).
+    await page.route("**/api/planner/visualiseer", async (route) => {
+      if (route.request().url().includes("/verfijn")) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          url: "http://localhost:3000/__expired_render.png",
+          path: RENDER_PATH,
+          folder: MOCK_FOLDER,
+          version: 1,
+        }),
+      });
+    });
+    await page.route("**/__expired_render.png", (route) => route.fulfill({ status: 404, body: "" }));
+
+    let resignPath: string | null = null;
+    await page.route("**/api/planner/render-url**", async (route) => {
+      resignPath = new URL(route.request().url()).searchParams.get("path");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ url: TINY_PNG_DATA_URL }),
+      });
+    });
+
+    await openPlannerPage(page);
+    await uploadPhoto(page, "upload-basis", "situatie.png");
+    await page.getByTestId("planner-beschrijving").fill("test");
+    await page.getByTestId("planner-generate").click();
+
+    await expect(page.getByTestId("render-main")).toBeVisible({ timeout: 30_000 });
+    // De frontend detecteert de mislukte load en vraagt een verse signed URL op voor het pad.
+    await expect.poll(() => resignPath, { timeout: 30_000 }).toBe(RENDER_PATH);
   });
 
   test("bijsturing voegt versie toe en oudere versie kan opnieuw actief worden", async ({ page }, testInfo) => {
