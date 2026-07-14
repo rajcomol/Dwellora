@@ -5,8 +5,10 @@ describe("GET /api/health", () => {
   it("returns ok payload", async () => {
     const res = await GET(new Request("http://localhost/api/health"));
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { ok?: boolean; timestamp?: string };
+    const body = (await res.json()) as { ok?: boolean; timestamp?: string; commit?: unknown };
     expect(body.ok).toBe(true);
     expect(typeof body.timestamp).toBe("string");
+    // Geen commit-SHA in de body (info-disclosure).
+    expect("commit" in body).toBe(false);
   });
 });

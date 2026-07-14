@@ -22,6 +22,7 @@ export const RATE_LIMIT = {
   documentsCompare: { limit: 16, windowMs: 60_000 },
   plannerVisualiseer: { limit: 8, windowMs: 60_000 },
   plannerVerfijn: { limit: 12, windowMs: 60_000 },
+  plannerRenderUrl: { limit: 60, windowMs: 60_000 },
   invitesAccept: { limit: 30, windowMs: 60_000 },
   invitesPost: { limit: 20, windowMs: 60_000 },
   /** Public token lookup for invite UX (service role); keep strict. */

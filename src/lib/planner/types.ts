@@ -15,6 +15,12 @@ export type RenderVersion = {
   label: string;
   /** Instructie bij bijsturing; null voor de eerste generatie. */
   instruction?: string | null;
+  /**
+   * Storage-pad (userId/folder/naam) van de render. De signed URL in `url` verloopt;
+   * met dit pad kan de frontend on demand een verse signed URL ophalen. Null/afwezig
+   * voor data-URL fallbacks en oude (publieke) opgeslagen renders.
+   */
+  path?: string | null;
 };
 
 /** Metadata van referentiefoto's (zonder afbeeldingsdata) voor opslag. */
