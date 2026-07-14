@@ -8,11 +8,21 @@ export async function GET(request: Request) {
   });
   if (rl) return rl;
 
-  return Response.json({
-    ok: true,
-    app: "renotasker",
-    timestamp: new Date().toISOString(),
-    commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-  });
+  // Geen commit-SHA in de body: dat is onnodige info-disclosure in productie.
+  // Buiten productie geven we hem als debug-header terug voor diagnose.
+  const headers: Record<string, string> = {};
+  if (process.env.NODE_ENV !== "production") {
+    const commit = process.env.VERCEL_GIT_COMMIT_SHA?.trim();
+    if (commit) headers["x-debug-commit"] = commit;
+  }
+
+  return Response.json(
+    {
+      ok: true,
+      app: "renotasker",
+      timestamp: new Date().toISOString(),
+    },
+    { headers }
+  );
 }
 

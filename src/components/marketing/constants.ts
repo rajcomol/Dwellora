@@ -1,18 +1,18 @@
-export const HERO_IMAGE = "/marketing/woonkamer.png";
+export const HERO_IMAGE = "/marketing/woonkamer.webp";
 
-export const SFEERBEELD_BEFORE = "/marketing/before.png";
+export const SFEERBEELD_BEFORE = "/marketing/before.webp";
 
-export const SFEERBEELD_AFTER = "/marketing/sfeerbeeld.png";
+export const SFEERBEELD_AFTER = "/marketing/sfeerbeeld.webp";
 
 /** Intrinsieke pixelafmetingen van marketing-beelden (voor scherpe weergave zonder upscale). */
 export const MARKETING_IMAGE_DIMENSIONS: Record<string, { width: number; height: number }> = {
-  "/marketing/before.png": { width: 2048, height: 1536 },
-  "/marketing/ruimtes.png": { width: 2558, height: 1269 },
-  "/marketing/planning.png": { width: 2542, height: 1267 },
-  "/marketing/dashboard.png": { width: 2544, height: 1267 },
-  "/marketing/sfeerbeeld.png": { width: 1568, height: 779 },
-  "/marketing/offertes.png": { width: 1568, height: 778 },
-  "/marketing/kluscoach.png": { width: 445, height: 634 },
+  "/marketing/before.webp": { width: 2048, height: 1536 },
+  "/marketing/ruimtes.webp": { width: 2558, height: 1269 },
+  "/marketing/planning.webp": { width: 2542, height: 1267 },
+  "/marketing/dashboard.webp": { width: 2544, height: 1267 },
+  "/marketing/sfeerbeeld.webp": { width: 1568, height: 779 },
+  "/marketing/offertes.webp": { width: 1568, height: 778 },
+  "/marketing/kluscoach.webp": { width: 445, height: 634 },
 };
 
 export const MARKETING_SCREENSHOT_SIZES = "(max-width: 768px) 100vw, 60vw";
@@ -41,21 +41,21 @@ export const MARKETING_FEATURES_BEFORE_SHOWCASE = [
   {
     id: "ruimtes",
     testId: "marketing-feature-ruimtes",
-    image: "/marketing/ruimtes.png",
+    image: "/marketing/ruimtes.webp",
     imageAlt: "RenoTasker ruimtes en taken",
     reverse: false,
   },
   {
     id: "planning",
     testId: "marketing-feature-planning",
-    image: "/marketing/planning.png",
+    image: "/marketing/planning.webp",
     imageAlt: "RenoTasker planning en tijdlijn",
     reverse: true,
   },
   {
     id: "budget",
     testId: "marketing-feature-budget",
-    image: "/marketing/dashboard.png",
+    image: "/marketing/dashboard.webp",
     imageAlt: "RenoTasker budget- en bouwdepotoverzicht",
     reverse: false,
   },
@@ -65,14 +65,14 @@ export const MARKETING_FEATURES_AFTER_SHOWCASE = [
   {
     id: "offertes",
     testId: "marketing-feature-offertes",
-    image: "/marketing/offertes.png",
+    image: "/marketing/offertes.webp",
     imageAlt: "RenoTasker offertes vergelijken",
     reverse: true,
   },
   {
     id: "kluscoach",
     testId: "marketing-feature-kluscoach",
-    image: "/marketing/kluscoach.png",
+    image: "/marketing/kluscoach.webp",
     imageAlt: "RenoTasker kluscoach",
     reverse: false,
   },

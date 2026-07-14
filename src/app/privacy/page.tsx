@@ -5,6 +5,7 @@ import nl from "@/i18n/locales/nl.json";
 export const metadata: Metadata = {
   title: `${nl.privacy.title} | ${nl.brand.name}`,
   description: nl.privacy.lead,
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {

@@ -6,6 +6,7 @@ import nl from "@/i18n/locales/nl.json";
 export const metadata: Metadata = {
   title: nl.meta.marketingTitle,
   description: nl.meta.marketingDescription,
+  alternates: { canonical: "/" },
   openGraph: {
     title: nl.meta.marketingTitle,
     description: nl.meta.marketingDescription,
