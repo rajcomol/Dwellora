@@ -67,3 +67,39 @@ export async function recordPlannerGeneration(
     console.error("planner_generations insert", error.message);
   }
 }
+
+export type PlannerReservation = {
+  ok: boolean;
+  used: number;
+  limit: number;
+};
+
+/**
+ * Atomair: controleert de daglimiet én registreert de generatie in één DB-call.
+ * Voorkomt de race waarbij twee gelijktijdige requests allebei de losse check passeren.
+ */
+export async function reservePlannerGeneration(
+  client: SupabaseClient,
+  userId: string,
+  kind: PlannerGenerationKind
+): Promise<PlannerReservation> {
+  const limit = getPlannerDailyLimitEnv();
+  const { data, error } = await client.rpc("reserve_planner_generation", {
+    p_user_id: userId,
+    p_kind: kind,
+    p_limit: limit,
+  });
+  if (error) {
+    console.error("reserve_planner_generation", error.message);
+    throw error;
+  }
+
+  const row = (data ?? {}) as Partial<PlannerReservation>;
+  const used = typeof row.used === "number" ? row.used : Number(row.used ?? 0);
+  const resolvedLimit = typeof row.limit === "number" ? row.limit : Number(row.limit ?? limit);
+  return {
+    ok: row.ok === true,
+    used: Number.isFinite(used) && used >= 0 ? used : 0,
+    limit: Number.isFinite(resolvedLimit) && resolvedLimit >= 0 ? resolvedLimit : limit,
+  };
+}

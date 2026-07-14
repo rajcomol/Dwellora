@@ -61,4 +61,36 @@ test.describe("Sfeerbeeld daglimiet", () => {
     await page.getByTestId("planner-beschrijving").fill("Test");
     await expect(page.getByTestId("planner-generate")).toHaveCount(0);
   });
+
+  test("toont limietmelding wanneer de atomaire reservering 429 geeft (race)", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Daglimiet Race", testInfo);
+    await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
+
+    // Quota laat nog ruimte zien, maar de server (reserve_planner_generation) wijst af:
+    // dit simuleert de race waarbij een parallelle request de laatste slot pakte.
+    await mockPlannerQuota(page, { used: 4, limit: 5, remaining: 1 });
+    await page.route("**/api/planner/visualiseer", async (route) => {
+      await route.fulfill({
+        status: 429,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "daily_limit_reached", used: 5, limit: 5 }),
+      });
+    });
+
+    await openPlannerPage(page);
+
+    await page.locator(`[data-testid="upload-basis"] input[type="file"]`).setInputFiles({
+      name: "situatie.png",
+      mimeType: "image/png",
+      buffer: TINY_PNG_BUFFER,
+    });
+    await page.getByTestId("planner-beschrijving").fill("Test");
+
+    await page.getByTestId("planner-generate").click();
+
+    await expect(page.getByTestId("planner-error")).toContainText(
+      "Je dagelijkse limiet is bereikt",
+      { timeout: 60_000 }
+    );
+  });
 });

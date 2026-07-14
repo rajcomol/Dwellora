@@ -1,5 +1,5 @@
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
-import { checkPlannerDailyLimitOrRespond, recordPlannerGeneration } from "@/lib/planner/dailyLimit";
+import { plannerDailyLimitResponse, reservePlannerGeneration } from "@/lib/planner/dailyLimit";
 import { processImageToBuffer } from "@/lib/planner/imageProcessor";
 import {
   OpenAIImageError,
@@ -56,8 +56,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const dailyLimit = await checkPlannerDailyLimitOrRespond(auth.client, auth.userId);
-  if (dailyLimit) return dailyLimit;
+  // Atomaire reservering VOORdat we de dure OpenAI-call doen (voorkomt race op de daglimiet).
+  const reservation = await reservePlannerGeneration(auth.client, auth.userId, "visualiseer");
+  if (!reservation.ok) {
+    return plannerDailyLimitResponse(reservation.used, reservation.limit);
+  }
 
   try {
     const folder = newRenderFolder();
@@ -85,12 +88,17 @@ export async function POST(req: Request) {
       size,
     });
 
-    const url = await persistPlannerRender(auth.client, auth.userId, folder, "render-v1.png", outputBuffer);
+    const { url, path } = await persistPlannerRender(auth.client, auth.userId, folder, "render-v1.png", outputBuffer);
 
-    await recordPlannerGeneration(auth.client, auth.userId, "visualiseer");
-
-    return Response.json({ url, folder, version: 1 });
+    return Response.json({ url, path, folder, version: 1 });
   } catch (e) {
+    // De daglimiet-slot is al gereserveerd (reserve_planner_generation). Bij een fout
+    // hierna is die slot "verbruikt"; dat is bewust (voorkomt misbruik). GEEN teruggave:
+    // dat zou de race heropenen. Log het duidelijk zodat het herkenbaar is.
+    console.warn("Planner visualiseer: gereserveerde daglimiet-slot verbruikt zonder geslaagde render", {
+      userId: auth.userId,
+    });
+
     if (e instanceof OpenAIImageError) {
       console.error("Planner visualiseer error", {
         code: e.code,

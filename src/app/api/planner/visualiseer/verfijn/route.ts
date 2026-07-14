@@ -1,5 +1,5 @@
 import { clientIpFromRequest, RATE_LIMIT, rateLimitResponse } from "@/lib/api/rateLimit";
-import { checkPlannerDailyLimitOrRespond, recordPlannerGeneration } from "@/lib/planner/dailyLimit";
+import { plannerDailyLimitResponse, reservePlannerGeneration } from "@/lib/planner/dailyLimit";
 import { loadImageToBuffer } from "@/lib/planner/imageProcessor";
 import { OpenAIImageError, refinePlannerImage } from "@/lib/planner/openaiImageEdit";
 import { persistPlannerRender } from "@/lib/planner/renderStorage";
@@ -45,13 +45,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const dailyLimit = await checkPlannerDailyLimitOrRespond(auth.client, auth.userId);
-  if (dailyLimit) return dailyLimit;
+  // Atomaire reservering VOORdat we de dure OpenAI-call doen (voorkomt race op de daglimiet).
+  const reservation = await reservePlannerGeneration(auth.client, auth.userId, "verfijn");
+  if (!reservation.ok) {
+    return plannerDailyLimitResponse(reservation.used, reservation.limit);
+  }
 
   try {
     const basisBuffer = await loadImageToBuffer(basisFoto);
     const outputBuffer = await refinePlannerImage({ basisBuffer, instruction: instructie });
-    const url = await persistPlannerRender(
+    const { url, path } = await persistPlannerRender(
       auth.client,
       auth.userId,
       folder,
@@ -59,10 +62,15 @@ export async function POST(req: Request) {
       outputBuffer
     );
 
-    await recordPlannerGeneration(auth.client, auth.userId, "verfijn");
-
-    return Response.json({ url, version });
+    return Response.json({ url, path, version });
   } catch (e) {
+    // De daglimiet-slot is al gereserveerd (reserve_planner_generation). Bij een fout
+    // hierna is die slot "verbruikt"; dat is bewust (voorkomt misbruik). GEEN teruggave:
+    // dat zou de race heropenen. Log het duidelijk zodat het herkenbaar is.
+    console.warn("Planner verfijn: gereserveerde daglimiet-slot verbruikt zonder geslaagde render", {
+      userId: auth.userId,
+    });
+
     if (e instanceof OpenAIImageError) {
       console.error("Planner verfijn error", {
         code: e.code,
