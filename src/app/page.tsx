@@ -15,8 +15,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: HERO_IMAGE,
-        width: 2400,
-        height: 1600,
+        width: 1024,
+        height: 576,
         alt: nl.meta.marketingTitle,
       },
     ],
