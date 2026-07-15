@@ -27,6 +27,12 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test
         env:
+          # NEXT_PUBLIC_* moeten beschikbaar zijn wanneer de Playwright webServer
+          # `npm run dev` start (next dev leest ze at runtime uit process.env; de
+          # webServer erft de env van deze stap). Zonder deze gooit
+          # src/lib/supabase/client.ts een error en crashen de /login-pagina's.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
