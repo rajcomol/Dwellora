@@ -208,6 +208,34 @@ test.describe("AI Kamervisualisatie", () => {
     await expect.poll(() => resignPath, { timeout: 30_000 }).toBe(RENDER_PATH);
   });
 
+  test("toont een rustige melding bij verlopen sessie (401), geen rauwe servertekst", async ({ page }, testInfo) => {
+    const projectName = uniqueName("PW Visual 401", testInfo);
+    await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });
+
+    await page.route("**/api/planner/visualiseer", async (route) => {
+      if (route.request().url().includes("/verfijn")) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Unauthorized." }),
+      });
+    });
+
+    await openPlannerPage(page);
+    await uploadPhoto(page, "upload-basis", "situatie.png");
+    await page.getByTestId("planner-beschrijving").fill("Maak de gevel modern wit");
+    await page.getByTestId("planner-generate").click();
+
+    await expect(page.getByTestId("planner-error")).toContainText(
+      "Je bent even niet meer ingelogd",
+      { timeout: 30_000 }
+    );
+    await expect(page.getByTestId("planner-error")).not.toContainText("Unauthorized");
+  });
+
   test("bijsturing voegt versie toe en oudere versie kan opnieuw actief worden", async ({ page }, testInfo) => {
     const projectName = uniqueName("PW Visual Refine", testInfo);
     await createProjectAndSelect(page, { name: projectName, ownContribution: "20000" });

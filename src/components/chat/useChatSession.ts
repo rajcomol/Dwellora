@@ -12,6 +12,16 @@ function makeId(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
 }
 
+/**
+ * Kiest een rustige, niet-technische i18n-sleutel op basis van de HTTP-status.
+ * Toont nooit rauwe servertekst of statuscodes aan de gebruiker.
+ */
+function chatErrorKey(status: number): string {
+  if (status === 429) return "chat.errorTooBusy";
+  if (status === 401 || status === 403) return "chat.errorSessionExpired";
+  return "chat.errorGeneral";
+}
+
 export type ThreadListItem = { id: string; title: string; projectId: string | null; updatedAt: string };
 
 export function useChatSession(options: { routeSuggestedProjectId: string | null }) {
@@ -155,15 +165,25 @@ export function useChatSession(options: { routeSuggestedProjectId: string | null
       try {
         const authHeaders = await getBearerAuthHeaders();
 
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders },
-          body: JSON.stringify(body),
-        });
+        let res: Response;
+        try {
+          res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body: JSON.stringify(body),
+          });
+        } catch (netErr) {
+          console.error("chat netwerkfout", netErr);
+          setError(t("chat.errorOffline"));
+          return;
+        }
 
         if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || `Request failed with status ${res.status}`);
+          // Rauwe servertekst nooit tonen; wel loggen voor debugging.
+          const text = await res.text().catch(() => "");
+          console.error("chat fout", res.status, text);
+          setError(t(chatErrorKey(res.status)));
+          return;
         }
 
         const data = (await res.json()) as { response?: string; threadId?: string | null };
@@ -184,8 +204,8 @@ export function useChatSession(options: { routeSuggestedProjectId: string | null
 
         setMessages((prev) => [...prev, assistantMessage]);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : t("chat.errorSendFailed");
-        setError(msg);
+        console.error("chat onverwachte fout", e);
+        setError(t("chat.errorSendFailed"));
       } finally {
         setPending(false);
       }

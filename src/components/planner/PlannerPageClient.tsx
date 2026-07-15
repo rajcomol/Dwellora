@@ -71,15 +71,14 @@ type PlannerApiErrorBody = {
   limit?: number;
 };
 
-function plannerApiErrorMessage(
-  json: PlannerApiErrorBody,
-  fallback: string,
-  dailyLimitMessage: string
-): string {
-  if (json.error === "daily_limit_reached") {
-    return dailyLimitMessage;
-  }
-  return json.error ?? fallback;
+/**
+ * Kiest een rustige, niet-technische i18n-sleutel op basis van de HTTP-status.
+ * Toont nooit rauwe servertekst of statuscodes aan de gebruiker.
+ */
+function plannerErrorKey(status: number, generalKey: string): string {
+  if (status === 429) return "planner.visual.dailyLimitReached";
+  if (status === 401 || status === 403) return "planner.visual.errorSessionExpired";
+  return generalKey;
 }
 
 export default function PlannerPageClient() {
@@ -114,24 +113,34 @@ export default function PlannerPageClient() {
   const step1Locked = hasResult;
   const quotaExhausted = quota !== null && quota.remaining <= 0;
 
-  const fetchQuota = useCallback(async () => {
-    if (!selectedProjectId) return;
-    try {
-      const headers = await getBearerAuthHeaders();
-      const res = await fetch("/api/planner/quota", { headers, cache: "no-store" });
-      if (!res.ok) return;
-      const data = (await res.json()) as PlannerQuotaState;
-      if (
-        typeof data.used === "number" &&
-        typeof data.limit === "number" &&
-        typeof data.remaining === "number"
-      ) {
-        setQuota(data);
+  // `silent` = true na een geslaagde generatie/bijsturing: dan mag een mislukte
+  // quota-refresh het succes niet overschrijven met een foutmelding.
+  const fetchQuota = useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
+      if (!selectedProjectId) return;
+      try {
+        const headers = await getBearerAuthHeaders();
+        const res = await fetch("/api/planner/quota", { headers, cache: "no-store" });
+        if (!res.ok) {
+          console.error("planner quota fout", res.status);
+          if (!silent) setError(t("planner.visual.errorQuota"));
+          return;
+        }
+        const data = (await res.json()) as PlannerQuotaState;
+        if (
+          typeof data.used === "number" &&
+          typeof data.limit === "number" &&
+          typeof data.remaining === "number"
+        ) {
+          setQuota(data);
+        }
+      } catch (e) {
+        console.error("planner quota netwerkfout", e);
+        if (!silent) setError(t("planner.visual.errorOffline"));
       }
-    } catch {
-      /* quota is optional UX; fail silently */
-    }
-  }, [selectedProjectId]);
+    },
+    [selectedProjectId, t]
+  );
 
   useEffect(() => {
     if (!selectedProjectId) return;
@@ -151,14 +160,16 @@ export default function PlannerPageClient() {
         setVersions(data.versions);
         setActiveVersionIndex(data.activeVersionIndex);
         setRenderFolder(data.renderFolder ?? null);
-      } catch {
-        /* tabel kan ontbreken vóór migratie; stil falen */
+      } catch (e) {
+        if (cancelled) return;
+        console.error("planner historie laden mislukt", e);
+        setError(t("planner.visual.errorLoadHistory"));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId]);
+  }, [selectedProjectId, t]);
 
   useEffect(() => {
     if (!selectedProjectId) {
@@ -234,19 +245,28 @@ export default function PlannerPageClient() {
             headers,
             cache: "no-store",
           });
-          if (!res.ok) return;
+          if (!res.ok) {
+            console.error("planner verse sfeerbeeld-URL fout", res.status);
+            setError(t("planner.visual.errorRefreshImage"));
+            return;
+          }
           const data = (await res.json()) as { url?: string };
-          if (!data.url) return;
+          if (!data.url) {
+            console.error("planner verse sfeerbeeld-URL: leeg antwoord");
+            setError(t("planner.visual.errorRefreshImage"));
+            return;
+          }
           setVersions((current) =>
             current.map((v) => (v.path === path ? { ...v, url: data.url! } : v))
           );
-        } catch {
-          /* laten staan; toont dan een gebroken beeld i.p.v. een crash */
+        } catch (e) {
+          console.error("planner verse sfeerbeeld-URL netwerkfout", e);
+          setError(t("planner.visual.errorOffline"));
         }
       })();
       return prev;
     });
-  }, []);
+  }, [t]);
 
   const handleGenerate = useCallback(async () => {
     if (!basisFoto) {
@@ -259,33 +279,50 @@ export default function PlannerPageClient() {
     setRefineError(null);
     try {
       const headers = await getBearerAuthHeaders();
-      const res = await fetch("/api/planner/visualiseer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({
-          basisfoto: basisFoto.dataUrl,
-          referenties: referenties.map((ref) => ({
-            foto: ref.image.dataUrl,
-            notitie: ref.notitie.trim() || undefined,
-          })),
-          beschrijving: beschrijving.trim() || undefined,
-        }),
-      });
-      const json = (await res.json()) as PlannerApiErrorBody & { url?: string; folder?: string; path?: string | null };
-      if (!res.ok) {
-        throw new Error(
-          plannerApiErrorMessage(json, t("planner.visual.error"), t("planner.visual.dailyLimitReached"))
-        );
+      let res: Response;
+      try {
+        res = await fetch("/api/planner/visualiseer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({
+            basisfoto: basisFoto.dataUrl,
+            referenties: referenties.map((ref) => ({
+              foto: ref.image.dataUrl,
+              notitie: ref.notitie.trim() || undefined,
+            })),
+            beschrijving: beschrijving.trim() || undefined,
+          }),
+        });
+      } catch (netErr) {
+        console.error("planner visualiseer netwerkfout", netErr);
+        setError(t("planner.visual.errorOffline"));
+        return;
       }
-      if (!json.url || !json.folder) throw new Error(t("planner.visual.error"));
+
+      const json = (await res.json().catch(() => ({}))) as PlannerApiErrorBody & {
+        url?: string;
+        folder?: string;
+        path?: string | null;
+      };
+      if (!res.ok) {
+        console.error("planner visualiseer fout", res.status, json);
+        setError(t(plannerErrorKey(res.status, "planner.visual.error")));
+        return;
+      }
+      if (!json.url || !json.folder) {
+        console.error("planner visualiseer: onverwacht antwoord", json);
+        setError(t("planner.visual.error"));
+        return;
+      }
 
       setRenderFolder(json.folder);
       setVersions([{ url: json.url, path: json.path ?? null, label: versionLabel(0), instruction: null }]);
       setActiveVersionIndex(0);
       setRefineInstruction("");
-      await fetchQuota();
+      await fetchQuota({ silent: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("planner.visual.error"));
+      console.error("planner visualiseer onverwachte fout", e);
+      setError(t("planner.visual.error"));
     } finally {
       setGenerating(false);
     }
@@ -324,23 +361,38 @@ export default function PlannerPageClient() {
         }
       }
 
-      const res = await fetch("/api/planner/visualiseer/verfijn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({
-          basis_foto: basisUrl,
-          instructie: instruction,
-          folder: renderFolder,
-          version: nextVersion,
-        }),
-      });
-      const json = (await res.json()) as PlannerApiErrorBody & { url?: string; path?: string | null };
-      if (!res.ok) {
-        throw new Error(
-          plannerApiErrorMessage(json, t("planner.visual.refineError"), t("planner.visual.dailyLimitReached"))
-        );
+      let res: Response;
+      try {
+        res = await fetch("/api/planner/visualiseer/verfijn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({
+            basis_foto: basisUrl,
+            instructie: instruction,
+            folder: renderFolder,
+            version: nextVersion,
+          }),
+        });
+      } catch (netErr) {
+        console.error("planner verfijn netwerkfout", netErr);
+        setRefineError(t("planner.visual.errorOffline"));
+        return;
       }
-      if (!json.url) throw new Error(t("planner.visual.refineError"));
+
+      const json = (await res.json().catch(() => ({}))) as PlannerApiErrorBody & {
+        url?: string;
+        path?: string | null;
+      };
+      if (!res.ok) {
+        console.error("planner verfijn fout", res.status, json);
+        setRefineError(t(plannerErrorKey(res.status, "planner.visual.refineError")));
+        return;
+      }
+      if (!json.url) {
+        console.error("planner verfijn: onverwacht antwoord", json);
+        setRefineError(t("planner.visual.refineError"));
+        return;
+      }
 
       setVersions((prev) => [
         ...prev,
@@ -348,9 +400,10 @@ export default function PlannerPageClient() {
       ]);
       setActiveVersionIndex(versions.length);
       setRefineInstruction("");
-      await fetchQuota();
+      await fetchQuota({ silent: true });
     } catch (e) {
-      setRefineError(e instanceof Error ? e.message : t("planner.visual.refineError"));
+      console.error("planner verfijn onverwachte fout", e);
+      setRefineError(t("planner.visual.refineError"));
     } finally {
       setRefining(false);
     }

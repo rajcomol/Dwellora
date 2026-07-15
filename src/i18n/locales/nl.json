@@ -85,7 +85,12 @@
       "versionLabel": "v{{n}}",
       "quotaRemaining": "Nog {{remaining}} van {{limit}} sfeerbeelden vandaag beschikbaar",
       "quotaExhausted": "Je hebt vandaag je limiet bereikt. Morgen kun je weer {{limit}} nieuwe sfeerbeelden maken.",
-      "dailyLimitReached": "Je dagelijkse limiet is bereikt. Kom morgen terug voor nieuwe sfeerbeelden."
+      "dailyLimitReached": "Je dagelijkse limiet is bereikt. Kom morgen terug voor nieuwe sfeerbeelden.",
+      "errorSessionExpired": "Je bent even niet meer ingelogd. Log opnieuw in en probeer het daarna nog eens.",
+      "errorOffline": "Geen internetverbinding gevonden. Controleer je verbinding en probeer het opnieuw.",
+      "errorLoadHistory": "We konden je eerdere sfeerbeelden even niet ophalen. Ververs de pagina om het opnieuw te proberen.",
+      "errorRefreshImage": "We konden dit sfeerbeeld even niet opnieuw laden. Ververs de pagina en probeer het nog eens.",
+      "errorQuota": "We konden even niet ophalen hoeveel sfeerbeelden je vandaag nog hebt. Ververs de pagina om het opnieuw te proberen."
     }
   },
   "welcome": {
@@ -822,7 +827,11 @@
     "errorLoadThread": "Kon het gesprek niet laden.",
     "errorSendFailed": "Bericht versturen mislukt.",
     "noProjectsOption": "Geen projecten beschikbaar",
-    "errorMessageInvalid": "Bericht is ongeldig of te lang."
+    "errorMessageInvalid": "Bericht is ongeldig of te lang.",
+    "errorTooBusy": "Je stelde net veel vragen kort achter elkaar. Wacht een halve minuut en probeer het dan opnieuw.",
+    "errorSessionExpired": "Je bent even niet meer ingelogd. Log opnieuw in om verder te chatten.",
+    "errorGeneral": "Er ging iets mis bij het versturen. Probeer het zo nog eens.",
+    "errorOffline": "Geen internetverbinding gevonden. Controleer je verbinding en probeer het opnieuw."
   },
   "settings": {
     "title": "Instellingen",
