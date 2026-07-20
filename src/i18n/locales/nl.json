@@ -1072,7 +1072,9 @@
       "beforeLabel": "Voor",
       "afterLabel": "Na",
       "beforeAlt": "Lege ruimte vóór de verbouwing",
-      "afterAlt": "AI-sfeerbeeld na de verbouwing"
+      "afterAlt": "AI-sfeerbeeld na de verbouwing",
+      "sliderAriaLabel": "Sleep om voor en na te vergelijken",
+      "sliderHint": "Sleep de knop om voor en na te vergelijken"
     },
     "features": {
       "heading": "Alles wat je nodig hebt, op één plek",
