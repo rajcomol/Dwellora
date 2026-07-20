@@ -95,8 +95,9 @@ test.describe("marketing landing", () => {
   test("sfeerbeeld-pill in hero scrollt naar showcase-sectie", async ({ page }) => {
     await page.goto("/");
 
+    // De pill moet volledig zichtbaar zijn (niet blijven hangen op opacity 0).
+    await expectRevealed(page, "marketing-hero-sfeerbeeld-pill");
     const pill = page.getByTestId("marketing-hero-sfeerbeeld-pill");
-    await expect(pill).toBeVisible();
     await expect(pill).toContainText("Nieuw: zie je verbouwing");
 
     await pill.click();

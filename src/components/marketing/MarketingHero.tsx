@@ -19,18 +19,14 @@ export default function MarketingHero() {
   const bgRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const revealRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!sectionRef.current || !pinRef.current) return;
 
     const ctx = gsap.context(() => {
-      if (!scrollEffects) {
-        gsap.set(revealRef.current, { opacity: 1, y: 0 });
-        return;
-      }
+      if (!scrollEffects) return;
 
-      if (!bgRef.current || !overlayRef.current || !contentRef.current || !revealRef.current) return;
+      if (!bgRef.current || !overlayRef.current || !contentRef.current) return;
 
       gsap.from(contentRef.current.children, {
         y: 32,
@@ -39,10 +35,12 @@ export default function MarketingHero() {
         stagger: 0.12,
         ease: "power2.out",
         delay: 0.15,
+        // Faalveilig: ruim na de entree de inline opacity/transform op, zodat geen
+        // enkel element (o.a. de Sfeerbeeld-pill) op opacity 0 blijft hangen.
+        clearProps: "opacity,transform",
       });
 
       gsap.set(bgRef.current, { scale: 1.15 });
-      gsap.set(revealRef.current, { opacity: 0, y: 40 });
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -70,11 +68,6 @@ export default function MarketingHero() {
           contentRef.current,
           { opacity: 0, y: -36, ease: "power1.inOut", duration: 0.45 },
           0.2,
-        )
-        .to(
-          revealRef.current,
-          { opacity: 1, y: 0, ease: "power2.out", duration: 0.45 },
-          0.45,
         );
     }, sectionRef);
 
@@ -139,22 +132,6 @@ export default function MarketingHero() {
               {t("marketing.hero.ctaSecondary")}
             </a>
           </div>
-        </div>
-
-        <div
-          ref={revealRef}
-          data-testid="marketing-hero-reveal"
-          className={[
-            "pointer-events-none absolute inset-x-0 bottom-0 mx-auto max-w-4xl px-4 pb-24 text-center sm:px-6 lg:px-8",
-            scrollEffects ? "opacity-0" : "opacity-100",
-          ].join(" ")}
-        >
-          <p className="text-2xl font-medium leading-snug tracking-tight text-white sm:text-3xl lg:text-4xl">
-            {t("marketing.hero.revealHeading")}
-          </p>
-          <p className="mt-4 text-base leading-relaxed text-white/75 sm:text-lg">
-            {t("marketing.hero.revealSubtitle")}
-          </p>
         </div>
 
         <div
