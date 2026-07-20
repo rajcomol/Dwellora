@@ -47,6 +47,33 @@ test.describe("marketing landing", () => {
     await expect(page.getByTestId("marketing-nav-cta")).toHaveAttribute("href", "/login/register");
   });
 
+  test("about-sectie toont het oprichtersverhaal zonder placeholder", async ({ page }) => {
+    await page.goto("/");
+
+    const about = page.getByTestId("marketing-about");
+    await about.scrollIntoViewIfNeeded();
+    await expect(about).toBeVisible();
+    await expect(about.getByText("Rajco Mol", { exact: true })).toBeVisible();
+    await expect(about.getByText("Bedenker van RenoTasker")).toBeVisible();
+
+    // Er mag nergens op de pagina nog een TODO-placeholder staan.
+    await expect(page.getByText("TODO", { exact: false })).toHaveCount(0);
+  });
+
+  test("sfeerbeeld-pill in hero scrollt naar showcase-sectie", async ({ page }) => {
+    await page.goto("/");
+
+    const pill = page.getByTestId("marketing-hero-sfeerbeeld-pill");
+    await expect(pill).toBeVisible();
+    await expect(pill).toContainText("Nieuw: zie je verbouwing");
+
+    await pill.click();
+
+    const showcase = page.getByTestId("marketing-sfeerbeeld-showcase");
+    await expect(showcase).toBeInViewport({ timeout: 15_000 });
+    await expect(showcase.getByRole("heading", { name: /Sfeerbeeld/ })).toBeVisible();
+  });
+
   test("feature-screenshot lightbox opent en sluit", async ({ page }) => {
     await page.goto("/");
 

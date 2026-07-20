@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { Sparkles } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useI18n } from "@/i18n/provider";
@@ -114,6 +115,14 @@ export default function MarketingHero() {
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/80 sm:text-xl">
             {t("marketing.hero.subtitle")}
           </p>
+          <a
+            href={`#${MARKETING_SECTION_IDS.sfeerbeeldShowcase}`}
+            data-testid="marketing-hero-sfeerbeeld-pill"
+            className="mt-6 inline-flex max-w-2xl items-center gap-2 rounded-full border border-renovation-accent/35 bg-renovation-accent/15 px-4 py-2 text-sm font-medium text-white shadow-sm backdrop-blur-md transition hover:-translate-y-0.5 hover:border-renovation-accent/50 hover:bg-renovation-accent/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-renovation-accent"
+          >
+            <Sparkles className="h-4 w-4 shrink-0 text-renovation-accent" aria-hidden="true" />
+            <span>{t("marketing.hero.sfeerbeeldPill")}</span>
+          </a>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href={REGISTER_HREF}

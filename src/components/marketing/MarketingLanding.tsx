@@ -1,6 +1,7 @@
 "use client";
 
 import MarketingAbout from "@/components/marketing/MarketingAbout";
+import MarketingFaq from "@/components/marketing/MarketingFaq";
 import MarketingFeatures from "@/components/marketing/MarketingFeatures";
 import MarketingFinalCta from "@/components/marketing/MarketingFinalCta";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
@@ -10,7 +11,6 @@ import MarketingNav from "@/components/marketing/MarketingNav";
 import MarketingPricing from "@/components/marketing/MarketingPricing";
 import MarketingProblem from "@/components/marketing/MarketingProblem";
 import MarketingSfeerbeeldShowcase from "@/components/marketing/MarketingSfeerbeeldShowcase";
-import MarketingStats from "@/components/marketing/MarketingStats";
 import {
   MARKETING_FEATURES_AFTER_SHOWCASE,
   MARKETING_FEATURES_BEFORE_SHOWCASE,
@@ -29,7 +29,6 @@ export default function MarketingLanding() {
       <main>
         <MarketingHero />
         <MarketingProblem />
-        <MarketingStats />
         <MarketingFeatures
           features={MARKETING_FEATURES_BEFORE_SHOWCASE}
           sectionProps={{ id: MARKETING_SECTION_IDS.features, "data-testid": "marketing-features" }}
@@ -38,6 +37,7 @@ export default function MarketingLanding() {
         <MarketingFeatures features={MARKETING_FEATURES_AFTER_SHOWCASE} showHeading={false} />
         <MarketingHowItWorks />
         <MarketingPricing />
+        <MarketingFaq />
         <MarketingAbout />
         <MarketingFinalCta />
       </main>

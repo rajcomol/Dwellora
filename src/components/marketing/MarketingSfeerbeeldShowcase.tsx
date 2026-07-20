@@ -10,6 +10,7 @@ import {
   MARKETING_SCREENSHOT_QUALITY,
   MARKETING_SCREENSHOT_SIZES,
   MARKETING_SCREENSHOT_UNOPTIMIZED,
+  MARKETING_SECTION_IDS,
   SFEERBEELD_AFTER,
   SFEERBEELD_BEFORE,
 } from "@/components/marketing/constants";
@@ -66,6 +67,7 @@ export default function MarketingSfeerbeeldShowcase() {
 
   return (
     <section
+      id={MARKETING_SECTION_IDS.sfeerbeeldShowcase}
       ref={sectionRef}
       data-testid="marketing-sfeerbeeld-showcase"
       className="relative bg-gradient-to-b from-background via-renovation-surface/40 to-background"

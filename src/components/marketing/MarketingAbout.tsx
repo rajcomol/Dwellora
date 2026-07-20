@@ -1,31 +1,82 @@
-import Card from "@/components/ui/Card";
-import nl from "@/i18n/locales/nl.json";
+"use client";
+
+import Image from "next/image";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useI18n } from "@/i18n/provider";
+import { usePrefersReducedMotion } from "@/components/marketing/usePrefersReducedMotion";
 import { MARKETING_SECTION_IDS } from "@/components/marketing/constants";
 
+gsap.registerPlugin(ScrollTrigger);
+
+const FOUNDER_IMAGE = "/marketing/oprichter.webp";
+
 export default function MarketingAbout() {
+  const { t } = useI18n();
+  const reducedMotion = usePrefersReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!sectionRef.current || reducedMotion) return;
+
+    const items = sectionRef.current.querySelectorAll<HTMLElement>("[data-about-reveal]");
+    if (!items.length) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(items, {
+        opacity: 0,
+        y: 24,
+        duration: 0.6,
+        ease: "power2.out",
+        stagger: 0.1,
+        scrollTrigger: { trigger: sectionRef.current, start: "top 80%", once: true },
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, [reducedMotion]);
+
   return (
     <section
       id={MARKETING_SECTION_IDS.about}
+      ref={sectionRef}
       data-testid="marketing-about"
       className="bg-renovation-surface py-20 sm:py-28"
     >
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_280px] lg:px-8">
-        <div>
-          <h2 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
-            {nl.marketing.about.heading}
-          </h2>
-          <p className="mt-5 text-base leading-relaxed text-renovation-concrete">
-            {/* TODO: persoonlijk verhaal + foto oprichter */}
-            {nl.marketing.about.placeholder}
-          </p>
-        </div>
+      <div className="mx-auto grid max-w-6xl items-start gap-10 px-4 sm:px-6 lg:grid-cols-[320px_1fr] lg:gap-16 lg:px-8">
+        <figure data-about-reveal className="m-0">
+          <div className="overflow-hidden rounded-2xl border border-renovation-border bg-renovation-muted/40 shadow-renovation-card">
+            <Image
+              src={FOUNDER_IMAGE}
+              alt="Rajco Mol, bedenker van RenoTasker"
+              width={640}
+              height={800}
+              className="h-auto w-full object-cover"
+              sizes="(max-width: 1024px) 100vw, 320px"
+            />
+          </div>
+          <figcaption className="mt-4 text-center lg:text-left">
+            <p className="text-base font-medium text-foreground">{t("marketing.about.name")}</p>
+            <p className="mt-0.5 text-sm text-renovation-concrete">{t("marketing.about.role")}</p>
+          </figcaption>
+        </figure>
 
-        <Card
-          aria-hidden="true"
-          className="flex aspect-[4/5] items-center justify-center border-dashed bg-renovation-muted/40 p-6 text-center text-sm text-renovation-concrete"
-        >
-          Foto oprichter
-        </Card>
+        <div data-about-reveal>
+          <h2 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+            {t("marketing.about.heading")}
+          </h2>
+          <div className="mt-6 space-y-4 text-base leading-relaxed text-renovation-concrete">
+            <p>{t("marketing.about.body1")}</p>
+            <p>{t("marketing.about.body2")}</p>
+            <p>
+              {t("marketing.about.body3a")}
+              <em>{t("marketing.about.body3emphasis")}</em>
+              {t("marketing.about.body3b")}
+            </p>
+            <p>{t("marketing.about.body4")}</p>
+          </div>
+        </div>
       </div>
     </section>
   );

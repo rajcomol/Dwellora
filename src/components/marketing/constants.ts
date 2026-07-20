@@ -33,7 +33,9 @@ export const REGISTER_HREF = "/login/register";
 
 export const MARKETING_SECTION_IDS = {
   features: "functies",
+  sfeerbeeldShowcase: "sfeerbeeld",
   pricing: "prijzen",
+  faq: "faq",
   about: "over",
 } as const;
 

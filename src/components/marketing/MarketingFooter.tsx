@@ -32,6 +32,11 @@ export default function MarketingFooter() {
               </a>
             </li>
             <li>
+              <a href={`#${MARKETING_SECTION_IDS.faq}`} className="hover:text-foreground">
+                {nl.marketing.nav.faq}
+              </a>
+            </li>
+            <li>
               <Link href="/login" className="hover:text-foreground">
                 {nl.marketing.nav.login}
               </Link>

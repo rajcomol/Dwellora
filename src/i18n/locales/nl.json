@@ -1035,6 +1035,7 @@
     "nav": {
       "features": "Functies",
       "pricing": "Prijzen",
+      "faq": "Veelgestelde vragen",
       "login": "Inloggen",
       "getStarted": "Gratis beginnen",
       "menuOpen": "Menu openen",
@@ -1043,7 +1044,8 @@
     },
     "hero": {
       "heading": "Jouw verbouwing, zonder de chaos",
-      "subtitle": "Alles-in-één verbouwapp die de lastige taken voor je uit handen neemt — van planning en budget tot offertes en visualisatie.",
+      "subtitle": "Alles-in-één verbouwapp die de lastige taken voor je uit handen neemt — van planning en budget tot offertes — en zie met AI hoe je huis wordt.",
+      "sfeerbeeldPill": "Nieuw: zie je verbouwing vóórdat je begint — met AI-sfeerbeelden",
       "ctaPrimary": "Gratis beginnen",
       "ctaSecondary": "Bekijk functies",
       "revealHeading": "Een verbouwing voelt al snel als een tweede baan.",
@@ -1065,11 +1067,6 @@
           "body": "Wie doet wat, wanneer? Zonder centraal plan verlies je snel het overzicht over planning en voortgang."
         }
       }
-    },
-    "stats": {
-      "modules": { "value": "5", "suffix": "", "label": "krachtige modules" },
-      "dashboard": { "value": "1", "suffix": "", "label": "overzichtelijk dashboard" },
-      "coach": { "value": "24", "suffix": "/7", "label": "AI-kluscoach" }
     },
     "sfeerbeeldShowcase": {
       "title": "Sfeerbeeld — zie je verbouwing vóórdat je begint",
@@ -1129,9 +1126,47 @@
       "monthly": "Maandelijks",
       "yearly": "Jaarlijks"
     },
+    "faq": {
+      "heading": "Veelgestelde vragen",
+      "subtitle": "Kort en duidelijk antwoord op wat verbouwers ons het vaakst vragen.",
+      "privacyLink": "Lees onze privacyverklaring",
+      "items": {
+        "cost": {
+          "question": "Wat kost RenoTasker?",
+          "answer": "Op dit moment kun je RenoTasker gratis gebruiken. Binnenkort komen er transparante abonnementen, met een gratis proefperiode zodat je rustig kunt uitproberen of het bij jouw verbouwing past."
+        },
+        "mobile": {
+          "question": "Kan ik RenoTasker op mijn telefoon gebruiken?",
+          "answer": "Ja, volledig. Je dashboard, planning en foto's werken gewoon op je telefoon, zodat je ook op de bouwplaats alles bij de hand hebt."
+        },
+        "data": {
+          "question": "Wat gebeurt er met mijn foto's en gegevens?",
+          "answer": "Jouw gegevens blijven van jou. Je foto's en projectgegevens worden beveiligd opgeslagen en niet met anderen gedeeld."
+        },
+        "sfeerbeeld": {
+          "question": "Hoe werkt het Sfeerbeeld?",
+          "answer": "Je uploadt een foto van je ruimte en beschrijft wat je wilt veranderen. De AI maakt daar een fotorealistisch beeld van, zodat je het resultaat al ziet vóórdat je begint."
+        },
+        "collaborate": {
+          "question": "Kan ik samenwerken met mijn partner?",
+          "answer": "Ja. Je kunt iemand uitnodigen voor je project, zodat jullie samen het overzicht houden over planning, budget en keuzes."
+        },
+        "cancel": {
+          "question": "Kan ik altijd opzeggen?",
+          "answer": "Ja. Zodra de abonnementen live zijn, is alles maandelijks opzegbaar. Je zit dus nergens aan vast."
+        }
+      }
+    },
     "about": {
       "heading": "Gebouwd door iemand die zelf verbouwt.",
-      "placeholder": "TODO: persoonlijk verhaal + foto oprichter — hier komt het verhaal achter RenoTasker."
+      "body1": "Ik ben Rajco Mol, bedenker van RenoTasker. Dit is inmiddels mijn derde verbouwing — en de eerste twee keer verloor ik het overzicht compleet. Planning, budget, offertes: ik probeerde het bij te houden in Excel, maar echt grip kreeg ik er nooit op.",
+      "body2": "Toen mijn vriendin en ik aan een nieuwe, flinke verbouwing begonnen, wist ik: dit keer pakken we het anders aan. Ik bouwde een simpele app voor onszelf — eerst alleen planning en budget. Maar het groeide. Naar een plek waar je je hele verbouwing kunt volgen, offertes vergelijkt, en met AI zelfs ziet hoe je huis straks wordt.",
+      "body3a": "Toen ik het deelde met vrienden en familie, was de reactie steeds hetzelfde: ",
+      "body3emphasis": "dit wil ik ook",
+      "body3b": ". Dat gaf me het vertrouwen om er echt iets van te maken. Zo is RenoTasker ontstaan.",
+      "body4": "In het dagelijks leven werk ik als functioneel beheerder in de IT, waar ik systemen doorontwikkel en help bij grote migraties. Die ervaring — overzicht brengen in complexe trajecten — steekt in elke hoek van deze app.",
+      "name": "Rajco Mol",
+      "role": "Bedenker van RenoTasker"
     },
     "finalCta": {
       "heading": "Klaar om grip te krijgen op je verbouwing?",
