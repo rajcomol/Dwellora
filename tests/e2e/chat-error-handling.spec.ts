@@ -2,7 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import { loginAsTestUser, testUserCredentialsConfigured, waitForDashboardAppReady } from "./helpers/auth";
 
 async function openKluscoach(page: Page): Promise<void> {
-  await page.getByRole("button", { name: /Kluscoach openen/ }).click();
+  const fab = page.getByTestId("kluscoach-fab");
+  await fab.scrollIntoViewIfNeeded();
+  await expect(fab).toBeVisible({ timeout: 30_000 });
+  await fab.click();
   await expect(page.getByRole("dialog")).toBeVisible({ timeout: 30_000 });
 }
 
@@ -41,8 +44,11 @@ test.describe("Kluscoach foutafhandeling", () => {
     await expect(page.getByText("Er ging iets mis bij het versturen. Probeer het zo nog eens.")).toBeVisible({
       timeout: 30_000,
     });
-    // Rauwe servertekst mag NOOIT in de UI belanden.
-    await expect(page.getByText(/stacktrace|Internal Server Error|OpenAI 500/)).toHaveCount(0);
+    // Rauwe servertekst mag NOOIT in de chat-UI belanden (scoped: Next.dev overlay
+    // kan console.error-tekst elders op de pagina tonen).
+    await expect(page.getByRole("dialog").getByText(/stacktrace|Internal Server Error|OpenAI 500/)).toHaveCount(
+      0
+    );
   });
 
   test("toont een rustige melding wanneer de sessie verlopen is (401)", async ({ page }) => {

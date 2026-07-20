@@ -76,9 +76,14 @@ export async function gotoProjectPath(
 }
 
 export async function openDashboard(page: Page): Promise<void> {
-  await page.goto("/dashboard");
+  // Behoud ?project= zodat first-steps / stats bij het juiste project blijven.
+  const target = withCurrentProject(page, "/dashboard");
+  await page.goto(target, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 60_000 }).catch(() => {});
-  await killTour(page);
+  await settleAfterNavigation(page);
+  if (target.includes("project=")) {
+    await waitForSelectedProject(page);
+  }
   await expect(page.getByRole("heading", { name: "Jouw renovatie-overzicht" })).toBeVisible({
     timeout: 60_000,
   });

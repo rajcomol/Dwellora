@@ -53,7 +53,12 @@ export default function MarketingAbout() {
           </div>
           <figcaption className="mt-4 text-center lg:text-left">
             <p className="text-base font-medium text-foreground">{t("marketing.about.name")}</p>
-            <p className="mt-0.5 text-sm text-renovation-concrete">{t("marketing.about.role")}</p>
+            <p
+              data-testid="marketing-about-role"
+              className="mt-0.5 text-sm text-renovation-concrete"
+            >
+              {t("marketing.about.role")}
+            </p>
           </figcaption>
         </figure>
 

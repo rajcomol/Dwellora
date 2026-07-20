@@ -86,7 +86,8 @@ test.describe("marketing landing", () => {
     await about.scrollIntoViewIfNeeded();
     await expect(about).toBeVisible();
     await expect(about.getByText("Rajco Mol", { exact: true })).toBeVisible();
-    await expect(about.getByText("Bedenker van RenoTasker")).toBeVisible();
+    await expect(page.getByTestId("marketing-about-role")).toBeVisible();
+    await expect(page.getByTestId("marketing-about-role")).toHaveText(/^Bedenker van RenoTasker$/);
 
     // Er mag nergens op de pagina nog een TODO-placeholder staan.
     await expect(page.getByText("TODO", { exact: false })).toHaveCount(0);

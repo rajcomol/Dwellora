@@ -22,7 +22,7 @@ test.describe("dashboard", () => {
     await expect(page.getByText("Taken", { exact: true })).toBeVisible();
     await expect(page.getByText("Budget resterend", { exact: true })).toBeVisible();
     await expect(page.getByText("Bouwdepot over", { exact: true })).toBeVisible();
-    await expect(page.getByText("Sleuteldatum", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("dashboard-key-date-stat")).toBeVisible();
 
     await expect(page.getByText("Eigen geld", { exact: true })).toBeVisible();
     await expect(page.getByText("Bouwdepot", { exact: true })).toBeVisible();

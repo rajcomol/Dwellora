@@ -12,10 +12,16 @@ test.describe("eerste stappen onboarding", () => {
   test.beforeEach(async () => {
     test.skip(!testUserCredentialsConfigured, "Set TEST_USER_EMAIL and TEST_USER_PASSWORD");
     const { email } = requireTestCredentials();
-    await resetFirstStepsOnboardingForTestUser(email);
+    const reset = await resetFirstStepsOnboardingForTestUser(email);
+    if (!reset) {
+      throw new Error(
+        "Kon first-steps onboarding niet resetten (SUPABASE_SERVICE_ROLE_KEY / testuser vereist)."
+      );
+    }
   });
 
   test("begeleidt nieuwe gebruiker door kamer, taak en kostenpost", async ({ page }, testInfo) => {
+    test.setTimeout(180_000);
     const projectName = uniqueName("PW First Steps", testInfo);
     const roomName = uniqueName("Keuken", testInfo);
     const taskTitle = uniqueName("Schilderen", testInfo);
@@ -68,7 +74,7 @@ test.describe("eerste stappen onboarding", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 30_000 });
     await dialog.getByLabel("Omschrijving").fill(expenseTitle);
-    await dialog.getByLabel("Bedrag").fill("150");
+    await dialog.getByTestId("kosten-field-bedrag").fill("150");
     await dialog.getByRole("button", { name: "Opslaan" }).click();
     await expect(page.getByText(expenseTitle, { exact: true })).toBeVisible({ timeout: 60_000 });
 

@@ -40,8 +40,14 @@ test.describe("taken", () => {
     await addTaskToRoom(page, roomName, taskTitle);
 
     await openRoomDetail(page, roomName);
-    const taskRow = page.locator("li").filter({ hasText: taskTitle }).first();
+    // Verwijderen zit achter "Bewerken" (ingeklapte taakrij); daarna native confirm.
+    const taskRow = page.getByTestId("room-task-item").filter({ hasText: taskTitle }).first();
+    await expect(taskRow).toBeVisible({ timeout: 60_000 });
+    await taskRow.getByRole("button", { name: "Bewerken" }).click();
+    page.once("dialog", (dialog) => dialog.accept());
     await taskRow.getByRole("button", { name: "Verwijderen" }).click();
-    await expect(page.getByText(taskTitle, { exact: true })).not.toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("room-task-item").filter({ hasText: taskTitle })).toHaveCount(0, {
+      timeout: 60_000,
+    });
   });
 });

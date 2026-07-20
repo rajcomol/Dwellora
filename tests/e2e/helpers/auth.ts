@@ -25,13 +25,17 @@ export function requireTestCredentials(): { email: string; password: string } {
 }
 
 export async function dismissOnboardingTour(page: Page): Promise<void> {
-  const skipButton = page.getByRole("button", { name: "Overslaan" }).first();
+  // Alleen de joyride-tour — NIET first-steps-skip (zelfde label "Overslaan").
+  const joyride = page.locator("#react-joyride-portal");
+  if (!(await joyride.isVisible().catch(() => false))) return;
+
+  const skipButton = joyride.getByRole("button", { name: "Overslaan" }).first();
   if (await skipButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
     await skipButton.click({ force: true });
     return;
   }
 
-  const closeButton = page.getByRole("button", { name: "Sluiten" }).first();
+  const closeButton = joyride.getByRole("button", { name: "Sluiten" }).first();
   if (await closeButton.isVisible({ timeout: 1_000 }).catch(() => false)) {
     await closeButton.click({ force: true });
   }
@@ -40,7 +44,9 @@ export async function dismissOnboardingTour(page: Page): Promise<void> {
 export async function killTour(page: Page): Promise<void> {
   try {
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(300);
+
+    const joyride = page.locator("#react-joyride-portal");
+    if (!(await joyride.isVisible().catch(() => false))) return;
 
     for (const selector of [
       '[data-action="close"]',
@@ -49,10 +55,9 @@ export async function killTour(page: Page): Promise<void> {
       'button:has-text("Sluiten")',
       "#react-joyride-step-0 button",
     ]) {
-      const btn = page.locator(selector).first();
+      const btn = joyride.locator(selector).first();
       if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
         await btn.click({ force: true });
-        await page.waitForTimeout(300);
       }
     }
   } catch {
