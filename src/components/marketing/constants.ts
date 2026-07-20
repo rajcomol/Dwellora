@@ -1,8 +1,9 @@
 export const HERO_IMAGE = "/marketing/woonkamer.webp";
 
-export const SFEERBEELD_BEFORE = "/marketing/before.webp";
+// Bestandsnamen zijn historisch: sfeerbeeld.webp = situatie vóór, before.webp = AI-resultaat.
+export const SFEERBEELD_BEFORE = "/marketing/sfeerbeeld.webp";
 
-export const SFEERBEELD_AFTER = "/marketing/sfeerbeeld.webp";
+export const SFEERBEELD_AFTER = "/marketing/before.webp";
 
 /** Intrinsieke pixelafmetingen van marketing-beelden (voor scherpe weergave zonder upscale). */
 export const MARKETING_IMAGE_DIMENSIONS: Record<string, { width: number; height: number }> = {
