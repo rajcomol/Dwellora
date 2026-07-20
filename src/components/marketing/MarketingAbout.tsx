@@ -3,12 +3,10 @@
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useI18n } from "@/i18n/provider";
 import { usePrefersReducedMotion } from "@/components/marketing/usePrefersReducedMotion";
 import { MARKETING_SECTION_IDS } from "@/components/marketing/constants";
-
-gsap.registerPlugin(ScrollTrigger);
+import { revealOnScroll } from "@/components/marketing/scrollReveal";
 
 const FOUNDER_IMAGE = "/marketing/oprichter.webp";
 
@@ -24,14 +22,11 @@ export default function MarketingAbout() {
     if (!items.length) return;
 
     const ctx = gsap.context(() => {
-      gsap.from(items, {
-        opacity: 0,
-        y: 24,
-        duration: 0.6,
-        ease: "power2.out",
-        stagger: 0.1,
-        scrollTrigger: { trigger: sectionRef.current, start: "top 80%", once: true },
-      });
+      revealOnScroll(
+        items,
+        { opacity: 0, y: 24, duration: 0.6, ease: "power2.out", stagger: 0.1 },
+        { trigger: sectionRef.current!, start: "top 80%" },
+      );
     }, sectionRef);
 
     return () => ctx.revert();

@@ -1,4 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/**
+ * Playwright's toBeVisible() negeert opacity — een element met opacity:0 geldt nog
+ * als "visible". Om de "onzichtbare witte vlakken" (scroll-reveal die blijft hangen
+ * op opacity 0) écht te vangen, pollen we op de computed opacity tot die 1 is.
+ */
+async function expectRevealed(page: Page, testId: string): Promise<void> {
+  const el = page.getByTestId(testId);
+  await el.scrollIntoViewIfNeeded();
+  await expect(el).toBeVisible();
+  await expect
+    .poll(async () => el.evaluate((node) => Number(getComputedStyle(node).opacity)), { timeout: 10_000 })
+    .toBeGreaterThan(0.99);
+}
 
 test.describe("marketing landing", () => {
   test("toont hero en functies voor niet-ingelogde bezoekers", async ({ page }) => {
@@ -45,6 +59,24 @@ test.describe("marketing landing", () => {
     await expect(page.getByTestId("marketing-nav-cta")).toBeVisible();
     await expect(page.getByTestId("marketing-nav-login")).toHaveAttribute("href", "/login");
     await expect(page.getByTestId("marketing-nav-cta")).toHaveAttribute("href", "/login/register");
+  });
+
+  test("scroll-geanimeerde secties worden zichtbaar (geen lege witte vlakken)", async ({ page }) => {
+    // Het probleem was intermitterend (afhankelijk van image-laadtiming), dus we
+    // herladen een paar keer vers vanaf de top en checken telkens alle drie de kaarten.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await page.goto("/", { waitUntil: "load" });
+
+      // De drie Probleem-kaartjes mogen nooit op opacity 0 blijven hangen.
+      await expectRevealed(page, "marketing-problem-quotes");
+      await expectRevealed(page, "marketing-problem-budget");
+      await expectRevealed(page, "marketing-problem-overview");
+    }
+
+    // Ook de overige scroll-reveal-secties moeten daadwerkelijk zichtbaar worden.
+    await expectRevealed(page, "marketing-feature-ruimtes");
+    await expectRevealed(page, "marketing-step-1");
+    await expectRevealed(page, "marketing-faq-item-cost");
   });
 
   test("about-sectie toont het oprichtersverhaal zonder placeholder", async ({ page }) => {

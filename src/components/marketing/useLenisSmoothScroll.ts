@@ -38,10 +38,23 @@ export function useLenisSmoothScroll(): void {
     // Pin/scrub-triggers opnieuw laten meten nu Lenis de scroll aanstuurt.
     ScrollTrigger.refresh();
 
+    // Triggerposities kloppen pas als de layout definitief is. Beelden en late
+    // secties (zoals de FAQ) veranderen de pagina-hoogte ná de eerste render,
+    // dus meten we opnieuw zodra alles geladen is en op de volgende frame.
+    const refresh = () => ScrollTrigger.refresh();
+    const rafId = requestAnimationFrame(refresh);
+    if (document.readyState === "complete") {
+      refresh();
+    } else {
+      window.addEventListener("load", refresh);
+    }
+
     return () => {
       lenis.off("scroll", ScrollTrigger.update);
       gsap.ticker.remove(raf);
       gsap.ticker.lagSmoothing(500, 33); // gsap-default herstellen
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("load", refresh);
       lenis.destroy();
       ScrollTrigger.refresh();
     };

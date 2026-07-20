@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useI18n } from "@/i18n/provider";
 import MarketingImageLightbox from "@/components/marketing/MarketingImageLightbox";
 import {
@@ -51,6 +52,7 @@ export default function MarketingFeatureScreenshot({ src, alt, testId }: Props) 
               sizes={MARKETING_SCREENSHOT_SIZES}
               className="h-auto w-full object-contain object-top"
               style={{ maxWidth: width }}
+              onLoad={() => ScrollTrigger.refresh()}
             />
           </div>
           <p className="border-t border-renovation-border bg-renovation-elevated px-4 py-2 text-center text-xs text-renovation-concrete">

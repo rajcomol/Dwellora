@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useI18n } from "@/i18n/provider";
 import MarketingFeatureScreenshot from "@/components/marketing/MarketingFeatureScreenshot";
 import {
@@ -11,8 +10,7 @@ import {
   type MarketingFeature,
 } from "@/components/marketing/constants";
 import { usePrefersReducedMotion } from "@/components/marketing/usePrefersReducedMotion";
-
-gsap.registerPlugin(ScrollTrigger);
+import { revealOnScroll } from "@/components/marketing/scrollReveal";
 
 type Props = {
   features?: readonly MarketingFeature[];
@@ -81,24 +79,19 @@ export default function MarketingFeatures({
         const fromX = block.dataset.reverse === "true" ? 48 : -48;
 
         if (text) {
-          gsap.from(text, {
-            x: fromX * 0.4,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power2.out",
-            scrollTrigger: { trigger: block, start: "top 80%" },
-          });
+          revealOnScroll(
+            text,
+            { x: fromX * 0.4, opacity: 0, duration: 0.8, ease: "power2.out" },
+            { trigger: block, start: "top 80%" },
+          );
         }
 
         if (image) {
-          gsap.from(image, {
-            x: fromX,
-            opacity: 0,
-            scale: 0.96,
-            duration: 0.9,
-            ease: "power2.out",
-            scrollTrigger: { trigger: block, start: "top 80%" },
-          });
+          revealOnScroll(
+            image,
+            { x: fromX, opacity: 0, scale: 0.96, duration: 0.9, ease: "power2.out" },
+            { trigger: block, start: "top 80%" },
+          );
         }
       });
     }, sectionRef);

@@ -2,12 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { usePrefersReducedMotion } from "@/components/marketing/usePrefersReducedMotion";
-
-gsap.registerPlugin(ScrollTrigger);
+import { revealOnScroll } from "@/components/marketing/scrollReveal";
 
 const STEP_KEYS = ["1", "2", "3"] as const;
 
@@ -21,17 +19,11 @@ export default function MarketingHowItWorks() {
     if (reducedMotion || !sectionRef.current || !cardsRef.current) return;
 
     const ctx = gsap.context(() => {
-      gsap.from(cardsRef.current!.children, {
-        y: 32,
-        opacity: 0,
-        duration: 0.75,
-        stagger: 0.14,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: cardsRef.current,
-          start: "top 85%",
-        },
-      });
+      revealOnScroll(
+        cardsRef.current!.children,
+        { y: 32, opacity: 0, duration: 0.75, stagger: 0.14, ease: "power2.out" },
+        { trigger: cardsRef.current!, start: "top 85%" },
+      );
     }, sectionRef);
 
     return () => ctx.revert();

@@ -17,7 +17,7 @@ export const MARKETING_IMAGE_DIMENSIONS: Record<string, { width: number; height:
 
 export const MARKETING_SCREENSHOT_SIZES = "(max-width: 768px) 100vw, 60vw";
 
-export const MARKETING_SCREENSHOT_QUALITY = 100;
+export const MARKETING_SCREENSHOT_QUALITY = 85;
 
 /** PNG/WebP-screenshots niet opnieuw comprimeren — behoudt scherpte. */
 export const MARKETING_SCREENSHOT_UNOPTIMIZED = true;

@@ -10,6 +10,11 @@ const tailwindPkg = path.join(appRoot, "node_modules", "tailwindcss");
 const nextConfig: NextConfig = {
   /** Hide floating Next.js “N” dev indicator (default bottom-left); errors still show in overlay. */
   devIndicators: false,
+  /** Toegestane next/image quality-waarden. Marketing-beelden gebruiken 85 (visueel
+   *  vrijwel identiek aan 100, kleiner). Zonder deze declaratie waarschuwt Next 16. */
+  images: {
+    qualities: [85],
+  },
   async redirects() {
     return [
       { source: "/dashboard/assistant", destination: "/dashboard", permanent: false },

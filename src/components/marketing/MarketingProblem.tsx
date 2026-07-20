@@ -2,12 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Card from "@/components/ui/Card";
 import { useI18n } from "@/i18n/provider";
 import { usePrefersReducedMotion } from "@/components/marketing/usePrefersReducedMotion";
-
-gsap.registerPlugin(ScrollTrigger);
+import { revealOnScroll } from "@/components/marketing/scrollReveal";
 
 const CARD_KEYS = ["quotes", "budget", "overview"] as const;
 
@@ -22,31 +20,20 @@ export default function MarketingProblem() {
     if (reducedMotion || !sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      if (headingRef.current) {
-        gsap.from(headingRef.current, {
-          y: 28,
-          opacity: 0,
-          duration: 0.7,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 80%",
-          },
-        });
+      if (headingRef.current && sectionRef.current) {
+        revealOnScroll(
+          headingRef.current,
+          { y: 28, opacity: 0, duration: 0.7, ease: "power2.out" },
+          { trigger: sectionRef.current, start: "top 80%" },
+        );
       }
 
       if (cardsRef.current) {
-        gsap.from(cardsRef.current.children, {
-          y: 36,
-          opacity: 0,
-          duration: 0.75,
-          stagger: 0.12,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: cardsRef.current,
-            start: "top 85%",
-          },
-        });
+        revealOnScroll(
+          cardsRef.current.children,
+          { y: 36, opacity: 0, duration: 0.75, stagger: 0.12, ease: "power2.out" },
+          { trigger: cardsRef.current, start: "top 85%" },
+        );
       }
     }, sectionRef);
 

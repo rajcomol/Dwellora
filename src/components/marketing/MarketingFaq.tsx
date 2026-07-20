@@ -3,12 +3,10 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useI18n } from "@/i18n/provider";
 import { usePrefersReducedMotion } from "@/components/marketing/usePrefersReducedMotion";
 import { MARKETING_SECTION_IDS } from "@/components/marketing/constants";
-
-gsap.registerPlugin(ScrollTrigger);
+import { revealOnScroll } from "@/components/marketing/scrollReveal";
 
 const FAQ_KEYS = ["cost", "mobile", "data", "sfeerbeeld", "collaborate", "cancel"] as const;
 
@@ -27,14 +25,11 @@ export default function MarketingFaq() {
     if (!items.length) return;
 
     const ctx = gsap.context(() => {
-      gsap.from(items, {
-        opacity: 0,
-        y: 24,
-        duration: 0.6,
-        ease: "power2.out",
-        stagger: 0.08,
-        scrollTrigger: { trigger: sectionRef.current, start: "top 80%", once: true },
-      });
+      revealOnScroll(
+        items,
+        { opacity: 0, y: 24, duration: 0.6, ease: "power2.out", stagger: 0.08 },
+        { trigger: sectionRef.current!, start: "top 80%" },
+      );
     }, sectionRef);
 
     return () => ctx.revert();
