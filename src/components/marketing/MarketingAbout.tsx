@@ -67,14 +67,22 @@ export default function MarketingAbout() {
             {t("marketing.about.heading")}
           </h2>
           <div className="mt-6 space-y-4 text-base leading-relaxed text-renovation-concrete">
+            <p className="text-lg font-medium italic leading-snug text-foreground sm:text-xl">
+              {t("marketing.about.intro")}
+            </p>
             <p>{t("marketing.about.body1")}</p>
             <p>{t("marketing.about.body2")}</p>
-            <p>
-              {t("marketing.about.body3a")}
-              <em>{t("marketing.about.body3emphasis")}</em>
-              {t("marketing.about.body3b")}
-            </p>
-            <p>{t("marketing.about.body4")}</p>
+            <p>{t("marketing.about.body3")}</p>
+            <p className="font-medium italic text-foreground">{t("marketing.about.body4")}</p>
+            <div>
+              <p>{t("marketing.about.body5a")}</p>
+              <blockquote className="mt-2 border-l-2 border-renovation-accent/50 pl-4 text-base font-medium italic text-foreground">
+                {t("marketing.about.body5quote")}
+              </blockquote>
+            </div>
+            <p>{t("marketing.about.body6")}</p>
+            <p>{t("marketing.about.body7")}</p>
+            <p>{t("marketing.about.body8")}</p>
           </div>
         </div>
       </div>
