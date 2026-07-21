@@ -39,6 +39,10 @@ test.describe("eerste stappen onboarding", () => {
     await expect(card.getByRole("heading", { name: "Je eerste stappen" })).toBeVisible();
     await expect(page.getByTestId("first-steps-step-project")).toHaveAttribute("data-done", "true");
     await expect(page.getByTestId("first-steps-step-room")).toHaveAttribute("data-done", "false");
+    // Eén stap tegelijk: de huidige stap (kamer) is uitgelicht.
+    await expect(card.getByText("Nu aan de beurt")).toBeVisible();
+    await expect(card.getByText("Voeg je eerste kamer toe")).toBeVisible();
+    await expect(card.getByText("Maak een taak in die kamer")).toHaveCount(0);
 
     await card.getByRole("link", { name: "Naar Ruimtes" }).click();
     await page.waitForURL(/\/dashboard\/rooms/, { timeout: 60_000 });
@@ -54,6 +58,7 @@ test.describe("eerste stappen onboarding", () => {
       timeout: 60_000,
     });
     await expect(page.getByTestId("first-steps-step-task")).toHaveAttribute("data-done", "false");
+    await expect(page.getByTestId("first-steps-card").getByText("Maak een taak in die kamer")).toBeVisible();
 
     await page.getByTestId("first-steps-card").getByRole("link", { name: "Taak toevoegen" }).click();
     await page.waitForURL(/\/dashboard\/rooms\/[^/?]+/, { timeout: 60_000 });
@@ -68,6 +73,7 @@ test.describe("eerste stappen onboarding", () => {
       timeout: 60_000,
     });
     await expect(page.getByTestId("first-steps-step-expense")).toHaveAttribute("data-done", "false");
+    await expect(page.getByTestId("first-steps-card").getByText("Zet je eerste kostenpost")).toBeVisible();
 
     await page.getByTestId("first-steps-card").getByRole("link", { name: "Naar Financiën" }).click();
     await page.waitForURL(/\/dashboard\/finances/, { timeout: 60_000 });

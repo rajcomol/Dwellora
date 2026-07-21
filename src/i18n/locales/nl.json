@@ -101,10 +101,17 @@
   "firstSteps": {
     "title": "Je eerste stappen",
     "progress": "{{completed}} van {{total}}",
+    "stepCounter": "Stap {{current}} van {{total}}",
+    "remaining": "Nog {{count}} te gaan — we lopen ze samen langs.",
+    "nowLabel": "Nu aan de beurt",
+    "laterButton": "Later doen",
     "stepProject": "Project aangemaakt",
     "stepRoom": "Voeg je eerste kamer toe",
     "stepTask": "Maak een taak in die kamer",
     "stepExpense": "Zet je eerste kostenpost",
+    "whyRoom": "Kamers verdelen je verbouwing in overzichtelijke stukken — denk aan de keuken, badkamer of woonkamer.",
+    "whyTask": "Taken zijn de concrete klussen per kamer. Zo weet je precies wat er nog moet gebeuren.",
+    "whyExpense": "Kostenposten geven je grip op je budget en bouwdepot. Je ziet direct waar je geld heen gaat.",
     "buttonRooms": "Naar Ruimtes",
     "buttonTask": "Taak toevoegen",
     "buttonFinances": "Naar Financiën",
@@ -920,7 +927,7 @@
       "welcome-overview": {
         "title": "Welkom: het dashboard als startpunt",
         "summary": "Wat je op het startscherm ziet en waar je begint.",
-        "body": "Het Dashboard is je startscherm. Bovenaan staat kort wat RenoTasker is, daaronder je \"Volgende stap\" (de eerstvolgende taak), en daarna je belangrijkste cijfers over budget en taken (zie het artikel \"De cijfers op je dashboard\").\n\nAls je voor het eerst een project hebt, zie je ook de kaart \"Je eerste stappen\": die helpt je je eerste kamer, taak en kostenpost aan te maken en verdwijnt vanzelf zodra je klaar bent. Wil je daarna een korte rondleiding door de tabbladen? Die is optioneel en start je via \"Help openen\" → \"Start de rondleiding\".\n\nHelemaal aan het begin is dit scherm nog leeg of staat alles op nul. Dat klopt: zodra je je verbouwing invult, vullen de overzichten zich vanzelf. Je begint meestal zo:\n- Voeg je kamers toe onder Ruimtes.\n- Maak per kamer taken aan.\n- Zet je uitgaven als kostenposten onder Financiën.\n\nDe rondleiding door de app is altijd opnieuw te starten via \"Help openen\" rechtsboven."
+        "body": "Het Dashboard is je startscherm. Bovenaan staat kort wat RenoTasker is, daaronder je \"Volgende stap\" (de eerstvolgende taak), en daarna je belangrijkste cijfers over budget en taken (zie het artikel \"De cijfers op je dashboard\").\n\nAls je voor het eerst een project hebt, zie je ook de kaart \"Je eerste stappen\". Die begeleidt je stap voor stap: eerst een kamer, dan een taak, dan een kostenpost. Je ziet steeds één stap uitgelicht, met een korte uitleg waarom die nuttig is, en een knop die je erheen brengt. Bovenaan tonen vier bolletjes je voortgang. Klaar met alle stappen? Dan kun je optioneel een korte rondleiding door de tabbladen starten. Via \"Later doen\" verberg je de kaart; de rondleiding kun je daarna altijd opnieuw starten via \"Help openen\" → \"Start de rondleiding\".\n\nHelemaal aan het begin is dit scherm nog leeg of staat alles op nul. Dat klopt: zodra je je verbouwing invult, vullen de overzichten zich vanzelf."
       },
       "navigation-sidebar": {
         "title": "Navigatie: zo vind je alles",

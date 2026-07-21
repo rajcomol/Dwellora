@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { ArrowRight } from "lucide-react";
 import { useRenovation } from "@/components/dashboard/RenovationProvider";
 import { useHelp } from "@/components/help/HelpProvider";
 import { useFirstStepsOnboarding } from "@/components/onboarding/FirstStepsOnboardingProvider";
@@ -15,7 +16,6 @@ import {
   completedFirstStepCount,
   countActiveProjectFirstSteps,
   firstRoomIdForProject,
-  firstStepsProgressPercent,
   isFirstStepsSetupComplete,
   shouldShowFirstStepsCard,
   type FirstStepId,
@@ -28,8 +28,8 @@ function CheckIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
+      strokeWidth="2.5"
+      className="h-3.5 w-3.5"
       aria-hidden="true"
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -47,6 +47,32 @@ function stepLabelKey(id: FirstStepId): string {
       return "firstSteps.stepTask";
     case "expense":
       return "firstSteps.stepExpense";
+  }
+}
+
+function stepWhyKey(id: FirstStepId): string | null {
+  switch (id) {
+    case "room":
+      return "firstSteps.whyRoom";
+    case "task":
+      return "firstSteps.whyTask";
+    case "expense":
+      return "firstSteps.whyExpense";
+    default:
+      return null;
+  }
+}
+
+function stepButtonLabelKey(id: FirstStepId): string | null {
+  switch (id) {
+    case "room":
+      return "firstSteps.buttonRooms";
+    case "task":
+      return "firstSteps.buttonTask";
+    case "expense":
+      return "firstSteps.buttonFinances";
+    default:
+      return null;
   }
 }
 
@@ -71,10 +97,11 @@ export default function FirstStepsCard() {
   );
   const steps = useMemo(() => buildFirstSteps(counts), [counts]);
   const completedCount = completedFirstStepCount(steps);
-  const progressPct = firstStepsProgressPercent(steps);
+  const remainingCount = FIRST_STEPS_TOTAL - completedCount;
   const setupComplete = isFirstStepsSetupComplete(steps);
   const firstRoomId = projectId ? firstRoomIdForProject(projectId, rooms) : null;
-  const roomStepDone = steps.find((step) => step.id === "room")?.done ?? false;
+  const currentStep = steps.find((step) => !step.done) ?? null;
+  const currentStepNumber = currentStep ? steps.findIndex((step) => step.id === currentStep.id) + 1 : FIRST_STEPS_TOTAL;
 
   const visible = shouldShowFirstStepsCard({
     isProfileReady,
@@ -93,42 +120,22 @@ export default function FirstStepsCard() {
     }
   }
 
-  function stepAction(stepId: FirstStepId) {
+  function stepHref(stepId: FirstStepId): string | null {
     if (stepId === "room") {
-      return (
-        <Link
-          href={appendProjectQuery("/dashboard/rooms?addRoom=1", projectId)}
-          className="inline-flex rounded-lg bg-renovation-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-renovation-steel"
-        >
-          {t("firstSteps.buttonRooms")}
-        </Link>
-      );
+      return appendProjectQuery("/dashboard/rooms?addRoom=1", projectId);
     }
-
     if (stepId === "task" && firstRoomId) {
-      return (
-        <Link
-          href={appendProjectQuery(`/dashboard/rooms/${firstRoomId}?focus=create-task`, projectId)}
-          className="inline-flex rounded-lg bg-renovation-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-renovation-steel"
-        >
-          {t("firstSteps.buttonTask")}
-        </Link>
-      );
+      return appendProjectQuery(`/dashboard/rooms/${firstRoomId}?focus=create-task`, projectId);
     }
-
     if (stepId === "expense") {
-      return (
-        <Link
-          href={appendProjectQuery("/dashboard/finances?add=1", projectId)}
-          className="inline-flex rounded-lg bg-renovation-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-renovation-steel"
-        >
-          {t("firstSteps.buttonFinances")}
-        </Link>
-      );
+      return appendProjectQuery("/dashboard/finances?add=1", projectId);
     }
-
     return null;
   }
+
+  const currentHref = currentStep ? stepHref(currentStep.id) : null;
+  const currentButtonLabel = currentStep ? stepButtonLabelKey(currentStep.id) : null;
+  const currentWhy = currentStep ? stepWhyKey(currentStep.id) : null;
 
   return (
     <section
@@ -137,6 +144,19 @@ export default function FirstStepsCard() {
     >
       {setupComplete ? (
         <div data-testid="first-steps-completion">
+          <ol className="mb-5 flex items-center justify-center gap-2" aria-label={t("firstSteps.title")}>
+            {steps.map((step, index) => (
+              <li
+                key={step.id}
+                data-testid={`first-steps-step-${step.id}`}
+                data-done={step.done ? "true" : "false"}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-renovation-accent bg-renovation-accent text-white"
+                aria-label={`${t(stepLabelKey(step.id))} — ${t("firstSteps.stepCounter", { current: index + 1, total: FIRST_STEPS_TOTAL })}`}
+              >
+                <CheckIcon />
+              </li>
+            ))}
+          </ol>
           <h2 className="text-lg font-semibold text-foreground">{t("firstSteps.completionTitle")}</h2>
           <p className="mt-2 text-sm leading-relaxed text-renovation-concrete">{t("firstSteps.completionBody")}</p>
           <div className="mt-5 flex flex-wrap gap-3">
@@ -159,71 +179,63 @@ export default function FirstStepsCard() {
             <div>
               <h2 className="text-lg font-semibold text-foreground">{t("firstSteps.title")}</h2>
               <p className="mt-1 text-sm text-renovation-concrete">
-                {t("firstSteps.progress", { completed: completedCount, total: FIRST_STEPS_TOTAL })}
+                {t("firstSteps.stepCounter", { current: currentStepNumber, total: FIRST_STEPS_TOTAL })}
               </p>
             </div>
+            <p className="text-xs text-renovation-concrete">
+              {t("firstSteps.remaining", { count: remainingCount })}
+            </p>
           </div>
 
-          <div
-            className="mt-4 h-1.5 overflow-hidden rounded-full bg-renovation-muted"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={FIRST_STEPS_TOTAL}
-            aria-valuenow={completedCount}
-            aria-label={t("firstSteps.title")}
-          >
-            <div
-              className="h-full rounded-full bg-renovation-accent transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-
-          <ol className="mt-5 space-y-3">
-            {steps.map((step) => {
-              const isTaskStep = step.id === "task";
-              const locked = isTaskStep && !roomStepDone;
-              const showAction = !step.done && !locked && step.id !== "project";
-
+          <ol className="mt-4 flex items-center gap-2" aria-label={t("firstSteps.title")}>
+            {steps.map((step, index) => {
+              const isCurrent = currentStep?.id === step.id;
               return (
                 <li
                   key={step.id}
                   data-testid={`first-steps-step-${step.id}`}
                   data-done={step.done ? "true" : "false"}
                   className={[
-                    "flex flex-col gap-2 rounded-xl border px-3 py-3 sm:flex-row sm:items-center sm:justify-between",
+                    "flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
                     step.done
-                      ? "border-renovation-border/70 bg-renovation-surface/60"
-                      : locked
-                        ? "border-renovation-border/50 bg-renovation-surface/30 opacity-60"
-                        : "border-renovation-border bg-renovation-surface",
+                      ? "border-renovation-accent bg-renovation-accent text-white"
+                      : isCurrent
+                        ? "border-renovation-accent bg-renovation-accent/15 text-renovation-accent ring-2 ring-renovation-accent/30"
+                        : "border-renovation-border bg-renovation-surface text-renovation-concrete/70",
                   ].join(" ")}
+                  aria-current={isCurrent ? "step" : undefined}
+                  aria-label={t(stepLabelKey(step.id))}
                 >
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span
-                      className={[
-                        "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
-                        step.done
-                          ? "border-renovation-accent bg-renovation-accent text-white"
-                          : "border-renovation-border bg-renovation-elevated text-renovation-concrete",
-                      ].join(" ")}
-                      aria-hidden="true"
-                    >
-                      {step.done ? <CheckIcon /> : steps.indexOf(step) + 1}
-                    </span>
-                    <span
-                      className={[
-                        "text-sm",
-                        step.done ? "text-renovation-concrete line-through" : "font-medium text-foreground",
-                      ].join(" ")}
-                    >
-                      {t(stepLabelKey(step.id))}
-                    </span>
-                  </div>
-                  {showAction ? <div className="sm:shrink-0">{stepAction(step.id)}</div> : null}
+                  {step.done ? <CheckIcon /> : index + 1}
                 </li>
               );
             })}
           </ol>
+
+          {currentStep ? (
+            <div className="mt-5 rounded-xl border border-renovation-accent/30 bg-renovation-accent/10 p-4 sm:p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-renovation-accent">
+                {t("firstSteps.nowLabel")}
+              </p>
+              <h3 className="mt-1.5 text-base font-semibold text-foreground sm:text-lg">
+                {t(stepLabelKey(currentStep.id))}
+              </h3>
+              {currentWhy ? (
+                <p className="mt-2 text-sm leading-relaxed text-renovation-concrete">{t(currentWhy)}</p>
+              ) : null}
+              {currentHref && currentButtonLabel ? (
+                <div className="mt-4">
+                  <Link
+                    href={currentHref}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-renovation-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-renovation-steel"
+                  >
+                    {t(currentButtonLabel)}
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </>
       )}
 
@@ -231,10 +243,10 @@ export default function FirstStepsCard() {
         <button
           type="button"
           data-testid="first-steps-skip"
-          className="text-xs font-medium text-renovation-concrete underline decoration-renovation-border underline-offset-2 transition-colors hover:text-renovation-steel"
+          className="text-xs font-medium text-renovation-concrete/80 transition-colors hover:text-renovation-concrete"
           onClick={() => void dismissCard(false)}
         >
-          {t("firstSteps.skip")}
+          {t("firstSteps.laterButton")}
         </button>
       </div>
     </section>
